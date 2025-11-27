@@ -10,7 +10,10 @@
   },
   "dependencies": {
     "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react-dom": "^19.2.3",
+    "@tailwindcss/vite": "^4.1.18",
+    "framer-motion": "^12.23.26",
+    "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
     "@types/react": "^19.2.9",
