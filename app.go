@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"NezordLauncher/pkg/constants"
 	"os"
+	"NezordLauncher/pkg/constants"
+	"NezordLauncher/pkg/system"
 )
 
 type App struct {
@@ -30,8 +31,12 @@ func (a *App) startup(ctx context.Context) {
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
 			err := os.MkdirAll(dir, 0755)
 			if err != nil {
-				fmt.Printf("Gagal membuat direktori: %s\n", err)
+				fmt.Printf("Failed to create directory: %s\n", err)
 			}
 		}
 	}
+}
+
+func (a *App) GetSystemPlatform() system.SystemInfo {
+	return system.GetSystemInfo()
 }
