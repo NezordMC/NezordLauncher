@@ -1,7 +1,9 @@
 package system
 
 import (
+	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 type SystemInfo struct {
@@ -44,4 +46,19 @@ func NormalizeArch(goarch string) string {
 
 func Is64Bit() bool {
 	return runtime.GOARCH == "amd64"
+}
+
+func GetClasspathSeparator() string {
+	return string(filepath.ListSeparator)
+}
+
+func JoinPaths(elem ...string) string {
+	return filepath.Clean(filepath.Join(elem...))
+}
+
+func ToNativePath(path string) string {
+	if runtime.GOOS == "windows" {
+		return strings.ReplaceAll(path, "/", "\\")
+	}
+	return strings.ReplaceAll(path, "\\", "/")
 }
