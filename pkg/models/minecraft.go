@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type VersionManifest struct {
 	Latest   LatestVersion `json:"latest"`
@@ -8,8 +10,8 @@ type VersionManifest struct {
 }
 
 type LatestVersion struct {
-	Release        string `json:"release"`
-	Snapshot       string `json:"snapshot"`
+	Release  string `json:"release"`
+	Snapshot string `json:"snapshot"`
 }
 
 type Version struct {
@@ -23,14 +25,14 @@ type Version struct {
 }
 
 type VersionDetail struct {
-	ID              string           `json:"id"`
-	AssetIndex      AssetIndex       `json:"assetIndex"`
-	Assets          string           `json:"assets"`
-	Downloads       DownloadMap      `json:"downloads"`
-	Libraries       []Library        `json:"libraries"`
-	MainClass       string           `json:"mainClass"`
-	MinecraftArguments string        `json:"minecraftArguments"`
-	Type            string           `json:"type"`
+	ID                 string      `json:"id"`
+	AssetIndex         AssetIndex  `json:"assetIndex"`
+	Assets             string      `json:"assets"`
+	Downloads          DownloadMap `json:"downloads"`
+	Libraries          []Library   `json:"libraries"`
+	MainClass          string      `json:"mainClass"`
+	MinecraftArguments string      `json:"minecraftArguments"`
+	Type               string      `json:"type"`
 }
 
 type AssetIndex struct {
@@ -71,4 +73,25 @@ type Rule struct {
 
 type OSConfig struct {
 	Name string `json:"name"`
+}
+
+func (l *Library) IsAllowed(osName string) bool {
+	if len(l.Rules) == 0 {
+		return true
+	}
+
+	allowed := false
+	for _, rule := range l.Rules {
+		isActionAllow := rule.Action == "allow"
+		
+		if rule.OS.Name == "" {
+			allowed = isActionAllow
+			continue
+		}
+
+		if rule.OS.Name == osName {
+			allowed = isActionAllow
+		}
+	}
+	return allowed
 }
