@@ -2,6 +2,7 @@ package system
 
 import (
 	"NezordLauncher/pkg/models"
+	"strings"
 )
 
 func ShouldDownload(rules []models.Rule) bool {
@@ -26,4 +27,28 @@ func ShouldDownload(rules []models.Rule) bool {
 	}
 
 	return result
+}
+
+func GetNativeClassifier(library models.Library) string {
+	if library.Natives == nil {
+		return ""
+	}
+
+	systemInfo := GetSystemInfo()
+	classifier, ok := library.Natives[systemInfo.OS]
+	if !ok {
+		return ""
+	}
+
+	return strings.ReplaceAll(classifier, "${arch}", systemInfo.Arch)
+}
+
+func GetNativeArtifact(library models.Library) (models.DownloadInfo, bool) {
+	classifier := GetNativeClassifier(library)
+	if classifier == "" {
+		return models.DownloadInfo{}, false
+	}
+
+	artifact, ok := library.Downloads.Classifiers[classifier]
+	return artifact, ok
 }

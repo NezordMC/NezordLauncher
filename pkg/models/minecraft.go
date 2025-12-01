@@ -60,10 +60,12 @@ type Library struct {
 	Name      string             `json:"name"`
 	Downloads LibraryDownloadMap `json:"downloads"`
 	Rules     []Rule             `json:"rules,omitempty"`
+	Natives   map[string]string  `json:"natives,omitempty"`
 }
 
 type LibraryDownloadMap struct {
-	Artifact DownloadInfo `json:"artifact"`
+	Artifact    DownloadInfo            `json:"artifact"`
+	Classifiers map[string]DownloadInfo `json:"classifiers,omitempty"`
 }
 
 type Rule struct {
