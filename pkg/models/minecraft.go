@@ -1,6 +1,8 @@
 package models
 
 import (
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -54,6 +56,26 @@ type DownloadInfo struct {
 	SHA1 string `json:"sha1"`
 	Size int    `json:"size"`
 	URL  string `json:"url"`
+	Path string `json:"path,omitempty"`
+}
+
+func (d DownloadInfo) GetPath() string {
+	if d.Path != "" {
+		return d.Path
+	}
+	
+	if d.URL == "" {
+		return ""
+	}
+
+	parts := strings.Split(d.URL, "/")
+	for i, part := range parts {
+		if part == "libraries.minecraft.net" && i+1 < len(parts) {
+			return strings.Join(parts[i+1:], "/")
+		}
+	}
+	
+	return filepath.Base(d.URL)
 }
 
 type Library struct {
