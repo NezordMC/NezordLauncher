@@ -1,11 +1,12 @@
 package main
 
 import (
+	"NezordLauncher/pkg/constants"
+	"NezordLauncher/pkg/downloader"
+	"NezordLauncher/pkg/system"
 	"context"
 	"fmt"
 	"os"
-	"NezordLauncher/pkg/constants"
-	"NezordLauncher/pkg/system"
 )
 
 type App struct {
@@ -39,4 +40,22 @@ func (a *App) startup(ctx context.Context) {
 
 func (a *App) GetSystemPlatform() system.SystemInfo {
 	return system.GetSystemInfo()
+}
+
+func (a *App) DownloadVersion(versionID string) error {
+	pool := downloader.NewWorkerPool(10, 100)
+	pool.Start()
+	
+	fetcher := downloader.NewArtifactFetcher(pool)
+	
+	fmt.Printf("Starting download for version: %s\n", versionID)
+	
+	if err := fetcher.DownloadVersion(versionID); err != nil {
+		pool.Wait() 
+		return fmt.Errorf("download failed: %w", err)
+	}
+
+	pool.Wait()
+	fmt.Printf("Download completed successfully for: %s\n", versionID)
+	return nil
 }
