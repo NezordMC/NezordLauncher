@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"time"
@@ -33,8 +34,52 @@ type VersionDetail struct {
 	Downloads          DownloadMap `json:"downloads"`
 	Libraries          []Library   `json:"libraries"`
 	MainClass          string      `json:"mainClass"`
-	MinecraftArguments string      `json:"minecraftArguments"`
+	MinecraftArguments string      `json:"minecraftArguments,omitempty"`
+	Arguments          Arguments   `json:"arguments,omitempty"`
 	Type               string      `json:"type"`
+}
+
+type Arguments struct {
+	Game []Argument `json:"game,omitempty"`
+	JVM  []Argument `json:"jvm,omitempty"`
+}
+
+type Argument struct {
+	Values []string
+	Rules  []Rule
+}
+
+func (a *Argument) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		a.Values = []string{s}
+		return nil
+	}
+
+	var obj struct {
+		Rules []Rule          `json:"rules"`
+		Value json.RawMessage `json:"value"`
+	}
+	
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return err
+	}
+
+	a.Rules = obj.Rules
+
+	var sVal string
+	if err := json.Unmarshal(obj.Value, &sVal); err == nil {
+		a.Values = []string{sVal}
+		return nil
+	}
+
+	var sSlice []string
+	if err := json.Unmarshal(obj.Value, &sSlice); err == nil {
+		a.Values = sSlice
+		return nil
+	}
+
+	return nil
 }
 
 type AssetIndex struct {
