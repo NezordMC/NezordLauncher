@@ -2,23 +2,24 @@ package main
 
 import (
 	"NezordLauncher/pkg/constants"
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
-func TestEndToEndDownload(t *testing.T) {
+func TestIntegration_LaunchGame(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
 
 	tempDir := t.TempDir()
-	
 	originalAppData := os.Getenv("APPDATA")
 	originalHome := os.Getenv("HOME")
 	
-	os.Setenv("APPDATA", tempDir) // Windows
-	os.Setenv("HOME", tempDir)    // Linux uses os.UserConfigDir which often defaults to HOME/.config
+	os.Setenv("APPDATA", tempDir)
+	os.Setenv("HOME", tempDir) 
 	
 	defer func() {
 		os.Setenv("APPDATA", originalAppData)
@@ -26,27 +27,32 @@ func TestEndToEndDownload(t *testing.T) {
 	}()
 
 	app := NewApp()
-	app.startup(nil)
+	app.EnableTestMode()
+	
+	app.startup(context.Background())
 
 	versionID := "rd-132211" 
+	t.Logf("Downloading %s...", versionID)
 	
-	t.Logf("Starting Smoke Test: Downloading %s...", versionID)
-	err := app.DownloadVersion(versionID)
+	if err := app.DownloadVersion(versionID); err != nil {
+		t.Fatalf("Download failed: %v", err)
+	}
+
+	t.Logf("Launching %s...", versionID)
+	
+	err := app.LaunchGame(versionID, 512, "TesterBot")
+	
 	if err != nil {
-		t.Fatalf("Smoke Test Failed: %v", err)
+		t.Fatalf("Launch failed: %v", err)
 	}
 
-	clientJar := filepath.Join(constants.GetInstancesDir(), versionID, versionID+".jar")
-	if _, err := os.Stat(clientJar); os.IsNotExist(err) {
-		t.Errorf("Client JAR missing at: %s", clientJar)
+	nativesDir := filepath.Join(constants.GetInstancesDir(), versionID, "natives")
+	if _, err := os.Stat(nativesDir); os.IsNotExist(err) {
+		t.Errorf("Natives directory missing at %s. Launch process might have aborted early.", nativesDir)
 	} else {
-		t.Logf("Verified: Client JAR exists at %s", clientJar)
+		t.Log("Verified: Natives extracted successfully.")
 	}
 
-	info, _ := os.Stat(constants.GetInstancesDir())
-	if !info.IsDir() {
-		t.Error("Instances directory not created")
-	}
-
-	t.Log("Smoke Test Passed: The Engine works!")
+	time.Sleep(2 * time.Second)
+	t.Log("Integration Test Passed: Launch sequence initiated successfully.")
 }
