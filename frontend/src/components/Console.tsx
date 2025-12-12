@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
+import { Terminal } from "lucide-react";
 
 interface ConsoleProps {
   logs: string[];
@@ -13,21 +14,37 @@ export function Console({ logs }: ConsoleProps) {
   }, [logs]);
 
   return (
-    <Card className="w-full h-full bg-black border-zinc-800 p-2 font-mono text-[10px] overflow-y-auto no-drag shadow-inner">
-      <div className="flex flex-col space-y-0.5">
+    <Card className="w-full h-full bg-black/80 border-zinc-800 p-3 font-mono text-[10px] overflow-hidden flex flex-col no-drag shadow-inner relative group">
+      <div className="absolute top-2 right-2 opacity-20 group-hover:opacity-50 transition-opacity">
+        <Terminal size={14} />
+      </div>
+
+      <div className="flex-1 overflow-y-auto space-y-1 pr-2 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
         {logs.length === 0 && (
-          <div className="text-zinc-600 italic">Waiting for log stream...</div>
+          <div className="text-zinc-700 italic flex items-center gap-2 h-full justify-center">
+            <div className="w-2 h-2 bg-zinc-800 animate-pulse rounded-full"></div>
+            System Idle. Ready for commands.
+          </div>
         )}
         {logs.map((log, index) => (
-          <div key={index} className="break-all flex">
-            <span className="text-zinc-600 mr-2 select-none">&gt;</span>
+          <div
+            key={index}
+            className="break-all flex leading-relaxed hover:bg-white/5 px-1 rounded transition-colors"
+          >
+            <span className="text-zinc-700 mr-2 select-none shrink-0">
+              &gt;
+            </span>
             <span
               className={
-                log.includes("[ERROR]") || log.includes("Error")
-                  ? "text-red-500"
+                log.includes("[ERROR]") || log.includes("[FATAL]")
+                  ? "text-red-500 font-bold"
                   : log.includes("[GAME]")
                     ? "text-blue-400"
-                    : "text-zinc-300"
+                    : log.includes("[DOWNLOAD]")
+                      ? "text-emerald-500"
+                      : log.includes("[COMMAND]")
+                        ? "text-yellow-500"
+                        : "text-zinc-400"
               }
             >
               {log}
