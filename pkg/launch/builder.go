@@ -127,8 +127,13 @@ func buildClasspath(version *models.VersionDetail) (string, error) {
 	}
 
 	// Add Client JAR (Minecraft itself)
-	clientJar := filepath.Join(constants.GetInstancesDir(), version.ID, fmt.Sprintf("%s.jar", version.ID))
-	paths = append(paths, clientJar)
+	jarID := version.ID
+    if version.Jar != "" {
+        jarID = version.Jar
+    }
+    
+    clientJar := filepath.Join(constants.GetInstancesDir(), jarID, fmt.Sprintf("%s.jar", jarID))
+    paths = append(paths, clientJar)
 
 	return strings.Join(paths, system.GetClasspathSeparator()), nil
 }
