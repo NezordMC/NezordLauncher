@@ -29,6 +29,8 @@ type Version struct {
 
 type VersionDetail struct {
 	ID                 string      `json:"id"`
+	InheritsFrom       string      `json:"inheritsFrom,omitempty"` 
+	Jar                string      `json:"jar,omitempty"`          
 	AssetIndex         AssetIndex  `json:"assetIndex"`
 	Assets             string      `json:"assets"`
 	Downloads          DownloadMap `json:"downloads"`
@@ -115,7 +117,7 @@ func (d DownloadInfo) GetPath() string {
 
 	parts := strings.Split(d.URL, "/")
 	for i, part := range parts {
-		if part == "libraries.minecraft.net" && i+1 < len(parts) {
+		if (part == "libraries.minecraft.net" || part == "maven") && i+1 < len(parts) {
 			return strings.Join(parts[i+1:], "/")
 		}
 	}
@@ -126,6 +128,7 @@ func (d DownloadInfo) GetPath() string {
 type Library struct {
 	Name      string             `json:"name"`
 	Downloads LibraryDownloadMap `json:"downloads"`
+	URL       string             `json:"url,omitempty"`
 	Rules     []Rule             `json:"rules,omitempty"`
 	Natives   map[string]string  `json:"natives,omitempty"`
 }
