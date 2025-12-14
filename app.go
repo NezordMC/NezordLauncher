@@ -1,9 +1,7 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
+	"NezordLauncher/pkg/auth"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/downloader"
 	"NezordLauncher/pkg/javascanner"
@@ -11,6 +9,9 @@ import (
 	"NezordLauncher/pkg/models"
 	"NezordLauncher/pkg/network"
 	"NezordLauncher/pkg/system"
+	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -18,12 +19,15 @@ import (
 )
 
 type App struct {
-	ctx        context.Context
-	isTestMode bool 
+	ctx            context.Context
+	isTestMode     bool
+	accountManager *auth.AccountManager
 }
 
 func NewApp() *App {
-	return &App{}
+	return &App{
+		accountManager: auth.NewAccountManager(),
+	}
 }
 
 func (a *App) EnableTestMode() {
@@ -60,7 +64,31 @@ func (a *App) startup(ctx context.Context) {
 			}
 		}
 	}
+
+
+	if err := a.accountManager.Load(); err != nil {
+		fmt.Printf("Failed to load accounts: %s\n", err)
+	}
 }
+
+
+func (a *App) GetAccounts() []auth.Account {
+	return a.accountManager.GetAccounts()
+}
+
+func (a *App) AddOfflineAccount(username string) (*auth.Account, error) {
+	return a.accountManager.AddOfflineAccount(username)
+}
+
+func (a *App) SetActiveAccount(uuid string) error {
+	return a.accountManager.SetActiveAccount(uuid)
+}
+
+func (a *App) GetActiveAccount() *auth.Account {
+	return a.accountManager.GetActiveAccount()
+}
+
+
 
 func (a *App) GetSystemPlatform() system.SystemInfo {
 	return system.GetSystemInfo()
@@ -84,11 +112,20 @@ func (a *App) DownloadVersion(versionID string) error {
 	return nil
 }
 
-func (a *App) LaunchGame(versionID string, ramMB int, username string) error {
+
+func (a *App) LaunchGame(versionID string, ramMB int) error {
+
+	account := a.accountManager.GetActiveAccount()
+	if account == nil {
+		return fmt.Errorf("no active account selected")
+	}
+
+
 	instanceDir := filepath.Join(constants.GetInstancesDir(), versionID)
 	nativesDir := filepath.Join(instanceDir, "natives")
 	
 	a.emit("launchStatus", "Preparing environment...")
+
 
 	version, err := a.getVersionDetails(versionID)
 	if err != nil {
@@ -107,15 +144,18 @@ func (a *App) LaunchGame(versionID string, ramMB int, username string) error {
 	}
 	a.emit("launchStatus", fmt.Sprintf("Using Java: %s (%s)", selectedJava.Version, selectedJava.Path))
 
+
 	a.emit("launchStatus", "Extracting native libraries...")
 	if err := launch.ExtractNatives(version.Libraries, nativesDir); err != nil {
 		return fmt.Errorf("natives extraction failed: %w", err)
 	}
+
+
 	opts := launch.LaunchOptions{
-		PlayerName:   username,
-		UUID:         "00000000-0000-0000-0000-000000000000",
-		AccessToken:  "null",
-		UserType:     "legacy",
+		PlayerName:   account.Username,
+		UUID:         account.UUID,
+		AccessToken:  account.AccessToken,
+		UserType:     string(account.Type),
 		VersionID:    versionID,
 		GameDir:      instanceDir,
 		AssetsDir:    constants.GetAssetsDir(),
@@ -129,6 +169,7 @@ func (a *App) LaunchGame(versionID string, ramMB int, username string) error {
 	if err != nil {
 		return fmt.Errorf("argument build failed: %w", err)
 	}
+
 
 	a.emit("launchStatus", "Launching game process...")
 	
@@ -149,8 +190,39 @@ func (a *App) LaunchGame(versionID string, ramMB int, username string) error {
 }
 
 func (a *App) getVersionDetails(versionID string) (*models.VersionDetail, error) {
-	client := network.NewHttpClient()
+
 	
+
+	localPath := filepath.Join(constants.GetVersionsDir(), versionID, fmt.Sprintf("%s.json", versionID))
+	if _, err := os.Stat(localPath); err == nil {
+
+		data, err := os.ReadFile(localPath)
+		if err != nil {
+			return nil, err
+		}
+		var child models.VersionDetail
+		if err := json.Unmarshal(data, &child); err != nil {
+			return nil, err
+		}
+		
+
+		if child.InheritsFrom != "" {
+			parent, err := a.fetchVanillaVersion(child.InheritsFrom)
+			if err != nil {
+				return nil, fmt.Errorf("failed to fetch parent %s: %w", child.InheritsFrom, err)
+			}
+			return launch.MergeVersions(&child, parent), nil
+		}
+		return &child, nil
+	}
+
+
+	return a.fetchVanillaVersion(versionID)
+}
+
+
+func (a *App) fetchVanillaVersion(versionID string) (*models.VersionDetail, error) {
+	client := network.NewHttpClient()
 	data, err := client.Get(constants.VersionManifestV2URL)
 	if err != nil {
 		return nil, err
@@ -182,6 +254,5 @@ func (a *App) getVersionDetails(versionID string) (*models.VersionDetail, error)
 	if err := json.Unmarshal(detailData, &detail); err != nil {
 		return nil, err
 	}
-
 	return &detail, nil
 }

@@ -3,7 +3,15 @@ import { LauncherForm } from "./components/LauncherForm";
 import { useLauncher } from "./hooks/useLauncher";
 
 function App() {
-  const { isLaunching, logs, launch } = useLauncher();
+  const {
+    isLaunching,
+    logs,
+    launch,
+    accounts,
+    activeAccount,
+    addOfflineAccount,
+    switchAccount,
+  } = useLauncher();
 
   return (
     <div className="flex flex-col items-center justify-center w-screen h-screen font-sans text-white bg-zinc-950 relative overflow-hidden p-6">
@@ -17,7 +25,14 @@ function App() {
           <div className="h-px w-24 bg-zinc-800 mx-auto"></div>
         </div>
 
-        <LauncherForm onLaunch={launch} isLaunching={isLaunching} />
+        <LauncherForm
+          onLaunch={launch}
+          isLaunching={isLaunching}
+          accounts={accounts}
+          activeAccount={activeAccount}
+          onAddAccount={addOfflineAccount}
+          onSwitchAccount={switchAccount}
+        />
 
         <div className="flex-grow max-h-48 min-h-[150px]">
           <Console logs={logs} />
@@ -25,7 +40,7 @@ function App() {
       </div>
 
       <div className="absolute bottom-4 text-[10px] text-zinc-800 font-mono select-none">
-        v1.0.0
+        v1.1.0-auth
       </div>
     </div>
   );

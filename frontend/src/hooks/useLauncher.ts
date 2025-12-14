@@ -1,13 +1,31 @@
 import { useState, useEffect } from "react";
-import { LaunchGame, DownloadVersion } from "../../wailsjs/go/main/App";
+
+import {
+  LaunchGame,
+  DownloadVersion,
+  GetAccounts,
+  AddOfflineAccount,
+  SetActiveAccount,
+  GetActiveAccount,
+} from "../../wailsjs/go/main/App";
 import { EventsOn } from "../../wailsjs/runtime/runtime";
-import { LaunchConfig } from "../components/LauncherForm";
+
+export interface Account {
+  uuid: string;
+  username: string;
+  type: string;
+}
 
 export function useLauncher() {
   const [isLaunching, setIsLaunching] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
 
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [activeAccount, setActiveAccountState] = useState<Account | null>(null);
+
   useEffect(() => {
+    refreshAccounts();
+
     const cleanups = [
       EventsOn("downloadStatus", (msg: string) =>
         setLogs((p) => [...p, `[DOWNLOAD] ${msg}`]),
@@ -25,8 +43,42 @@ export function useLauncher() {
     return () => cleanups.forEach((c) => c());
   }, []);
 
-  const launch = async (config: LaunchConfig) => {
+  const refreshAccounts = async () => {
+    try {
+      const accs = await GetAccounts();
+      setAccounts(accs || []);
+      const active = await GetActiveAccount();
+      setActiveAccountState(active);
+    } catch (e) {
+      console.error("Failed to load accounts", e);
+    }
+  };
+
+  const addOfflineAccount = async (username: string) => {
+    try {
+      await AddOfflineAccount(username);
+      await refreshAccounts();
+    } catch (e) {
+      setLogs((p) => [...p, `[ERROR] Failed to add account: ${e}`]);
+    }
+  };
+
+  const switchAccount = async (uuid: string) => {
+    try {
+      await SetActiveAccount(uuid);
+      await refreshAccounts();
+    } catch (e) {
+      console.error("Failed to switch account", e);
+    }
+  };
+
+  const launch = async (config: { version: string; ram: number }) => {
     if (isLaunching) return;
+    if (!activeAccount) {
+      setLogs((p) => [...p, `[ERROR] No account selected!`]);
+      return;
+    }
+
     setIsLaunching(true);
     setLogs([]);
 
@@ -39,14 +91,23 @@ export function useLauncher() {
 
       setLogs((p) => [
         ...p,
-        `[COMMAND] Artifacts verified. Initializing launch sequence...`,
+        `[COMMAND] Artifacts verified. Launching as ${activeAccount.username}...`,
       ]);
-      await LaunchGame(config.version, config.ram, config.username);
+
+      await LaunchGame(config.version, config.ram);
     } catch (e) {
       setLogs((p) => [...p, `[FATAL] Sequence aborted: ${e}`]);
       setIsLaunching(false);
     }
   };
 
-  return { isLaunching, logs, launch };
+  return {
+    isLaunching,
+    logs,
+    launch,
+    accounts,
+    activeAccount,
+    addOfflineAccount,
+    switchAccount,
+  };
 }

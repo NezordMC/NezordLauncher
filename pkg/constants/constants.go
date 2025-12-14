@@ -38,3 +38,7 @@ func GetLibrariesDir() string {
 func GetRuntimesDir() string {
 	return filepath.Join(GetAppDataDir(), "runtimes")
 }
+
+func GetVersionsDir() string {
+	return filepath.Join(GetAppDataDir(), "versions")
+}
