@@ -7,7 +7,6 @@ import (
 )
 
 func TestBuildArguments_Modern(t *testing.T) {
-	// Mock Version 1.19+ (Modern JSON Structure)
 	version := &models.VersionDetail{
 		ID:        "1.20.1",
 		MainClass: "net.minecraft.client.main.Main",
@@ -38,10 +37,8 @@ func TestBuildArguments_Modern(t *testing.T) {
 		t.Fatalf("Failed to build args: %v", err)
 	}
 
-	// Validation
 	argStr := strings.Join(args, " ")
 	
-	// Check standard JVM args
 	if !strings.Contains(argStr, "-Xmx2048M") {
 		t.Error("Missing RAM argument")
 	}
@@ -49,24 +46,44 @@ func TestBuildArguments_Modern(t *testing.T) {
 		t.Error("Missing natives path")
 	}
 
-	// Check Variable Substitution
 	if !strings.Contains(argStr, "--username NezordUser") {
 		t.Error("Failed to substitute ${auth_player_name}")
 	}
 	if !strings.Contains(argStr, "--version 1.20.1") {
 		t.Error("Failed to substitute ${version_name}")
 	}
+}
+
+func TestBuildArguments_Authlib(t *testing.T) {
+	version := &models.VersionDetail{
+		ID:        "1.20.1",
+		MainClass: "net.minecraft.client.main.Main",
+	}
+
+	opts := LaunchOptions{
+		PlayerName:          "ElyUser",
+		VersionID:           "1.20.1",
+		AuthlibInjectorPath: "/path/to/authlib.jar",
+	}
+
+	args, err := BuildArguments(version, opts)
+	if err != nil {
+		t.Fatalf("Failed to build args: %v", err)
+	}
+
+	argStr := strings.Join(args, " ")
 	
-	t.Logf("Generated Modern Args: %v", args)
+	expected := "-javaagent:/path/to/authlib.jar=ely.by"
+	if !strings.Contains(argStr, expected) {
+		t.Errorf("Missing javaagent argument. Got: %s", argStr)
+	}
 }
 
 func TestBuildArguments_Legacy(t *testing.T) {
-	// Mock Version 1.7.10 (Legacy String Structure)
 	version := &models.VersionDetail{
 		ID:                 "1.7.10",
 		MainClass:          "net.minecraft.client.main.Main",
 		MinecraftArguments: "--username ${auth_player_name} --version ${version_name} --gameDir ${game_directory}",
-		// Arguments struct is empty/nil for legacy
 	}
 
 	opts := LaunchOptions{
@@ -83,18 +100,14 @@ func TestBuildArguments_Legacy(t *testing.T) {
 
 	argStr := strings.Join(args, " ")
 
-	// Legacy versions MUST fallback to default JVM args (-cp)
 	if !strings.Contains(argStr, "-cp") {
 		t.Error("Missing -cp argument in legacy mode")
 	}
 	
-	// Check legacy string parsing
 	if !strings.Contains(argStr, "--username LegacySteve") {
 		t.Error("Failed to parse legacy minecraftArguments")
 	}
 	if !strings.Contains(argStr, "/tmp/legacy_mc") {
 		t.Error("Failed to substitute gameDir")
 	}
-
-	t.Logf("Generated Legacy Args: %v", args)
 }

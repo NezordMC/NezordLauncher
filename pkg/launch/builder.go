@@ -10,27 +10,26 @@ import (
 )
 
 type LaunchOptions struct {
-	PlayerName   string
-	UUID         string
-	AccessToken  string
-	UserType     string
-	VersionID    string
-	GameDir      string
-	AssetsDir    string
-	NativesDir   string
-	RamMB        int
-	Width        int
-	Height       int
+	PlayerName          string
+	UUID                string
+	AccessToken         string
+	UserType            string
+	VersionID           string
+	GameDir             string
+	AssetsDir           string
+	NativesDir          string
+	RamMB               int
+	Width               int
+	Height              int
+	AuthlibInjectorPath string
 }
 
 func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]string, error) {
-	// Build Classpath (Library List)
 	classpath, err := buildClasspath(version)
 	if err != nil {
 		return nil, err
 	}
 
-	// Prepare Variables for Substitution
 	vars := map[string]string{
 		"${auth_player_name}":  options.PlayerName,
 		"${auth_uuid}":         options.UUID,
@@ -40,8 +39,8 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 		"${game_directory}":    options.GameDir,
 		"${assets_root}":       options.AssetsDir,
 		"${assets_index_name}": version.AssetIndex.ID,
-		"${auth_xuid}":         options.AccessToken, // For Microsoft Auth compatibility
-		"${clientid}":          options.AccessToken, // For Microsoft Auth compatibility
+		"${auth_xuid}":         options.AccessToken,
+		"${clientid}":          options.AccessToken,
 		"${version_type}":      version.Type,
 		"${natives_directory}": options.NativesDir,
 		"${launcher_name}":     constants.AppName,
@@ -51,11 +50,13 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 
 	var args []string
 
-	// Default JVM Args (Memory & Natives)
 	args = append(args, fmt.Sprintf("-Xmx%dM", options.RamMB))
 	args = append(args, fmt.Sprintf("-Djava.library.path=%s", options.NativesDir))
 
-	// Modern JVM Args (1.13+)
+	if options.AuthlibInjectorPath != "" {
+		args = append(args, fmt.Sprintf("-javaagent:%s=ely.by", options.AuthlibInjectorPath))
+	}
+
 	if len(version.Arguments.JVM) > 0 {
 		for _, arg := range version.Arguments.JVM {
 			if checkRules(arg.Rules) {
@@ -65,15 +66,12 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 			}
 		}
 	} else {
-		// Legacy Fallback for JVM Args (Standard behavior)
 		args = append(args, "-cp", classpath)
 	}
 
 	args = append(args, version.MainClass)
 
-	// Construct Game Arguments
 	if len(version.Arguments.Game) > 0 {
-		// Modern Game Args (1.13+)
 		for _, arg := range version.Arguments.Game {
 			if checkRules(arg.Rules) {
 				for _, val := range arg.Values {
@@ -82,15 +80,12 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 			}
 		}
 	} else {
-		// Legacy Game Args (<1.13)
 		legacyArgs := strings.Split(version.MinecraftArguments, " ")
 		for _, arg := range legacyArgs {
 			args = append(args, replaceVars(arg, vars))
 		}
 	}
 
-	// Add Resolution Args manually if not present (Safety net)
-	// Some versions rely on this being passed explicitly if not in arguments
 	hasWidth := false
 	for _, a := range args {
 		if strings.Contains(a, "--width") {
@@ -111,7 +106,6 @@ func buildClasspath(version *models.VersionDetail) (string, error) {
 	libDir := constants.GetLibrariesDir()
 	sysInfo := system.GetSystemInfo()
 
-	// Add Libraries
 	for _, lib := range version.Libraries {
 		if !lib.IsAllowed(sysInfo.OS) {
 			continue
@@ -126,14 +120,13 @@ func buildClasspath(version *models.VersionDetail) (string, error) {
 		paths = append(paths, fullPath)
 	}
 
-	// Add Client JAR (Minecraft itself)
 	jarID := version.ID
-    if version.Jar != "" {
-        jarID = version.Jar
-    }
-    
-    clientJar := filepath.Join(constants.GetInstancesDir(), jarID, fmt.Sprintf("%s.jar", jarID))
-    paths = append(paths, clientJar)
+	if version.Jar != "" {
+		jarID = version.Jar
+	}
+
+	clientJar := filepath.Join(constants.GetInstancesDir(), jarID, fmt.Sprintf("%s.jar", jarID))
+	paths = append(paths, clientJar)
 
 	return strings.Join(paths, system.GetClasspathSeparator()), nil
 }
@@ -154,11 +147,8 @@ func checkRules(rules []models.Rule) bool {
 			continue
 		}
 		
-		// Handle specific OS matches (osx, linux, windows)
-		// Note: system.GetSystemInfo returns normalized (linux, osx, windows)
 		match := rule.OS.Name == sysInfo.OS
 		
-		// Specific case for macOS sometimes referred as "osx" in older JSONs
 		if rule.OS.Name == "osx" && sysInfo.OS == "darwin" {
 			match = true
 		}

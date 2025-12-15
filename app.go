@@ -1,6 +1,9 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"NezordLauncher/pkg/auth"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/downloader"
@@ -8,10 +11,8 @@ import (
 	"NezordLauncher/pkg/launch"
 	"NezordLauncher/pkg/models"
 	"NezordLauncher/pkg/network"
+	"NezordLauncher/pkg/services"
 	"NezordLauncher/pkg/system"
-	"context"
-	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -65,12 +66,10 @@ func (a *App) startup(ctx context.Context) {
 		}
 	}
 
-
 	if err := a.accountManager.Load(); err != nil {
 		fmt.Printf("Failed to load accounts: %s\n", err)
 	}
 }
-
 
 func (a *App) GetAccounts() []auth.Account {
 	return a.accountManager.GetAccounts()
@@ -87,8 +86,6 @@ func (a *App) SetActiveAccount(uuid string) error {
 func (a *App) GetActiveAccount() *auth.Account {
 	return a.accountManager.GetActiveAccount()
 }
-
-
 
 func (a *App) GetSystemPlatform() system.SystemInfo {
 	return system.GetSystemInfo()
@@ -112,20 +109,16 @@ func (a *App) DownloadVersion(versionID string) error {
 	return nil
 }
 
-
 func (a *App) LaunchGame(versionID string, ramMB int) error {
-
 	account := a.accountManager.GetActiveAccount()
 	if account == nil {
 		return fmt.Errorf("no active account selected")
 	}
 
-
 	instanceDir := filepath.Join(constants.GetInstancesDir(), versionID)
 	nativesDir := filepath.Join(instanceDir, "natives")
 	
 	a.emit("launchStatus", "Preparing environment...")
-
 
 	version, err := a.getVersionDetails(versionID)
 	if err != nil {
@@ -144,32 +137,41 @@ func (a *App) LaunchGame(versionID string, ramMB int) error {
 	}
 	a.emit("launchStatus", fmt.Sprintf("Using Java: %s (%s)", selectedJava.Version, selectedJava.Path))
 
-
 	a.emit("launchStatus", "Extracting native libraries...")
 	if err := launch.ExtractNatives(version.Libraries, nativesDir); err != nil {
 		return fmt.Errorf("natives extraction failed: %w", err)
 	}
 
+	authlibPath := ""
+	if account.Type == auth.AccountTypeElyBy {
+		a.emit("launchStatus", "Verifying Authlib Injector...")
+		path, err := services.EnsureAuthlibInjector()
+		if err != nil {
+			return fmt.Errorf("failed to ensure authlib injector: %w", err)
+		}
+		authlibPath = path
+		a.emit("launchStatus", "Authlib Injector ready")
+	}
 
 	opts := launch.LaunchOptions{
-		PlayerName:   account.Username,
-		UUID:         account.UUID,
-		AccessToken:  account.AccessToken,
-		UserType:     string(account.Type),
-		VersionID:    versionID,
-		GameDir:      instanceDir,
-		AssetsDir:    constants.GetAssetsDir(),
-		NativesDir:   nativesDir,
-		RamMB:        ramMB,
-		Width:        854,
-		Height:       480,
+		PlayerName:          account.Username,
+		UUID:                account.UUID,
+		AccessToken:         account.AccessToken,
+		UserType:            string(account.Type),
+		VersionID:           versionID,
+		GameDir:             instanceDir,
+		AssetsDir:           constants.GetAssetsDir(),
+		NativesDir:          nativesDir,
+		RamMB:               ramMB,
+		Width:               854,
+		Height:              480,
+		AuthlibInjectorPath: authlibPath,
 	}
 
 	args, err := launch.BuildArguments(version, opts)
 	if err != nil {
 		return fmt.Errorf("argument build failed: %w", err)
 	}
-
 
 	a.emit("launchStatus", "Launching game process...")
 	
@@ -190,12 +192,8 @@ func (a *App) LaunchGame(versionID string, ramMB int) error {
 }
 
 func (a *App) getVersionDetails(versionID string) (*models.VersionDetail, error) {
-
-	
-
 	localPath := filepath.Join(constants.GetVersionsDir(), versionID, fmt.Sprintf("%s.json", versionID))
 	if _, err := os.Stat(localPath); err == nil {
-
 		data, err := os.ReadFile(localPath)
 		if err != nil {
 			return nil, err
@@ -205,7 +203,6 @@ func (a *App) getVersionDetails(versionID string) (*models.VersionDetail, error)
 			return nil, err
 		}
 		
-
 		if child.InheritsFrom != "" {
 			parent, err := a.fetchVanillaVersion(child.InheritsFrom)
 			if err != nil {
@@ -216,10 +213,8 @@ func (a *App) getVersionDetails(versionID string) (*models.VersionDetail, error)
 		return &child, nil
 	}
 
-
 	return a.fetchVanillaVersion(versionID)
 }
-
 
 func (a *App) fetchVanillaVersion(versionID string) (*models.VersionDetail, error) {
 	client := network.NewHttpClient()
