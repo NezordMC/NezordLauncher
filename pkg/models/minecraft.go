@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
@@ -28,17 +29,39 @@ type Version struct {
 }
 
 type VersionDetail struct {
-	ID                 string      `json:"id"`
-	InheritsFrom       string      `json:"inheritsFrom,omitempty"` 
-	Jar                string      `json:"jar,omitempty"`          
-	AssetIndex         AssetIndex  `json:"assetIndex"`
-	Assets             string      `json:"assets"`
-	Downloads          DownloadMap `json:"downloads"`
-	Libraries          []Library   `json:"libraries"`
-	MainClass          string      `json:"mainClass"`
-	MinecraftArguments string      `json:"minecraftArguments,omitempty"`
-	Arguments          Arguments   `json:"arguments,omitempty"`
-	Type               string      `json:"type"`
+	ID                 string        `json:"id"`
+	InheritsFrom       string        `json:"inheritsFrom,omitempty"`
+	Jar                string        `json:"jar,omitempty"`
+	AssetIndex         AssetIndex    `json:"assetIndex"`
+	Assets             string        `json:"assets"`
+	Downloads          DownloadMap   `json:"downloads"`
+	Libraries          []Library     `json:"libraries"`
+	MainClass          MainClassData `json:"mainClass"` 
+	MinecraftArguments string        `json:"minecraftArguments,omitempty"`
+	Arguments          Arguments     `json:"arguments,omitempty"`
+	Type               string        `json:"type"`
+}
+
+type MainClassData struct {
+	Client string
+	Server string
+}
+
+func (m *MainClassData) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		m.Client = s
+		return nil
+	}
+
+	var obj map[string]string
+	if err := json.Unmarshal(data, &obj); err == nil {
+		m.Client = obj["client"]
+		m.Server = obj["server"]
+		return nil
+	}
+
+	return nil
 }
 
 type Arguments struct {
@@ -163,7 +186,25 @@ func (l *Library) IsAllowed(osName string) bool {
 
 		if rule.OS.Name == osName {
 			allowed = isActionAllow
+			continue
+		}
+		
+		if rule.OS.Name == "osx" && osName == "darwin" {
+			allowed = isActionAllow
 		}
 	}
 	return allowed
+}
+
+func (l *Library) GetMavenPath() string {
+	parts := strings.Split(l.Name, ":")
+	if len(parts) < 3 {
+		return ""
+	}
+	
+	domain := strings.ReplaceAll(parts[0], ".", "/")
+	name := parts[1]
+	version := parts[2]
+	
+	return fmt.Sprintf("%s/%s/%s/%s-%s.jar", domain, name, version, name, version)
 }

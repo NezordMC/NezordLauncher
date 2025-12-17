@@ -1,181 +1,221 @@
 package downloader
 
 import (
-	"encoding/json"
-	"fmt"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/models"
 	"NezordLauncher/pkg/network"
 	"NezordLauncher/pkg/system"
-	"path/filepath"
+	"encoding/json"
+	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 type ArtifactFetcher struct {
-	client *network.HttpClient
-	pool   *WorkerPool
+	pool *WorkerPool
 }
 
 func NewArtifactFetcher(pool *WorkerPool) *ArtifactFetcher {
-	return &ArtifactFetcher{
-		client: network.NewHttpClient(),
-		pool:   pool,
-	}
+	return &ArtifactFetcher{pool: pool}
 }
 
 func (f *ArtifactFetcher) DownloadVersion(versionID string) error {
-	manifest, err := f.fetchManifest()
+
+	v, err := f.getVersionDetails(versionID)
 	if err != nil {
 		return err
 	}
 
-	versionURL := ""
-	for _, v := range manifest.Versions {
-		if v.ID == versionID {
-			versionURL = v.URL
-			break
-		}
-	}
 
-	if versionURL == "" {
-		return fmt.Errorf("version %s not found in manifest", versionID)
-	}
-
-	details, err := f.fetchVersionDetails(versionURL)
-	if err != nil {
+	if err := f.downloadClient(v); err != nil {
 		return err
 	}
 
-	if err := f.processLibraries(details.Libraries); err != nil {
+
+	if err := f.downloadLibraries(v); err != nil {
 		return err
 	}
 
-	if err := f.processAssets(details.AssetIndex); err != nil {
-		return err
-	}
 
-	if err := f.processClient(details.Downloads.Client, versionID); err != nil {
+	if err := f.downloadAssets(v); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (f *ArtifactFetcher) fetchManifest() (*models.VersionManifest, error) {
-	data, err := f.client.Get(constants.VersionManifestV2URL)
+func (f *ArtifactFetcher) getVersionDetails(versionID string) (*models.VersionDetail, error) {
+
+	localPath := filepath.Join(constants.GetVersionsDir(), versionID, fmt.Sprintf("%s.json", versionID))
+	if _, err := os.Stat(localPath); err == nil {
+		data, err := os.ReadFile(localPath)
+		if err != nil {
+			return nil, err
+		}
+		var detail models.VersionDetail
+		if err := json.Unmarshal(data, &detail); err != nil {
+			return nil, err
+		}
+		return &detail, nil
+	}
+
+
+	client := network.NewHttpClient()
+	manifestData, err := client.Get(constants.VersionManifestV2URL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch version manifest: %w", err)
+		return nil, err
 	}
 
 	var manifest models.VersionManifest
-	if err := json.Unmarshal(data, &manifest); err != nil {
-		return nil, fmt.Errorf("failed to parse manifest: %w", err)
+	if err := json.Unmarshal(manifestData, &manifest); err != nil {
+		return nil, err
 	}
 
-	return &manifest, nil
-}
+	targetURL := ""
+	for _, v := range manifest.Versions {
+		if v.ID == versionID {
+			targetURL = v.URL
+			break
+		}
+	}
 
-func (f *ArtifactFetcher) fetchVersionDetails(url string) (*models.VersionDetail, error) {
-	data, err := f.client.Get(url)
+	if targetURL == "" {
+		return nil, fmt.Errorf("version %s not found", versionID)
+	}
+
+	detailData, err := client.Get(targetURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch version details: %w", err)
+		return nil, err
 	}
 
 	var detail models.VersionDetail
-	if err := json.Unmarshal(data, &detail); err != nil {
-		return nil, fmt.Errorf("failed to parse version details: %w", err)
+	if err := json.Unmarshal(detailData, &detail); err != nil {
+		return nil, err
 	}
 
 	return &detail, nil
 }
 
-func (f *ArtifactFetcher) processLibraries(libs []models.Library) error {
+func (f *ArtifactFetcher) downloadClient(v *models.VersionDetail) error {
+
+	if v.Downloads.Client.URL != "" {
+		path := filepath.Join(constants.GetInstancesDir(), v.ID, fmt.Sprintf("%s.jar", v.ID))
+		f.pool.Submit(Task{
+			URL:  v.Downloads.Client.URL,
+			Path: path,
+			SHA1: v.Downloads.Client.SHA1,
+		})
+	}
+	return nil
+}
+
+func (f *ArtifactFetcher) downloadLibraries(v *models.VersionDetail) error {
 	sysInfo := system.GetSystemInfo()
 	libDir := constants.GetLibrariesDir()
 
-	for _, lib := range libs {
+	for _, lib := range v.Libraries {
 		if !lib.IsAllowed(sysInfo.OS) {
 			continue
 		}
 
+
 		if lib.Downloads.Artifact.URL != "" {
-			// PERBAIKAN DI SINI: Menggunakan GetPath()
-			path := filepath.Join(libDir, lib.Downloads.Artifact.GetPath())
-			f.pool.Submit(&DownloadTask{
-				URL:         lib.Downloads.Artifact.URL,
-				Destination: path,
-				SHA1:        lib.Downloads.Artifact.SHA1,
-				NameID:      fmt.Sprintf("Library: %s", lib.Name),
-				Client:      f.client,
+			path := lib.Downloads.Artifact.GetPath()
+			fullPath := filepath.Join(libDir, path)
+			f.pool.Submit(Task{
+				URL:  lib.Downloads.Artifact.URL,
+				Path: fullPath,
+				SHA1: lib.Downloads.Artifact.SHA1,
 			})
+		} else if lib.Name != "" {
+			relPath := lib.GetMavenPath()
+			if relPath != "" {
+				baseURL := lib.URL
+				if baseURL == "" {
+					baseURL = "https://libraries.minecraft.net/"
+				}
+				if !strings.HasSuffix(baseURL, "/") {
+					baseURL += "/"
+				}
+				
+				fullUrl := baseURL + relPath
+				fullPath := filepath.Join(libDir, relPath)
+				
+				f.pool.Submit(Task{
+					URL:  fullUrl,
+					Path: fullPath,
+
+				})
+			}
 		}
 
-		if native, ok := system.GetNativeArtifact(lib); ok {
-			// PERBAIKAN DI SINI: Menggunakan GetPath()
-			path := filepath.Join(libDir, native.GetPath())
-			f.pool.Submit(&DownloadTask{
-				URL:         native.URL,
-				Destination: path,
-				SHA1:        native.SHA1,
-				NameID:      fmt.Sprintf("Native: %s", lib.Name),
-				Client:      f.client,
-			})
+
+		if lib.Natives != nil {
+			if nativeKey, ok := lib.Natives[sysInfo.OS]; ok {
+				if artifact, exists := lib.Downloads.Classifiers[nativeKey]; exists {
+					path := artifact.GetPath()
+					fullPath := filepath.Join(libDir, path)
+					f.pool.Submit(Task{
+						URL:  artifact.URL,
+						Path: fullPath,
+						SHA1: artifact.SHA1,
+					})
+				}
+			}
 		}
 	}
 	return nil
 }
 
-func (f *ArtifactFetcher) processAssets(index models.AssetIndex) error {
-	data, err := f.client.Get(index.URL)
+func (f *ArtifactFetcher) downloadAssets(v *models.VersionDetail) error {
+
+	idxURL := v.AssetIndex.URL
+	if idxURL == "" {
+		return nil
+	}
+	
+	idxPath := filepath.Join(constants.GetAssetsDir(), "indexes", fmt.Sprintf("%s.json", v.AssetIndex.ID))
+	
+
+	client := network.NewHttpClient()
+	idxData, err := client.Get(idxURL)
 	if err != nil {
-		return fmt.Errorf("failed to fetch asset index: %w", err)
+		if cached, err := os.ReadFile(idxPath); err == nil {
+			idxData = cached
+		} else {
+			return fmt.Errorf("failed to fetch asset index: %w", err)
+		}
+	} else {
+
+		os.MkdirAll(filepath.Dir(idxPath), 0755)
+		os.WriteFile(idxPath, idxData, 0644)
 	}
 
-	var assets struct {
+	var indexObj struct {
 		Objects map[string]struct {
 			Hash string `json:"hash"`
 			Size int    `json:"size"`
 		} `json:"objects"`
 	}
-
-	if err := json.Unmarshal(data, &assets); err != nil {
-		return fmt.Errorf("failed to parse asset index: %w", err)
-	}
-
-	assetDir := constants.GetAssetsDir()
 	
-	indexPath := filepath.Join(assetDir, "indexes", index.ID+".json")
-	if err := os.MkdirAll(filepath.Dir(indexPath), 0755); err == nil {
-		os.WriteFile(indexPath, data, 0644)
+	if err := json.Unmarshal(idxData, &indexObj); err != nil {
+		return err
 	}
 
-	for name, obj := range assets.Objects {
-		subDir := obj.Hash[:2]
-		objectPath := filepath.Join(assetDir, "objects", subDir, obj.Hash)
-		objectURL := fmt.Sprintf("%s%s/%s", constants.ResourcesURL, subDir, obj.Hash)
+	baseAssetURL := "https://resources.download.minecraft.net/"
+	objectsDir := filepath.Join(constants.GetAssetsDir(), "objects")
 
-		f.pool.Submit(&DownloadTask{
-			URL:         objectURL,
-			Destination: objectPath,
-			SHA1:        obj.Hash,
-			NameID:      fmt.Sprintf("Asset: %s", name),
-			Client:      f.client,
+	for _, obj := range indexObj.Objects {
+		path := filepath.Join(objectsDir, obj.Hash[:2], obj.Hash)
+		url := fmt.Sprintf("%s%s/%s", baseAssetURL, obj.Hash[:2], obj.Hash)
+		
+		f.pool.Submit(Task{
+			URL:  url,
+			Path: path,
+			SHA1: obj.Hash,
 		})
 	}
 
-	return nil
-}
-
-func (f *ArtifactFetcher) processClient(client models.DownloadInfo, versionID string) error {
-	path := filepath.Join(constants.GetInstancesDir(), versionID, fmt.Sprintf("%s.jar", versionID))
-	
-	f.pool.Submit(&DownloadTask{
-		URL:         client.URL,
-		Destination: path,
-		SHA1:        client.SHA1,
-		NameID:      fmt.Sprintf("Client: %s", versionID),
-		Client:      f.client,
-	})
-	
 	return nil
 }
