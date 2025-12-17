@@ -61,7 +61,7 @@ func InstallFabric(gameVersion string, loaderVersion string) (string, error) {
 		ID:           versionID,
 		InheritsFrom: gameVersion,
 		Type:         "release",
-		MainClass:    target.LauncherMeta.MainClass.Client,
+		MainClass:    target.LauncherMeta.MainClass,
 		Libraries:    libraries,
 	}
 

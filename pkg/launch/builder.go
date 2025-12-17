@@ -69,7 +69,7 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 		args = append(args, "-cp", classpath)
 	}
 
-	args = append(args, version.MainClass)
+	args = append(args, version.MainClass.Client)
 
 	if len(version.Arguments.Game) > 0 {
 		for _, arg := range version.Arguments.Game {

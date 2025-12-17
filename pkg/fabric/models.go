@@ -1,6 +1,8 @@
 package fabric
 
-import "encoding/json"
+import (
+	"NezordLauncher/pkg/models"
+)
 
 type LoaderVersion struct {
 	Loader       Loader       `json:"loader"`
@@ -25,29 +27,7 @@ type Intermediary struct {
 type LauncherMeta struct {
 	Version   int                  `json:"version"`
 	Libraries map[string][]Library `json:"libraries"`
-	MainClass MainClassData        `json:"mainClass"`
-}
-
-type MainClassData struct {
-	Client string
-	Server string
-}
-
-func (m *MainClassData) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err == nil {
-		m.Client = s
-		return nil
-	}
-
-	var obj map[string]string
-	if err := json.Unmarshal(data, &obj); err == nil {
-		m.Client = obj["client"]
-		m.Server = obj["server"]
-		return nil
-	}
-
-	return nil
+	MainClass models.MainClassData `json:"mainClass"`
 }
 
 type Library struct {

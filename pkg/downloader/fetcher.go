@@ -13,11 +13,15 @@ import (
 )
 
 type ArtifactFetcher struct {
-	pool *WorkerPool
+	pool   *WorkerPool
+	client *network.HttpClient
 }
 
 func NewArtifactFetcher(pool *WorkerPool) *ArtifactFetcher {
-	return &ArtifactFetcher{pool: pool}
+	return &ArtifactFetcher{
+		pool:   pool,
+		client: network.NewHttpClient(),
+	}
 }
 
 func (f *ArtifactFetcher) DownloadVersion(versionID string) error {
@@ -101,10 +105,12 @@ func (f *ArtifactFetcher) downloadClient(v *models.VersionDetail) error {
 
 	if v.Downloads.Client.URL != "" {
 		path := filepath.Join(constants.GetInstancesDir(), v.ID, fmt.Sprintf("%s.jar", v.ID))
-		f.pool.Submit(Task{
-			URL:  v.Downloads.Client.URL,
-			Path: path,
-			SHA1: v.Downloads.Client.SHA1,
+		f.pool.Submit(&DownloadTask{
+			URL:         v.Downloads.Client.URL,
+			Destination: path,
+			SHA1:        v.Downloads.Client.SHA1,
+			NameID:      v.ID,
+			Client:      f.client,
 		})
 	}
 	return nil
@@ -123,10 +129,12 @@ func (f *ArtifactFetcher) downloadLibraries(v *models.VersionDetail) error {
 		if lib.Downloads.Artifact.URL != "" {
 			path := lib.Downloads.Artifact.GetPath()
 			fullPath := filepath.Join(libDir, path)
-			f.pool.Submit(Task{
-				URL:  lib.Downloads.Artifact.URL,
-				Path: fullPath,
-				SHA1: lib.Downloads.Artifact.SHA1,
+			f.pool.Submit(&DownloadTask{
+				URL:         lib.Downloads.Artifact.URL,
+				Destination: fullPath,
+				SHA1:        lib.Downloads.Artifact.SHA1,
+				NameID:      lib.Name,
+				Client:      f.client,
 			})
 		} else if lib.Name != "" {
 			relPath := lib.GetMavenPath()
@@ -142,10 +150,11 @@ func (f *ArtifactFetcher) downloadLibraries(v *models.VersionDetail) error {
 				fullUrl := baseURL + relPath
 				fullPath := filepath.Join(libDir, relPath)
 				
-				f.pool.Submit(Task{
-					URL:  fullUrl,
-					Path: fullPath,
-
+				f.pool.Submit(&DownloadTask{
+					URL:         fullUrl,
+					Destination: fullPath,
+					NameID:      lib.Name,
+					Client:      f.client,
 				})
 			}
 		}
@@ -156,10 +165,12 @@ func (f *ArtifactFetcher) downloadLibraries(v *models.VersionDetail) error {
 				if artifact, exists := lib.Downloads.Classifiers[nativeKey]; exists {
 					path := artifact.GetPath()
 					fullPath := filepath.Join(libDir, path)
-					f.pool.Submit(Task{
-						URL:  artifact.URL,
-						Path: fullPath,
-						SHA1: artifact.SHA1,
+					f.pool.Submit(&DownloadTask{
+						URL:         artifact.URL,
+						Destination: fullPath,
+						SHA1:        artifact.SHA1,
+						NameID:      nativeKey,
+						Client:      f.client,
 					})
 				}
 			}
@@ -210,10 +221,12 @@ func (f *ArtifactFetcher) downloadAssets(v *models.VersionDetail) error {
 		path := filepath.Join(objectsDir, obj.Hash[:2], obj.Hash)
 		url := fmt.Sprintf("%s%s/%s", baseAssetURL, obj.Hash[:2], obj.Hash)
 		
-		f.pool.Submit(Task{
-			URL:  url,
-			Path: path,
-			SHA1: obj.Hash,
+		f.pool.Submit(&DownloadTask{
+			URL:         url,
+			Destination: path,
+			SHA1:        obj.Hash,
+			NameID:      obj.Hash,
+			Client:      f.client,
 		})
 	}
 
