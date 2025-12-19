@@ -101,3 +101,29 @@ func TestBuildArguments_Legacy(t *testing.T) {
 		t.Error("Missing -cp argument in legacy mode")
 	}
 }
+
+func TestBuildArguments_UserTypeMapping(t *testing.T) {
+	version := &models.VersionDetail{
+		ID:        "1.20.1",
+		MainClass: models.MainClassData{Client: "Main"},
+		Arguments: models.Arguments{
+			Game: []models.Argument{
+				{Values: []string{"--userType", "${user_type}"}},
+			},
+		},
+	}
+
+	optsOffline := LaunchOptions{UserType: "offline"}
+	args1, _ := BuildArguments(version, optsOffline)
+	argStr1 := strings.Join(args1, " ")
+	if !strings.Contains(argStr1, "--userType legacy") {
+		t.Errorf("Failed to map 'offline' to 'legacy'. Got: %s", argStr1)
+	}
+
+	optsEly := LaunchOptions{UserType: "elyby"}
+	args2, _ := BuildArguments(version, optsEly)
+	argStr2 := strings.Join(args2, " ")
+	if !strings.Contains(argStr2, "--userType mojang") {
+		t.Errorf("Failed to map 'elyby' to 'mojang'. Got: %s", argStr2)
+	}
+}

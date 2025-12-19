@@ -1,10 +1,10 @@
 package launch
 
 import (
-	"fmt"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/models"
 	"NezordLauncher/pkg/system"
+	"fmt"
 	"path/filepath"
 	"strings"
 )
@@ -14,6 +14,7 @@ type LaunchOptions struct {
 	UUID                string
 	AccessToken         string
 	UserType            string
+	UserProperties      string
 	VersionID           string
 	GameDir             string
 	AssetsDir           string
@@ -30,17 +31,44 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 		return nil, err
 	}
 
+
+	mcUserType := "mojang"
+	switch options.UserType {
+	case "microsoft":
+		mcUserType = "msa"
+	case "offline":
+		mcUserType = "legacy" 
+	case "elyby":
+		mcUserType = "mojang"
+	}
+
+	userProps := options.UserProperties
+	if userProps == "" {
+		userProps = "{}"
+	}
+
+	accessToken := options.AccessToken
+	if accessToken == "" || accessToken == "null" {
+		accessToken = "null"
+	}
+
+	clientID := accessToken
+	if clientID == "null" {
+		clientID = options.UUID
+	}
+	
 	vars := map[string]string{
 		"${auth_player_name}":  options.PlayerName,
 		"${auth_uuid}":         options.UUID,
-		"${auth_access_token}": options.AccessToken,
-		"${user_type}":         options.UserType,
+		"${auth_access_token}": accessToken,
+		"${user_type}":         mcUserType,
+		"${user_properties}":   userProps,
 		"${version_name}":      options.VersionID,
 		"${game_directory}":    options.GameDir,
 		"${assets_root}":       options.AssetsDir,
 		"${assets_index_name}": version.AssetIndex.ID,
-		"${auth_xuid}":         options.AccessToken,
-		"${clientid}":          options.AccessToken,
+		"${auth_xuid}":         clientID,
+		"${clientid}":          clientID,
 		"${version_type}":      version.Type,
 		"${natives_directory}": options.NativesDir,
 		"${launcher_name}":     constants.AppName,
@@ -112,6 +140,11 @@ func buildClasspath(version *models.VersionDetail) (string, error) {
 		}
 		
 		path := lib.Downloads.Artifact.GetPath()
+		
+		if path == "" {
+			path = lib.GetMavenPath()
+		}
+
 		if path == "" {
 			continue 
 		}
