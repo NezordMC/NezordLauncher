@@ -251,3 +251,7 @@ func (a *App) fetchVanillaVersion(versionID string) (*models.VersionDetail, erro
 	}
 	return &detail, nil
 }
+
+func (a *App) LoginElyBy(username, password string) (*auth.Account, error) {
+	return a.accountManager.AddElyByAccount(username, password)
+}

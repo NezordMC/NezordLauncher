@@ -1,19 +1,12 @@
 package network
 
 import (
+	"bytes"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"NezordLauncher/pkg/constants"
-	"NezordLauncher/pkg/system"
+	"runtime"
 	"time"
-)
-
-const (
-	DefaultTimeout = 30 * time.Second
-	ConnectTimeout = 10 * time.Second
-	KeepAlive      = 30 * time.Second
 )
 
 type HttpClient struct {
@@ -21,24 +14,15 @@ type HttpClient struct {
 }
 
 func NewHttpClient() *HttpClient {
-	transport := &http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout:   ConnectTimeout,
-			KeepAlive: KeepAlive,
-		}).DialContext,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
-
 	return &HttpClient{
 		client: &http.Client{
-			Transport: transport,
-			Timeout:   DefaultTimeout,
+			Timeout: 30 * time.Second,
 		},
 	}
+}
+
+func (c *HttpClient) getUserAgent() string {
+	return fmt.Sprintf("NezordLauncher/1.0 (%s; %s)", runtime.GOOS, runtime.GOARCH)
 }
 
 func (c *HttpClient) Get(url string) ([]byte, error) {
@@ -47,9 +31,7 @@ func (c *HttpClient) Get(url string) ([]byte, error) {
 		return nil, err
 	}
 
-	sysInfo := system.GetSystemInfo()
-	userAgent := fmt.Sprintf("%s/1.0.0 (%s; %s)", constants.AppName, sysInfo.OS, sysInfo.Arch)
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("User-Agent", c.getUserAgent())
 
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -61,10 +43,32 @@ func (c *HttpClient) Get(url string) ([]byte, error) {
 		return nil, fmt.Errorf("request failed with status: %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
+}
+
+func (c *HttpClient) PostJSON(url string, body []byte) ([]byte, error) {
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+	
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", c.getUserAgent())
+	
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	return body, nil
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(data))
+	}
+
+	return data, nil
 }

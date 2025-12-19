@@ -178,3 +178,48 @@ func (m *AccountManager) GetAccounts() []Account {
 	copy(result, m.Data.Accounts)
 	return result
 }
+
+func (m *AccountManager) AddElyByAccount(username, password string) (*Account, error) {
+	resp, err := AuthenticateElyBy(username, password)
+	if err != nil {
+		return nil, err
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	uuid := resp.SelectedProfile.ID
+	displayName := resp.SelectedProfile.Name
+
+	for i, acc := range m.Data.Accounts {
+		if acc.UUID == uuid {
+			m.Data.Accounts[i].Username = displayName
+			m.Data.Accounts[i].AccessToken = resp.AccessToken
+			m.Data.Accounts[i].ClientToken = resp.ClientToken
+			m.Data.Accounts[i].Type = AccountTypeElyBy
+			
+			m.Data.ActiveUUID = uuid
+			m.saveInternal()
+			
+			accCopy := m.Data.Accounts[i]
+			return &accCopy, nil
+		}
+	}
+
+	newAcc := Account{
+		UUID:        uuid,
+		Username:    displayName,
+		Type:        AccountTypeElyBy,
+		AccessToken: resp.AccessToken,
+		ClientToken: resp.ClientToken,
+	}
+
+	m.Data.Accounts = append(m.Data.Accounts, newAcc)
+	m.Data.ActiveUUID = uuid
+
+	if err := m.saveInternal(); err != nil {
+		return nil, err
+	}
+
+	return &newAcc, nil
+}
