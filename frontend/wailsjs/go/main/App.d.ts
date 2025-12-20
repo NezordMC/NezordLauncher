@@ -17,4 +17,6 @@ export function GetSystemPlatform():Promise<system.SystemInfo>;
 
 export function LaunchGame(arg1:string,arg2:number):Promise<void>;
 
+export function LoginElyBy(arg1:string,arg2:string):Promise<auth.Account>;
+
 export function SetActiveAccount(arg1:string):Promise<void>;

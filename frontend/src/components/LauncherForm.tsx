@@ -1,13 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Play, User, Cpu, Box, Loader2, Plus, Check, X } from "lucide-react";
+import { Play, User, Cpu, Box, Loader2, Check, X } from "lucide-react";
 import { Account } from "@/hooks/useLauncher";
+import { ModloaderSelector, ModloaderType } from "./ModloaderSelector";
 
 export interface LaunchConfig {
   version: string;
   ram: number;
+  modloaderType: ModloaderType;
+  loaderVersion: string;
 }
 
 interface LauncherFormProps {
@@ -27,13 +30,21 @@ export function LauncherForm({
   onAddAccount,
   onSwitchAccount,
 }: LauncherFormProps) {
+  // Default Configuration
   const [config, setConfig] = useState<LaunchConfig>({
     version: "1.20.1",
     ram: 4096,
+    modloaderType: "vanilla",
+    loaderVersion: "",
   });
 
+  // Local UI State for Add Account
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [newUsername, setNewUsername] = useState("");
+
+  // Placeholder for loader versions (Will be connected in Commit 42)
+  const [availableLoaders, setAvailableLoaders] = useState<string[]>([]);
+  const [isLoadingLoaders, setIsLoadingLoaders] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +56,21 @@ export function LauncherForm({
       onAddAccount(newUsername);
       setNewUsername("");
       setIsAddingUser(false);
+    }
+  };
+
+  const handleModloaderChange = (type: ModloaderType) => {
+    setConfig((prev) => ({ ...prev, modloaderType: type }));
+
+    // Mocking fetch trigger for UI demo (Real logic in Commit 42)
+    if (type !== "vanilla") {
+      setIsLoadingLoaders(true);
+      setAvailableLoaders([]); // Reset
+      // Simulate delay
+      setTimeout(() => {
+        setAvailableLoaders(["0.14.25 (Stable)", "0.15.0 (Beta)"]);
+        setIsLoadingLoaders(false);
+      }, 500);
     }
   };
 
@@ -122,10 +148,23 @@ export function LauncherForm({
           )}
         </div>
 
+        {/* MODLOADER SELECTOR */}
+        <ModloaderSelector
+          selectedType={config.modloaderType}
+          onTypeChange={handleModloaderChange}
+          loaderVersion={config.loaderVersion}
+          onLoaderVersionChange={(v) =>
+            setConfig((prev) => ({ ...prev, loaderVersion: v }))
+          }
+          availableLoaders={availableLoaders}
+          isLoadingLoaders={isLoadingLoaders}
+        />
+
+        {/* VERSION & RAM */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-              <Box size={10} /> Version ID
+              <Box size={10} /> Game Version
             </label>
             <Input
               value={config.version}
@@ -153,6 +192,7 @@ export function LauncherForm({
           </div>
         </div>
 
+        {/* LAUNCH BUTTON */}
         <Button
           type="submit"
           disabled={isLaunching || !activeAccount}
