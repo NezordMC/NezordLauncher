@@ -22,12 +22,24 @@ export function GetActiveAccount() {
   return window['go']['main']['App']['GetActiveAccount']();
 }
 
+export function GetFabricLoaders(arg1) {
+  return window['go']['main']['App']['GetFabricLoaders'](arg1);
+}
+
+export function GetQuiltLoaders(arg1) {
+  return window['go']['main']['App']['GetQuiltLoaders'](arg1);
+}
+
 export function GetSystemPlatform() {
   return window['go']['main']['App']['GetSystemPlatform']();
 }
 
-export function LaunchGame(arg1, arg2) {
-  return window['go']['main']['App']['LaunchGame'](arg1, arg2);
+export function GetVanillaVersions() {
+  return window['go']['main']['App']['GetVanillaVersions']();
+}
+
+export function LaunchGame(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['LaunchGame'](arg1, arg2, arg3, arg4);
 }
 
 export function LoginElyBy(arg1, arg2) {

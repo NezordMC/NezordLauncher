@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Play, User, Cpu, Box, Loader2, Check, X } from "lucide-react";
-import { Account } from "@/hooks/useLauncher";
+import { Account, Version } from "@/hooks/useLauncher";
 import { ModloaderSelector, ModloaderType } from "./ModloaderSelector";
 
 export interface LaunchConfig {
@@ -20,6 +20,11 @@ interface LauncherFormProps {
   activeAccount: Account | null;
   onAddAccount: (username: string) => void;
   onSwitchAccount: (uuid: string) => void;
+  minecraftVersions: Version[];
+  fetchModloaders: (
+    mcVersion: string,
+    type: ModloaderType,
+  ) => Promise<string[]>;
 }
 
 export function LauncherForm({
@@ -29,8 +34,9 @@ export function LauncherForm({
   activeAccount,
   onAddAccount,
   onSwitchAccount,
+  minecraftVersions,
+  fetchModloaders,
 }: LauncherFormProps) {
-  // Default Configuration
   const [config, setConfig] = useState<LaunchConfig>({
     version: "1.20.1",
     ram: 4096,
@@ -38,13 +44,46 @@ export function LauncherForm({
     loaderVersion: "",
   });
 
-  // Local UI State for Add Account
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [newUsername, setNewUsername] = useState("");
 
-  // Placeholder for loader versions (Will be connected in Commit 42)
   const [availableLoaders, setAvailableLoaders] = useState<string[]>([]);
   const [isLoadingLoaders, setIsLoadingLoaders] = useState(false);
+
+  useEffect(() => {
+    if (
+      minecraftVersions.length > 0 &&
+      !minecraftVersions.find((v) => v.id === config.version)
+    ) {
+      setConfig((p) => ({ ...p, version: minecraftVersions[0].id }));
+    }
+  }, [minecraftVersions]);
+
+  useEffect(() => {
+    if (config.modloaderType === "vanilla") {
+      setAvailableLoaders([]);
+      setConfig((p) => ({ ...p, loaderVersion: "" }));
+      return;
+    }
+
+    const load = async () => {
+      setIsLoadingLoaders(true);
+      setAvailableLoaders([]);
+      const loaders = await fetchModloaders(
+        config.version,
+        config.modloaderType,
+      );
+      setAvailableLoaders(loaders);
+      if (loaders.length > 0) {
+        setConfig((p) => ({ ...p, loaderVersion: loaders[0] }));
+      } else {
+        setConfig((p) => ({ ...p, loaderVersion: "" }));
+      }
+      setIsLoadingLoaders(false);
+    };
+
+    load();
+  }, [config.modloaderType, config.version]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,25 +98,9 @@ export function LauncherForm({
     }
   };
 
-  const handleModloaderChange = (type: ModloaderType) => {
-    setConfig((prev) => ({ ...prev, modloaderType: type }));
-
-    // Mocking fetch trigger for UI demo (Real logic in Commit 42)
-    if (type !== "vanilla") {
-      setIsLoadingLoaders(true);
-      setAvailableLoaders([]); // Reset
-      // Simulate delay
-      setTimeout(() => {
-        setAvailableLoaders(["0.14.25 (Stable)", "0.15.0 (Beta)"]);
-        setIsLoadingLoaders(false);
-      }, 500);
-    }
-  };
-
   return (
     <Card className="w-full p-6 bg-zinc-900/50 border-zinc-800 backdrop-blur-sm space-y-6 no-drag shadow-2xl">
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* ACCOUNT SELECTOR */}
         <div className="space-y-1.5">
           <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest flex items-center gap-2">
             <User size={10} /> Account
@@ -116,11 +139,8 @@ export function LauncherForm({
                   className="w-full bg-black/50 border border-zinc-800 text-zinc-300 text-xs font-mono h-9 px-3 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-zinc-600 cursor-pointer"
                   value={activeAccount?.uuid || ""}
                   onChange={(e) => {
-                    if (e.target.value === "ADD_NEW") {
-                      setIsAddingUser(true);
-                    } else {
-                      onSwitchAccount(e.target.value);
-                    }
+                    if (e.target.value === "ADD_NEW") setIsAddingUser(true);
+                    else onSwitchAccount(e.target.value);
                   }}
                 >
                   {accounts.length === 0 && (
@@ -140,41 +160,50 @@ export function LauncherForm({
                     + Add Offline Account
                   </option>
                 </select>
-                <div className="absolute right-3 top-2.5 pointer-events-none text-zinc-500">
-                  <User size={12} />
-                </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* MODLOADER SELECTOR */}
         <ModloaderSelector
           selectedType={config.modloaderType}
-          onTypeChange={handleModloaderChange}
+          onTypeChange={(t) => setConfig((p) => ({ ...p, modloaderType: t }))}
           loaderVersion={config.loaderVersion}
           onLoaderVersionChange={(v) =>
-            setConfig((prev) => ({ ...prev, loaderVersion: v }))
+            setConfig((p) => ({ ...p, loaderVersion: v }))
           }
           availableLoaders={availableLoaders}
           isLoadingLoaders={isLoadingLoaders}
         />
 
-        {/* VERSION & RAM */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest flex items-center gap-2">
               <Box size={10} /> Game Version
             </label>
-            <Input
-              value={config.version}
-              onChange={(e) =>
-                setConfig({ ...config, version: e.target.value })
-              }
-              className="bg-black/50 border-zinc-800 font-mono text-xs h-9 text-zinc-300 focus-visible:ring-zinc-600 transition-all"
-              placeholder="e.g. 1.20.1"
-              disabled={isLaunching}
-            />
+            <div className="relative">
+              <select
+                className="w-full bg-black/50 border border-zinc-800 text-zinc-300 text-xs font-mono h-9 px-3 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-zinc-600 cursor-pointer disabled:opacity-50"
+                value={config.version}
+                onChange={(e) =>
+                  setConfig({ ...config, version: e.target.value })
+                }
+                disabled={isLaunching}
+              >
+                {minecraftVersions.length === 0 ? (
+                  <option value="1.20.1">1.20.1 (Offline)</option>
+                ) : (
+                  minecraftVersions.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.id}
+                    </option>
+                  ))
+                )}
+              </select>
+              <div className="absolute right-3 top-2.5 pointer-events-none text-zinc-500">
+                <Box size={12} />
+              </div>
+            </div>
           </div>
           <div className="space-y-1.5">
             <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest flex items-center gap-2">
@@ -192,10 +221,13 @@ export function LauncherForm({
           </div>
         </div>
 
-        {/* LAUNCH BUTTON */}
         <Button
           type="submit"
-          disabled={isLaunching || !activeAccount}
+          disabled={
+            isLaunching ||
+            !activeAccount ||
+            (config.modloaderType !== "vanilla" && !config.loaderVersion)
+          }
           className="w-full bg-zinc-50 hover:bg-zinc-300 text-black font-extrabold tracking-[0.2em] uppercase text-xs h-11 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {isLaunching ? (

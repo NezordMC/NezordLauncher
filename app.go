@@ -1,18 +1,20 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"NezordLauncher/pkg/auth"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/downloader"
+	"NezordLauncher/pkg/fabric"
 	"NezordLauncher/pkg/javascanner"
 	"NezordLauncher/pkg/launch"
 	"NezordLauncher/pkg/models"
 	"NezordLauncher/pkg/network"
+	"NezordLauncher/pkg/quilt"
 	"NezordLauncher/pkg/services"
 	"NezordLauncher/pkg/system"
+	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -56,6 +58,7 @@ func (a *App) startup(ctx context.Context) {
 		constants.GetAssetsDir(),
 		constants.GetLibrariesDir(),
 		constants.GetRuntimesDir(),
+		constants.GetVersionsDir(),
 	}
 
 	for _, dir := range dirs {
@@ -71,12 +74,68 @@ func (a *App) startup(ctx context.Context) {
 	}
 }
 
+
+
+func (a *App) GetVanillaVersions() ([]models.Version, error) {
+	client := network.NewHttpClient()
+	data, err := client.Get(constants.VersionManifestV2URL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch manifest: %w", err)
+	}
+
+	var manifest models.VersionManifest
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return nil, fmt.Errorf("failed to parse manifest: %w", err)
+	}
+
+	var releases []models.Version
+	for _, v := range manifest.Versions {
+		if v.Type == "release" {
+			releases = append(releases, v)
+		}
+	}
+
+	return releases, nil
+}
+
+func (a *App) GetFabricLoaders(mcVersion string) ([]string, error) {
+	loaders, err := fabric.GetLoaderVersions(mcVersion)
+	if err != nil {
+		return nil, err
+	}
+	
+	var versions []string
+	for _, l := range loaders {
+		versions = append(versions, l.Loader.Version)
+	}
+	return versions, nil
+}
+
+func (a *App) GetQuiltLoaders(mcVersion string) ([]string, error) {
+	loaders, err := quilt.GetLoaderVersions(mcVersion)
+	if err != nil {
+		return nil, err
+	}
+	
+	var versions []string
+	for _, l := range loaders {
+		versions = append(versions, l.Loader.Version)
+	}
+	return versions, nil
+}
+
+
+
 func (a *App) GetAccounts() []auth.Account {
 	return a.accountManager.GetAccounts()
 }
 
 func (a *App) AddOfflineAccount(username string) (*auth.Account, error) {
 	return a.accountManager.AddOfflineAccount(username)
+}
+
+func (a *App) LoginElyBy(username, password string) (*auth.Account, error) {
+	return a.accountManager.AddElyByAccount(username, password)
 }
 
 func (a *App) SetActiveAccount(uuid string) error {
@@ -86,6 +145,8 @@ func (a *App) SetActiveAccount(uuid string) error {
 func (a *App) GetActiveAccount() *auth.Account {
 	return a.accountManager.GetActiveAccount()
 }
+
+
 
 func (a *App) GetSystemPlatform() system.SystemInfo {
 	return system.GetSystemInfo()
@@ -109,21 +170,44 @@ func (a *App) DownloadVersion(versionID string) error {
 	return nil
 }
 
-func (a *App) LaunchGame(versionID string, ramMB int) error {
+func (a *App) LaunchGame(versionID string, ramMB int, modloaderType string, modloaderVersion string) error {
 	account := a.accountManager.GetActiveAccount()
 	if account == nil {
 		return fmt.Errorf("no active account selected")
 	}
 
-	instanceDir := filepath.Join(constants.GetInstancesDir(), versionID)
+
+	finalVersionID := versionID
+	if modloaderType == "fabric" && modloaderVersion != "" {
+		a.emit("launchStatus", "Installing Fabric...")
+		installedID, err := fabric.InstallFabric(versionID, modloaderVersion)
+		if err != nil {
+			return fmt.Errorf("failed to install fabric: %w", err)
+		}
+		finalVersionID = installedID
+		a.emit("launchStatus", "Fabric installed: "+installedID)
+	} else if modloaderType == "quilt" && modloaderVersion != "" {
+		a.emit("launchStatus", "Installing Quilt...")
+		installedID, err := quilt.InstallQuilt(versionID, modloaderVersion)
+		if err != nil {
+			return fmt.Errorf("failed to install quilt: %w", err)
+		}
+		finalVersionID = installedID
+		a.emit("launchStatus", "Quilt installed: "+installedID)
+	}
+
+
+	instanceDir := filepath.Join(constants.GetInstancesDir(), finalVersionID)
 	nativesDir := filepath.Join(instanceDir, "natives")
 	
 	a.emit("launchStatus", "Preparing environment...")
 
-	version, err := a.getVersionDetails(versionID)
+
+	version, err := a.getVersionDetails(finalVersionID)
 	if err != nil {
 		return fmt.Errorf("failed to get version details: %w", err)
 	}
+
 
 	a.emit("launchStatus", "Selecting Java runtime...")
 	javaInstalls, err := javascanner.ScanJavaInstallations()
@@ -131,16 +215,24 @@ func (a *App) LaunchGame(versionID string, ramMB int) error {
 		return fmt.Errorf("java scan failed: %w", err)
 	}
 	
-	selectedJava, err := javascanner.SelectJava(javaInstalls, versionID)
+
+	javaTargetVersion := versionID
+	if version.InheritsFrom != "" {
+		javaTargetVersion = version.InheritsFrom
+	}
+	
+	selectedJava, err := javascanner.SelectJava(javaInstalls, javaTargetVersion)
 	if err != nil {
 		return fmt.Errorf("java selection failed: %w", err)
 	}
 	a.emit("launchStatus", fmt.Sprintf("Using Java: %s (%s)", selectedJava.Version, selectedJava.Path))
 
+
 	a.emit("launchStatus", "Extracting native libraries...")
 	if err := launch.ExtractNatives(version.Libraries, nativesDir); err != nil {
 		return fmt.Errorf("natives extraction failed: %w", err)
 	}
+
 
 	authlibPath := ""
 	if account.Type == auth.AccountTypeElyBy {
@@ -150,15 +242,15 @@ func (a *App) LaunchGame(versionID string, ramMB int) error {
 			return fmt.Errorf("failed to ensure authlib injector: %w", err)
 		}
 		authlibPath = path
-		a.emit("launchStatus", "Authlib Injector ready")
 	}
+
 
 	opts := launch.LaunchOptions{
 		PlayerName:          account.Username,
 		UUID:                account.UUID,
 		AccessToken:         account.AccessToken,
 		UserType:            string(account.Type),
-		VersionID:           versionID,
+		VersionID:           finalVersionID, 
 		GameDir:             instanceDir,
 		AssetsDir:           constants.GetAssetsDir(),
 		NativesDir:          nativesDir,
@@ -172,6 +264,7 @@ func (a *App) LaunchGame(versionID string, ramMB int) error {
 	if err != nil {
 		return fmt.Errorf("argument build failed: %w", err)
 	}
+
 
 	a.emit("launchStatus", "Launching game process...")
 	
@@ -190,6 +283,7 @@ func (a *App) LaunchGame(versionID string, ramMB int) error {
 
 	return nil
 }
+
 
 func (a *App) getVersionDetails(versionID string) (*models.VersionDetail, error) {
 	localPath := filepath.Join(constants.GetVersionsDir(), versionID, fmt.Sprintf("%s.json", versionID))
@@ -250,8 +344,4 @@ func (a *App) fetchVanillaVersion(versionID string) (*models.VersionDetail, erro
 		return nil, err
 	}
 	return &detail, nil
-}
-
-func (a *App) LoginElyBy(username, password string) (*auth.Account, error) {
-	return a.accountManager.AddElyByAccount(username, password)
 }

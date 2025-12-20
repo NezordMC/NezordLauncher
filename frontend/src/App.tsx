@@ -11,6 +11,8 @@ function App() {
     activeAccount,
     addOfflineAccount,
     switchAccount,
+    minecraftVersions,
+    fetchModloaders,
   } = useLauncher();
 
   return (
@@ -32,6 +34,8 @@ function App() {
           activeAccount={activeAccount}
           onAddAccount={addOfflineAccount}
           onSwitchAccount={switchAccount}
+          minecraftVersions={minecraftVersions}
+          fetchModloaders={fetchModloaders}
         />
 
         <div className="flex-grow max-h-48 min-h-[150px]">
@@ -40,7 +44,7 @@ function App() {
       </div>
 
       <div className="absolute bottom-4 text-[10px] text-zinc-800 font-mono select-none">
-        v1.1.0-auth
+        v1.2.0-dynamic
       </div>
     </div>
   );
