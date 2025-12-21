@@ -103,14 +103,19 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 		for _, arg := range version.Arguments.Game {
 			if checkRules(arg.Rules) {
 				for _, val := range arg.Values {
-					args = append(args, replaceVars(val, vars))
+					valProcessed := replaceVars(val, vars)
+					if valProcessed != "--demo" {
+						args = append(args, valProcessed)
+					}
 				}
 			}
 		}
 	} else {
 		legacyArgs := strings.Split(version.MinecraftArguments, " ")
 		for _, arg := range legacyArgs {
-			args = append(args, replaceVars(arg, vars))
+			if arg != "--demo" {
+				args = append(args, replaceVars(arg, vars))
+			}
 		}
 	}
 
