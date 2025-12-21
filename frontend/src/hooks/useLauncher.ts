@@ -4,6 +4,7 @@ import {
   DownloadVersion,
   GetAccounts,
   AddOfflineAccount,
+  LoginElyBy,
   SetActiveAccount,
   GetActiveAccount,
   GetVanillaVersions,
@@ -97,6 +98,15 @@ export function useLauncher() {
     }
   };
 
+  const loginElyBy = async (u: string, p: string) => {
+    try {
+      await LoginElyBy(u, p);
+      await refreshAccounts();
+    } catch (e) {
+      throw e;
+    }
+  };
+
   const switchAccount = async (uuid: string) => {
     try {
       await SetActiveAccount(uuid);
@@ -153,6 +163,7 @@ export function useLauncher() {
     accounts,
     activeAccount,
     addOfflineAccount,
+    loginElyBy,
     switchAccount,
     minecraftVersions,
     fetchModloaders,

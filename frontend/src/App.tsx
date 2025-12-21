@@ -10,6 +10,7 @@ function App() {
     accounts,
     activeAccount,
     addOfflineAccount,
+    loginElyBy,
     switchAccount,
     minecraftVersions,
     fetchModloaders,
@@ -33,6 +34,7 @@ function App() {
           accounts={accounts}
           activeAccount={activeAccount}
           onAddAccount={addOfflineAccount}
+          onLoginElyBy={loginElyBy}
           onSwitchAccount={switchAccount}
           minecraftVersions={minecraftVersions}
           fetchModloaders={fetchModloaders}
@@ -44,7 +46,7 @@ function App() {
       </div>
 
       <div className="absolute bottom-4 text-[10px] text-zinc-800 font-mono select-none">
-        v1.2.0-dynamic
+        v1.0.0
       </div>
     </div>
   );
