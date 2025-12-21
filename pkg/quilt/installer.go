@@ -1,10 +1,10 @@
 package quilt
 
 import (
-	"encoding/json"
-	"fmt"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/models"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -60,6 +60,7 @@ func InstallQuilt(gameVersion string, loaderVersion string) (string, error) {
 	versionJSON := models.VersionDetail{
 		ID:           versionID,
 		InheritsFrom: gameVersion,
+		Jar:          gameVersion,
 		Type:         "release",
 		MainClass:    target.LauncherMeta.MainClass, 
 		Libraries:    libraries,
