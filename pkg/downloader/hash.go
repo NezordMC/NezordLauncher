@@ -10,6 +10,10 @@ import (
 )
 
 func VerifyFileSHA1(filePath string, expectedHash string) error {
+	if expectedHash == "" {
+		return nil
+	}
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to open file for verification: %w", err)

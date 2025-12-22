@@ -43,8 +43,8 @@ type VersionDetail struct {
 }
 
 type MainClassData struct {
-	Client string
-	Server string
+	Client string `json:"client,omitempty"`
+	Server string `json:"server,omitempty"`
 }
 
 func (m *MainClassData) UnmarshalJSON(data []byte) error {

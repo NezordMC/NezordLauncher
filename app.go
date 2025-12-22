@@ -196,6 +196,14 @@ func (a *App) LaunchGame(versionID string, ramMB int, modloaderType string, modl
 		a.emit("launchStatus", "Quilt installed: "+installedID)
 	}
 
+	if modloaderType != "vanilla" && modloaderVersion != "" {
+		a.emit("launchStatus", "Downloading modloader libraries...")
+		if err := a.DownloadVersion(finalVersionID); err != nil {
+			return fmt.Errorf("failed to download modloader libraries: %w", err)
+		}
+	}
+
+
 
 	instanceDir := filepath.Join(constants.GetInstancesDir(), finalVersionID)
 	nativesDir := filepath.Join(instanceDir, "natives")
