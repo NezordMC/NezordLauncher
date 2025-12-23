@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"NezordLauncher/pkg/auth"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/downloader"
 	"NezordLauncher/pkg/fabric"
+	"NezordLauncher/pkg/instances"
 	"NezordLauncher/pkg/javascanner"
 	"NezordLauncher/pkg/launch"
 	"NezordLauncher/pkg/models"
@@ -12,9 +16,6 @@ import (
 	"NezordLauncher/pkg/quilt"
 	"NezordLauncher/pkg/services"
 	"NezordLauncher/pkg/system"
-	"context"
-	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -25,11 +26,13 @@ type App struct {
 	ctx            context.Context
 	isTestMode     bool
 	accountManager *auth.AccountManager
+	instanceManager *instances.Manager
 }
 
 func NewApp() *App {
 	return &App{
-		accountManager: auth.NewAccountManager(),
+		accountManager:  auth.NewAccountManager(),
+		instanceManager: instances.NewManager(),
 	}
 }
 
@@ -72,9 +75,11 @@ func (a *App) startup(ctx context.Context) {
 	if err := a.accountManager.Load(); err != nil {
 		fmt.Printf("Failed to load accounts: %s\n", err)
 	}
+
+	if err := a.instanceManager.Load(); err != nil {
+		fmt.Printf("Failed to load instances: %s\n", err)
+	}
 }
-
-
 
 func (a *App) GetVanillaVersions() ([]models.Version, error) {
 	client := network.NewHttpClient()
@@ -124,8 +129,6 @@ func (a *App) GetQuiltLoaders(mcVersion string) ([]string, error) {
 	return versions, nil
 }
 
-
-
 func (a *App) GetAccounts() []auth.Account {
 	return a.accountManager.GetAccounts()
 }
@@ -146,7 +149,21 @@ func (a *App) GetActiveAccount() *auth.Account {
 	return a.accountManager.GetActiveAccount()
 }
 
+func (a *App) CreateInstance(name, gameVersion, modloaderType, modloaderVersion string) (*instances.Instance, error) {
+	return a.instanceManager.CreateInstance(name, gameVersion, instances.ModloaderType(modloaderType), modloaderVersion)
+}
 
+func (a *App) GetInstances() []instances.Instance {
+	return a.instanceManager.GetAll()
+}
+
+func (a *App) DeleteInstance(id string) error {
+	return a.instanceManager.DeleteInstance(id)
+}
+
+func (a *App) UpdateInstanceSettings(id string, settings instances.InstanceSettings) error {
+	return a.instanceManager.UpdateSettings(id, settings)
+}
 
 func (a *App) GetSystemPlatform() system.SystemInfo {
 	return system.GetSystemInfo()
@@ -176,7 +193,6 @@ func (a *App) LaunchGame(versionID string, ramMB int, modloaderType string, modl
 		return fmt.Errorf("no active account selected")
 	}
 
-
 	finalVersionID := versionID
 	if modloaderType == "fabric" && modloaderVersion != "" {
 		a.emit("launchStatus", "Installing Fabric...")
@@ -196,26 +212,15 @@ func (a *App) LaunchGame(versionID string, ramMB int, modloaderType string, modl
 		a.emit("launchStatus", "Quilt installed: "+installedID)
 	}
 
-	if modloaderType != "vanilla" && modloaderVersion != "" {
-		a.emit("launchStatus", "Downloading modloader libraries...")
-		if err := a.DownloadVersion(finalVersionID); err != nil {
-			return fmt.Errorf("failed to download modloader libraries: %w", err)
-		}
-	}
-
-
-
 	instanceDir := filepath.Join(constants.GetInstancesDir(), finalVersionID)
 	nativesDir := filepath.Join(instanceDir, "natives")
 	
 	a.emit("launchStatus", "Preparing environment...")
 
-
 	version, err := a.getVersionDetails(finalVersionID)
 	if err != nil {
 		return fmt.Errorf("failed to get version details: %w", err)
 	}
-
 
 	a.emit("launchStatus", "Selecting Java runtime...")
 	javaInstalls, err := javascanner.ScanJavaInstallations()
@@ -223,7 +228,6 @@ func (a *App) LaunchGame(versionID string, ramMB int, modloaderType string, modl
 		return fmt.Errorf("java scan failed: %w", err)
 	}
 	
-
 	javaTargetVersion := versionID
 	if version.InheritsFrom != "" {
 		javaTargetVersion = version.InheritsFrom
@@ -235,12 +239,10 @@ func (a *App) LaunchGame(versionID string, ramMB int, modloaderType string, modl
 	}
 	a.emit("launchStatus", fmt.Sprintf("Using Java: %s (%s)", selectedJava.Version, selectedJava.Path))
 
-
 	a.emit("launchStatus", "Extracting native libraries...")
 	if err := launch.ExtractNatives(version.Libraries, nativesDir); err != nil {
 		return fmt.Errorf("natives extraction failed: %w", err)
 	}
-
 
 	authlibPath := ""
 	if account.Type == auth.AccountTypeElyBy {
@@ -252,13 +254,12 @@ func (a *App) LaunchGame(versionID string, ramMB int, modloaderType string, modl
 		authlibPath = path
 	}
 
-
 	opts := launch.LaunchOptions{
 		PlayerName:          account.Username,
 		UUID:                account.UUID,
 		AccessToken:         account.AccessToken,
 		UserType:            string(account.Type),
-		VersionID:           finalVersionID, 
+		VersionID:           finalVersionID,
 		GameDir:             instanceDir,
 		AssetsDir:           constants.GetAssetsDir(),
 		NativesDir:          nativesDir,
@@ -272,7 +273,6 @@ func (a *App) LaunchGame(versionID string, ramMB int, modloaderType string, modl
 	if err != nil {
 		return fmt.Errorf("argument build failed: %w", err)
 	}
-
 
 	a.emit("launchStatus", "Launching game process...")
 	
@@ -291,7 +291,6 @@ func (a *App) LaunchGame(versionID string, ramMB int, modloaderType string, modl
 
 	return nil
 }
-
 
 func (a *App) getVersionDetails(versionID string) (*models.VersionDetail, error) {
 	localPath := filepath.Join(constants.GetVersionsDir(), versionID, fmt.Sprintf("%s.json", versionID))

@@ -1,9 +1,9 @@
 package instances
 
 import (
-	"NezordLauncher/pkg/constants"
 	"encoding/json"
 	"fmt"
+	"NezordLauncher/pkg/constants"
 	"os"
 	"path/filepath"
 	"sort"
@@ -28,7 +28,6 @@ func (m *Manager) Load() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// Ensure dir exists
 	if err := os.MkdirAll(m.baseDir, 0755); err != nil {
 		return err
 	}
@@ -45,10 +44,9 @@ func (m *Manager) Load() error {
 			continue
 		}
 
-		// Check for instance.json
 		configPath := filepath.Join(m.baseDir, entry.Name(), "instance.json")
 		if _, err := os.Stat(configPath); os.IsNotExist(err) {
-			continue // Not a valid instance folder
+			continue
 		}
 
 		data, err := os.ReadFile(configPath)
@@ -78,7 +76,6 @@ func (m *Manager) GetAll() []Instance {
 		list = append(list, *i)
 	}
 
-	// Sort by last played (descending)
 	sort.Slice(list, func(i, j int) bool {
 		return list[i].LastPlayed.After(list[j].LastPlayed)
 	})
@@ -116,7 +113,6 @@ func (m *Manager) SaveInstance(inst *Instance) error {
 	return nil
 }
 
-// CreateInstance initializes a new instance structure
 func (m *Manager) CreateInstance(name, gameVersion string, loaderType ModloaderType, loaderVersion string) (*Instance, error) {
 	id := fmt.Sprintf("%s-%d", slugify(name), time.Now().Unix())
 	
@@ -128,7 +124,7 @@ func (m *Manager) CreateInstance(name, gameVersion string, loaderType ModloaderT
 		ModloaderVersion: loaderVersion,
 		Created:          time.Now(),
 		Settings: InstanceSettings{
-			RamMB: 4096, // Default
+			RamMB: 4096,
 		},
 	}
 	
@@ -156,7 +152,35 @@ func (m *Manager) DeleteInstance(id string) error {
 	return nil
 }
 
-// Simple slugify helper
+func (m *Manager) UpdateSettings(id string, settings InstanceSettings) error {
+	m.mu.Lock()
+	inst, ok := m.instances[id]
+	m.mu.Unlock() 
+
+	if !ok {
+		return fmt.Errorf("instance not found")
+	}
+
+	inst.Settings = settings
+	
+	return m.SaveInstance(inst)
+}
+
+func (m *Manager) UpdatePlayTime(id string, durationSec int64) error {
+	m.mu.Lock()
+	inst, ok := m.instances[id]
+	m.mu.Unlock()
+
+	if !ok {
+		return fmt.Errorf("instance not found")
+	}
+
+	inst.LastPlayed = time.Now()
+	inst.PlayTime += durationSec
+	
+	return m.SaveInstance(inst)
+}
+
 func slugify(s string) string {
-	return s
+	return s 
 }
