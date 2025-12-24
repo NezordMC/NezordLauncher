@@ -1,48 +1,49 @@
 package downloader
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/models"
 	"NezordLauncher/pkg/network"
 	"NezordLauncher/pkg/system"
-	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 type ArtifactFetcher struct {
-	pool   *WorkerPool
-	client *network.HttpClient
+	pool *WorkerPool
 }
 
 func NewArtifactFetcher(pool *WorkerPool) *ArtifactFetcher {
-	return &ArtifactFetcher{
-		pool:   pool,
-		client: network.NewHttpClient(),
-	}
+	return &ArtifactFetcher{pool: pool}
 }
 
-func (f *ArtifactFetcher) DownloadVersion(versionID string) error {
+func (f *ArtifactFetcher) DownloadVersion(ctx context.Context, versionID string) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 
 	v, err := f.getVersionDetails(versionID)
 	if err != nil {
 		return err
 	}
 
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 
-	if err := f.downloadClient(v); err != nil {
+	if err := f.downloadClient(ctx, v); err != nil {
 		return err
 	}
 
-
-	if err := f.downloadLibraries(v); err != nil {
+	if err := f.downloadLibraries(ctx, v); err != nil {
 		return err
 	}
 
-
-	if err := f.downloadAssets(v); err != nil {
+	if err := f.downloadAssets(ctx, v); err != nil {
 		return err
 	}
 
@@ -50,7 +51,6 @@ func (f *ArtifactFetcher) DownloadVersion(versionID string) error {
 }
 
 func (f *ArtifactFetcher) getVersionDetails(versionID string) (*models.VersionDetail, error) {
-
 	localPath := filepath.Join(constants.GetVersionsDir(), versionID, fmt.Sprintf("%s.json", versionID))
 	if _, err := os.Stat(localPath); err == nil {
 		data, err := os.ReadFile(localPath)
@@ -63,7 +63,6 @@ func (f *ArtifactFetcher) getVersionDetails(versionID string) (*models.VersionDe
 		}
 		return &detail, nil
 	}
-
 
 	client := network.NewHttpClient()
 	manifestData, err := client.Get(constants.VersionManifestV2URL)
@@ -101,40 +100,44 @@ func (f *ArtifactFetcher) getVersionDetails(versionID string) (*models.VersionDe
 	return &detail, nil
 }
 
-func (f *ArtifactFetcher) downloadClient(v *models.VersionDetail) error {
-
+func (f *ArtifactFetcher) downloadClient(ctx context.Context, v *models.VersionDetail) error {
 	if v.Downloads.Client.URL != "" {
 		path := filepath.Join(constants.GetInstancesDir(), v.ID, fmt.Sprintf("%s.jar", v.ID))
-		f.pool.Submit(&DownloadTask{
-			URL:         v.Downloads.Client.URL,
-			Destination: path,
-			SHA1:        v.Downloads.Client.SHA1,
-			NameID:      v.ID,
-			Client:      f.client,
-		})
+		
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			f.pool.Submit(Task{
+				URL:  v.Downloads.Client.URL,
+				Path: path,
+				SHA1: v.Downloads.Client.SHA1,
+			})
+		}
 	}
 	return nil
 }
 
-func (f *ArtifactFetcher) downloadLibraries(v *models.VersionDetail) error {
+func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.VersionDetail) error {
 	sysInfo := system.GetSystemInfo()
 	libDir := constants.GetLibrariesDir()
 
 	for _, lib := range v.Libraries {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		if !lib.IsAllowed(sysInfo.OS) {
 			continue
 		}
 
-
 		if lib.Downloads.Artifact.URL != "" {
 			path := lib.Downloads.Artifact.GetPath()
 			fullPath := filepath.Join(libDir, path)
-			f.pool.Submit(&DownloadTask{
-				URL:         lib.Downloads.Artifact.URL,
-				Destination: fullPath,
-				SHA1:        lib.Downloads.Artifact.SHA1,
-				NameID:      lib.Name,
-				Client:      f.client,
+			f.pool.Submit(Task{
+				URL:  lib.Downloads.Artifact.URL,
+				Path: fullPath,
+				SHA1: lib.Downloads.Artifact.SHA1,
 			})
 		} else if lib.Name != "" {
 			relPath := lib.GetMavenPath()
@@ -143,6 +146,7 @@ func (f *ArtifactFetcher) downloadLibraries(v *models.VersionDetail) error {
 				if baseURL == "" {
 					baseURL = "https://libraries.minecraft.net/"
 				}
+				
 				if !strings.HasSuffix(baseURL, "/") {
 					baseURL += "/"
 				}
@@ -150,27 +154,22 @@ func (f *ArtifactFetcher) downloadLibraries(v *models.VersionDetail) error {
 				fullUrl := baseURL + relPath
 				fullPath := filepath.Join(libDir, relPath)
 				
-				f.pool.Submit(&DownloadTask{
-					URL:         fullUrl,
-					Destination: fullPath,
-					NameID:      lib.Name,
-					Client:      f.client,
+				f.pool.Submit(Task{
+					URL:  fullUrl,
+					Path: fullPath,
 				})
 			}
 		}
-
 
 		if lib.Natives != nil {
 			if nativeKey, ok := lib.Natives[sysInfo.OS]; ok {
 				if artifact, exists := lib.Downloads.Classifiers[nativeKey]; exists {
 					path := artifact.GetPath()
 					fullPath := filepath.Join(libDir, path)
-					f.pool.Submit(&DownloadTask{
-						URL:         artifact.URL,
-						Destination: fullPath,
-						SHA1:        artifact.SHA1,
-						NameID:      nativeKey,
-						Client:      f.client,
+					f.pool.Submit(Task{
+						URL:  artifact.URL,
+						Path: fullPath,
+						SHA1: artifact.SHA1,
 					})
 				}
 			}
@@ -179,16 +178,14 @@ func (f *ArtifactFetcher) downloadLibraries(v *models.VersionDetail) error {
 	return nil
 }
 
-func (f *ArtifactFetcher) downloadAssets(v *models.VersionDetail) error {
-
+func (f *ArtifactFetcher) downloadAssets(ctx context.Context, v *models.VersionDetail) error {
 	idxURL := v.AssetIndex.URL
 	if idxURL == "" {
-		return nil
+		return nil 
 	}
 	
 	idxPath := filepath.Join(constants.GetAssetsDir(), "indexes", fmt.Sprintf("%s.json", v.AssetIndex.ID))
 	
-
 	client := network.NewHttpClient()
 	idxData, err := client.Get(idxURL)
 	if err != nil {
@@ -198,7 +195,6 @@ func (f *ArtifactFetcher) downloadAssets(v *models.VersionDetail) error {
 			return fmt.Errorf("failed to fetch asset index: %w", err)
 		}
 	} else {
-
 		os.MkdirAll(filepath.Dir(idxPath), 0755)
 		os.WriteFile(idxPath, idxData, 0644)
 	}
@@ -218,15 +214,17 @@ func (f *ArtifactFetcher) downloadAssets(v *models.VersionDetail) error {
 	objectsDir := filepath.Join(constants.GetAssetsDir(), "objects")
 
 	for _, obj := range indexObj.Objects {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		path := filepath.Join(objectsDir, obj.Hash[:2], obj.Hash)
 		url := fmt.Sprintf("%s%s/%s", baseAssetURL, obj.Hash[:2], obj.Hash)
 		
-		f.pool.Submit(&DownloadTask{
-			URL:         url,
-			Destination: path,
-			SHA1:        obj.Hash,
-			NameID:      obj.Hash,
-			Client:      f.client,
+		f.pool.Submit(Task{
+			URL:  url,
+			Path: path,
+			SHA1: obj.Hash,
 		})
 	}
 

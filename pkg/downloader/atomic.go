@@ -1,25 +1,39 @@
 package downloader
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 )
 
-func CommitFile(tempPath string, finalPath string, expectedHash string) error {
-	if err := VerifyFileSHA1(tempPath, expectedHash); err != nil {
-		os.Remove(tempPath)
-		return fmt.Errorf("integrity check failed for %s: %w", tempPath, err)
+
+func CheckFileSHA1(path string, expected string) bool {
+	valid, _ := VerifyFileSHA1(path, expected)
+	return valid
+}
+
+
+func AtomicWriteFile(path string, data []byte) error {
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
 	}
 
-	destDir := filepath.Dir(finalPath)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
-		return fmt.Errorf("failed to create destination directory %s: %w", destDir, err)
+	
+	tmpFile, err := os.CreateTemp(dir, "tmp-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmpFile.Name()) 
+
+	
+	if _, err := tmpFile.Write(data); err != nil {
+		tmpFile.Close()
+		return err
+	}
+	if err := tmpFile.Close(); err != nil {
+		return err
 	}
 
-	if err := os.Rename(tempPath, finalPath); err != nil {
-		return fmt.Errorf("failed to move validated file to %s: %w", finalPath, err)
-	}
-
-	return nil
+	
+	return os.Rename(tmpFile.Name(), path)
 }

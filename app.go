@@ -18,6 +18,7 @@ import (
 	"NezordLauncher/pkg/system"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -27,6 +28,10 @@ type App struct {
 	isTestMode      bool
 	accountManager  *auth.AccountManager
 	instanceManager *instances.Manager
+	
+	
+	downloadCancel context.CancelFunc
+	downloadMu     sync.Mutex
 }
 
 func NewApp() *App {
@@ -169,22 +174,57 @@ func (a *App) GetSystemPlatform() system.SystemInfo {
 	return system.GetSystemInfo()
 }
 
+
 func (a *App) DownloadVersion(versionID string) error {
+	a.downloadMu.Lock()
+	
+	if a.downloadCancel != nil {
+		a.downloadCancel()
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	a.downloadCancel = cancel
+	a.downloadMu.Unlock()
+
+	defer func() {
+		a.downloadMu.Lock()
+		if a.downloadCancel != nil {
+			a.downloadCancel() 
+			a.downloadCancel = nil
+		}
+		a.downloadMu.Unlock()
+	}()
+
 	pool := downloader.NewWorkerPool(10, 100)
-	pool.Start()
+	
+	pool.Start(ctx)
 	
 	fetcher := downloader.NewArtifactFetcher(pool)
 	
 	a.emit("downloadStatus", fmt.Sprintf("Starting download for version: %s", versionID))
 	
-	if err := fetcher.DownloadVersion(versionID); err != nil {
+	
+	if err := fetcher.DownloadVersion(ctx, versionID); err != nil {
+		
 		pool.Wait() 
+		if err == context.Canceled {
+			a.emit("downloadStatus", "Download cancelled by user")
+			return fmt.Errorf("download cancelled")
+		}
 		return fmt.Errorf("download failed: %w", err)
 	}
 
 	pool.Wait()
 	a.emit("downloadStatus", "Download completed successfully")
 	return nil
+}
+
+func (a *App) CancelDownload() {
+	a.downloadMu.Lock()
+	defer a.downloadMu.Unlock()
+	if a.downloadCancel != nil {
+		a.downloadCancel()
+		a.emit("downloadStatus", "Cancelling download...")
+	}
 }
 
 func (a *App) LaunchInstance(instanceID string) error {

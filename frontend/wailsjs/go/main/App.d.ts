@@ -7,6 +7,8 @@ import {models} from '../models';
 
 export function AddOfflineAccount(arg1:string):Promise<auth.Account>;
 
+export function CancelDownload():Promise<void>;
+
 export function CreateInstance(arg1:string,arg2:string,arg3:string,arg4:string):Promise<instances.Instance>;
 
 export function DeleteInstance(arg1:string):Promise<void>;

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import {
-  LaunchGame,
+  LaunchInstance, 
+  CreateInstance, 
+  GetInstances, 
   DownloadVersion,
   GetAccounts,
   AddOfflineAccount,
@@ -25,18 +27,37 @@ export interface Version {
   type: string;
 }
 
+
+export interface Instance {
+  id: string;
+  name: string;
+  gameVersion: string;
+  modloaderType: string;
+  modloaderVersion: string;
+  created: string;
+  lastPlayed: string;
+  playTime: number;
+}
+
 export function useLauncher() {
   const [isLaunching, setIsLaunching] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
 
+  
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [activeAccount, setActiveAccountState] = useState<Account | null>(null);
 
+  
   const [minecraftVersions, setMinecraftVersions] = useState<Version[]>([]);
 
+  
+  const [instances, setInstances] = useState<Instance[]>([]);
+
+  
   useEffect(() => {
     refreshAccounts();
     fetchVersions();
+    refreshInstances(); 
 
     const cleanups = [
       EventsOn("downloadStatus", (msg: string) =>
@@ -72,6 +93,16 @@ export function useLauncher() {
       setActiveAccountState(active);
     } catch (e) {
       console.error("Failed to load accounts", e);
+    }
+  };
+
+  
+  const refreshInstances = async () => {
+    try {
+      const list = await GetInstances();
+      setInstances(list || []);
+    } catch (e) {
+      console.error("Failed to load instances", e);
     }
   };
 
@@ -116,6 +147,8 @@ export function useLauncher() {
     }
   };
 
+  
+  
   const launch = async (config: {
     version: string;
     ram: number;
@@ -132,24 +165,34 @@ export function useLauncher() {
     setLogs([]);
 
     try {
-      if (config.modloaderType === "vanilla") {
-        setLogs((p) => [...p, `[COMMAND] Checking vanilla artifacts...`]);
-        await DownloadVersion(config.version);
-      } else {
-        setLogs((p) => [
-          ...p,
-          `[COMMAND] Checking base artifacts for modloader...`,
-        ]);
-        await DownloadVersion(config.version);
-      }
+      
+      
+      
 
-      setLogs((p) => [...p, `[COMMAND] Launching game sequence...`]);
-      await LaunchGame(
+      const tempInstanceName = `QuickPlay-${config.version}`;
+      setLogs((p) => [
+        ...p,
+        `[SYSTEM] Creating temporary instance: ${tempInstanceName}...`,
+      ]);
+
+      
+      
+      const inst = await CreateInstance(
+        tempInstanceName,
         config.version,
-        config.ram,
         config.modloaderType,
         config.loaderVersion,
       );
+
+      
+      setLogs((p) => [
+        ...p,
+        `[COMMAND] Checking artifacts for ${config.version}...`,
+      ]);
+      await DownloadVersion(config.version);
+
+      setLogs((p) => [...p, `[COMMAND] Launching Instance ${inst.id}...`]);
+      await LaunchInstance(inst.id);
     } catch (e) {
       setLogs((p) => [...p, `[FATAL] Sequence aborted: ${e}`]);
       setIsLaunching(false);
@@ -167,5 +210,6 @@ export function useLauncher() {
     switchAccount,
     minecraftVersions,
     fetchModloaders,
+    instances, 
   };
 }

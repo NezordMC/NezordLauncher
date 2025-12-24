@@ -6,6 +6,10 @@ export function AddOfflineAccount(arg1) {
   return window['go']['main']['App']['AddOfflineAccount'](arg1);
 }
 
+export function CancelDownload() {
+  return window['go']['main']['App']['CancelDownload']();
+}
+
 export function CreateInstance(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['CreateInstance'](arg1, arg2, arg3, arg4);
 }
