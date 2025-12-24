@@ -6,6 +6,14 @@ export function AddOfflineAccount(arg1) {
   return window['go']['main']['App']['AddOfflineAccount'](arg1);
 }
 
+export function CreateInstance(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['CreateInstance'](arg1, arg2, arg3, arg4);
+}
+
+export function DeleteInstance(arg1) {
+  return window['go']['main']['App']['DeleteInstance'](arg1);
+}
+
 export function DownloadVersion(arg1) {
   return window['go']['main']['App']['DownloadVersion'](arg1);
 }
@@ -26,6 +34,10 @@ export function GetFabricLoaders(arg1) {
   return window['go']['main']['App']['GetFabricLoaders'](arg1);
 }
 
+export function GetInstances() {
+  return window['go']['main']['App']['GetInstances']();
+}
+
 export function GetQuiltLoaders(arg1) {
   return window['go']['main']['App']['GetQuiltLoaders'](arg1);
 }
@@ -38,8 +50,8 @@ export function GetVanillaVersions() {
   return window['go']['main']['App']['GetVanillaVersions']();
 }
 
-export function LaunchGame(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['LaunchGame'](arg1, arg2, arg3, arg4);
+export function LaunchInstance(arg1) {
+  return window['go']['main']['App']['LaunchInstance'](arg1);
 }
 
 export function LoginElyBy(arg1, arg2) {
@@ -48,4 +60,8 @@ export function LoginElyBy(arg1, arg2) {
 
 export function SetActiveAccount(arg1) {
   return window['go']['main']['App']['SetActiveAccount'](arg1);
+}
+
+export function UpdateInstanceSettings(arg1, arg2) {
+  return window['go']['main']['App']['UpdateInstanceSettings'](arg1, arg2);
 }

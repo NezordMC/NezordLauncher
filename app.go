@@ -23,9 +23,9 @@ import (
 )
 
 type App struct {
-	ctx            context.Context
-	isTestMode     bool
-	accountManager *auth.AccountManager
+	ctx             context.Context
+	isTestMode      bool
+	accountManager  *auth.AccountManager
 	instanceManager *instances.Manager
 }
 
@@ -187,33 +187,49 @@ func (a *App) DownloadVersion(versionID string) error {
 	return nil
 }
 
-func (a *App) LaunchGame(versionID string, ramMB int, modloaderType string, modloaderVersion string) error {
+func (a *App) LaunchInstance(instanceID string) error {
 	account := a.accountManager.GetActiveAccount()
 	if account == nil {
 		return fmt.Errorf("no active account selected")
 	}
 
-	finalVersionID := versionID
-	if modloaderType == "fabric" && modloaderVersion != "" {
-		a.emit("launchStatus", "Installing Fabric...")
-		installedID, err := fabric.InstallFabric(versionID, modloaderVersion)
+	inst, ok := a.instanceManager.Get(instanceID)
+	if !ok {
+		return fmt.Errorf("instance not found: %s", instanceID)
+	}
+
+	a.instanceManager.UpdatePlayTime(instanceID, 0)
+
+	finalVersionID := inst.GetLaunchVersionID()
+	baseGameVersion := inst.GameVersion
+
+	if inst.ModloaderType == instances.ModloaderFabric {
+		a.emit("launchStatus", "Verifying Fabric...")
+		installedID, err := fabric.InstallFabric(baseGameVersion, inst.ModloaderVersion)
 		if err != nil {
 			return fmt.Errorf("failed to install fabric: %w", err)
 		}
-		finalVersionID = installedID
-		a.emit("launchStatus", "Fabric installed: "+installedID)
-	} else if modloaderType == "quilt" && modloaderVersion != "" {
-		a.emit("launchStatus", "Installing Quilt...")
-		installedID, err := quilt.InstallQuilt(versionID, modloaderVersion)
+		if installedID != finalVersionID {
+			fmt.Printf("Warning: Calculated ID %s differs from installed ID %s\n", finalVersionID, installedID)
+			finalVersionID = installedID
+		}
+		a.emit("launchStatus", "Fabric ready: "+installedID)
+	} else if inst.ModloaderType == instances.ModloaderQuilt {
+		a.emit("launchStatus", "Verifying Quilt...")
+		installedID, err := quilt.InstallQuilt(baseGameVersion, inst.ModloaderVersion)
 		if err != nil {
 			return fmt.Errorf("failed to install quilt: %w", err)
 		}
 		finalVersionID = installedID
-		a.emit("launchStatus", "Quilt installed: "+installedID)
+		a.emit("launchStatus", "Quilt ready: "+installedID)
 	}
 
-	instanceDir := filepath.Join(constants.GetInstancesDir(), finalVersionID)
-	nativesDir := filepath.Join(instanceDir, "natives")
+	instanceDir := filepath.Join(constants.GetInstancesDir(), inst.ID, ".minecraft")
+	if err := os.MkdirAll(instanceDir, 0755); err != nil {
+		return fmt.Errorf("failed to create instance dir: %w", err)
+	}
+
+	nativesDir := filepath.Join(constants.GetInstancesDir(), inst.ID, "natives")
 	
 	a.emit("launchStatus", "Preparing environment...")
 
@@ -222,22 +238,35 @@ func (a *App) LaunchGame(versionID string, ramMB int, modloaderType string, modl
 		return fmt.Errorf("failed to get version details: %w", err)
 	}
 
-	a.emit("launchStatus", "Selecting Java runtime...")
-	javaInstalls, err := javascanner.ScanJavaInstallations()
-	if err != nil {
-		return fmt.Errorf("java scan failed: %w", err)
+	javaPath := ""
+	if inst.Settings.OverrideJava && inst.Settings.JavaPath != "" {
+		a.emit("launchStatus", "Using custom Java...")
+		if _, err := os.Stat(inst.Settings.JavaPath); err == nil {
+			javaPath = inst.Settings.JavaPath
+		} else {
+			a.emit("launchError", "Custom Java path invalid, falling back to auto-detect")
+		}
 	}
-	
-	javaTargetVersion := versionID
-	if version.InheritsFrom != "" {
-		javaTargetVersion = version.InheritsFrom
+
+	if javaPath == "" {
+		a.emit("launchStatus", "Scanning Java runtime...")
+		javaInstalls, err := javascanner.ScanJavaInstallations()
+		if err != nil {
+			return fmt.Errorf("java scan failed: %w", err)
+		}
+		
+		javaTargetVersion := finalVersionID
+		if version.InheritsFrom != "" {
+			javaTargetVersion = version.InheritsFrom
+		}
+		
+		selectedJava, err := javascanner.SelectJava(javaInstalls, javaTargetVersion)
+		if err != nil {
+			return fmt.Errorf("java selection failed: %w", err)
+		}
+		javaPath = selectedJava.Path
+		a.emit("launchStatus", fmt.Sprintf("Using Java: %s (%s)", selectedJava.Version, selectedJava.Path))
 	}
-	
-	selectedJava, err := javascanner.SelectJava(javaInstalls, javaTargetVersion)
-	if err != nil {
-		return fmt.Errorf("java selection failed: %w", err)
-	}
-	a.emit("launchStatus", fmt.Sprintf("Using Java: %s (%s)", selectedJava.Version, selectedJava.Path))
 
 	a.emit("launchStatus", "Extracting native libraries...")
 	if err := launch.ExtractNatives(version.Libraries, nativesDir); err != nil {
@@ -254,24 +283,40 @@ func (a *App) LaunchGame(versionID string, ramMB int, modloaderType string, modl
 		authlibPath = path
 	}
 
+	ramMB := inst.Settings.RamMB
+	if ramMB == 0 {
+		ramMB = 4096 
+	}
+
+	width := 854
+	height := 480
+	if inst.Settings.ResolutionW > 0 && inst.Settings.ResolutionH > 0 {
+		width = inst.Settings.ResolutionW
+		height = inst.Settings.ResolutionH
+	}
+
 	opts := launch.LaunchOptions{
 		PlayerName:          account.Username,
 		UUID:                account.UUID,
 		AccessToken:         account.AccessToken,
 		UserType:            string(account.Type),
 		VersionID:           finalVersionID,
-		GameDir:             instanceDir,
+		GameDir:             instanceDir, 
 		AssetsDir:           constants.GetAssetsDir(),
 		NativesDir:          nativesDir,
 		RamMB:               ramMB,
-		Width:               854,
-		Height:              480,
+		Width:               width,
+		Height:              height,
 		AuthlibInjectorPath: authlibPath,
 	}
 
 	args, err := launch.BuildArguments(version, opts)
 	if err != nil {
 		return fmt.Errorf("argument build failed: %w", err)
+	}
+
+	if inst.Settings.JvmArgs != "" {
+		args = append([]string{inst.Settings.JvmArgs}, args...)
 	}
 
 	a.emit("launchStatus", "Launching game process...")
@@ -282,7 +327,7 @@ func (a *App) LaunchGame(versionID string, ramMB int, modloaderType string, modl
 	}
 
 	go func() {
-		if err := launch.ExecuteGame(selectedJava.Path, args, instanceDir, logCallback); err != nil {
+		if err := launch.ExecuteGame(javaPath, args, instanceDir, logCallback); err != nil {
 			a.emit("launchError", err.Error())
 		} else {
 			a.emit("launchStatus", "Game closed successfully")

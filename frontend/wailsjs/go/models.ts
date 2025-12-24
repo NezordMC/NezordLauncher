@@ -25,6 +25,85 @@ export namespace auth {
 
 }
 
+export namespace instances {
+	
+	export class InstanceSettings {
+	    ramMB: number;
+	    javaPath: string;
+	    resolutionW: number;
+	    resolutionH: number;
+	    jvmArgs: string;
+	    overrideJava: boolean;
+	    overrideRam: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new InstanceSettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ramMB = source["ramMB"];
+	        this.javaPath = source["javaPath"];
+	        this.resolutionW = source["resolutionW"];
+	        this.resolutionH = source["resolutionH"];
+	        this.jvmArgs = source["jvmArgs"];
+	        this.overrideJava = source["overrideJava"];
+	        this.overrideRam = source["overrideRam"];
+	    }
+	}
+	export class Instance {
+	    id: string;
+	    name: string;
+	    icon: string;
+	    gameVersion: string;
+	    modloaderType: string;
+	    modloaderVersion: string;
+	    settings: InstanceSettings;
+	    // Go type: time
+	    created: any;
+	    // Go type: time
+	    lastPlayed: any;
+	    playTime: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Instance(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.icon = source["icon"];
+	        this.gameVersion = source["gameVersion"];
+	        this.modloaderType = source["modloaderType"];
+	        this.modloaderVersion = source["modloaderVersion"];
+	        this.settings = this.convertValues(source["settings"], InstanceSettings);
+	        this.created = this.convertValues(source["created"], null);
+	        this.lastPlayed = this.convertValues(source["lastPlayed"], null);
+	        this.playTime = source["playTime"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+
 export namespace models {
 	
 	export class Version {
