@@ -4,6 +4,7 @@ import {auth} from '../models';
 import {instances} from '../models';
 import {system} from '../models';
 import {models} from '../models';
+import {javascanner} from '../models';
 
 export function AddOfflineAccount(arg1:string):Promise<auth.Account>;
 
@@ -34,6 +35,8 @@ export function GetVanillaVersions():Promise<Array<models.Version>>;
 export function LaunchInstance(arg1:string):Promise<void>;
 
 export function LoginElyBy(arg1:string,arg2:string):Promise<auth.Account>;
+
+export function ScanJavaInstallations():Promise<Array<javascanner.JavaInfo>>;
 
 export function SetActiveAccount(arg1:string):Promise<void>;
 

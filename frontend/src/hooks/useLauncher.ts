@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import {
-  LaunchInstance, 
-  CreateInstance, 
-  GetInstances, 
+  LaunchInstance,
+  CreateInstance,
+  GetInstances,
   DownloadVersion,
   GetAccounts,
   AddOfflineAccount,
@@ -12,6 +12,7 @@ import {
   GetVanillaVersions,
   GetFabricLoaders,
   GetQuiltLoaders,
+  ScanJavaInstallations,
 } from "../../wailsjs/go/main/App";
 import { EventsOn } from "../../wailsjs/runtime/runtime";
 import { ModloaderType } from "../components/ModloaderSelector";
@@ -27,7 +28,6 @@ export interface Version {
   type: string;
 }
 
-
 export interface Instance {
   id: string;
   name: string;
@@ -37,6 +37,13 @@ export interface Instance {
   created: string;
   lastPlayed: string;
   playTime: number;
+}
+
+
+export interface JavaInfo {
+  path: string;
+  version: string;
+  major: number;
 }
 
 export function useLauncher() {
@@ -57,7 +64,7 @@ export function useLauncher() {
   useEffect(() => {
     refreshAccounts();
     fetchVersions();
-    refreshInstances(); 
+    refreshInstances();
 
     const cleanups = [
       EventsOn("downloadStatus", (msg: string) =>
@@ -96,7 +103,6 @@ export function useLauncher() {
     }
   };
 
-  
   const refreshInstances = async () => {
     try {
       const list = await GetInstances();
@@ -118,6 +124,17 @@ export function useLauncher() {
       console.error(`Failed to fetch ${type} loaders`, e);
     }
     return [];
+  };
+
+  
+  const scanJava = async (): Promise<JavaInfo[]> => {
+    try {
+      
+      return await ScanJavaInstallations();
+    } catch (e) {
+      console.error("Java scan failed", e);
+      return [];
+    }
   };
 
   const addOfflineAccount = async (username: string) => {
@@ -147,8 +164,6 @@ export function useLauncher() {
     }
   };
 
-  
-  
   const launch = async (config: {
     version: string;
     ram: number;
@@ -165,18 +180,12 @@ export function useLauncher() {
     setLogs([]);
 
     try {
-      
-      
-      
-
       const tempInstanceName = `QuickPlay-${config.version}`;
       setLogs((p) => [
         ...p,
         `[SYSTEM] Creating temporary instance: ${tempInstanceName}...`,
       ]);
 
-      
-      
       const inst = await CreateInstance(
         tempInstanceName,
         config.version,
@@ -184,7 +193,6 @@ export function useLauncher() {
         config.loaderVersion,
       );
 
-      
       setLogs((p) => [
         ...p,
         `[COMMAND] Checking artifacts for ${config.version}...`,
@@ -210,6 +218,7 @@ export function useLauncher() {
     switchAccount,
     minecraftVersions,
     fetchModloaders,
-    instances, 
+    instances,
+    scanJava,
   };
 }

@@ -29,7 +29,6 @@ type App struct {
 	accountManager  *auth.AccountManager
 	instanceManager *instances.Manager
 	
-	
 	downloadCancel context.CancelFunc
 	downloadMu     sync.Mutex
 }
@@ -174,10 +173,12 @@ func (a *App) GetSystemPlatform() system.SystemInfo {
 	return system.GetSystemInfo()
 }
 
+func (a *App) ScanJavaInstallations() ([]javascanner.JavaInfo, error) {
+	return javascanner.ScanJavaInstallations()
+}
 
 func (a *App) DownloadVersion(versionID string) error {
 	a.downloadMu.Lock()
-	
 	if a.downloadCancel != nil {
 		a.downloadCancel()
 	}
@@ -188,23 +189,20 @@ func (a *App) DownloadVersion(versionID string) error {
 	defer func() {
 		a.downloadMu.Lock()
 		if a.downloadCancel != nil {
-			a.downloadCancel() 
+			a.downloadCancel()
 			a.downloadCancel = nil
 		}
 		a.downloadMu.Unlock()
 	}()
 
 	pool := downloader.NewWorkerPool(10, 100)
-	
 	pool.Start(ctx)
 	
 	fetcher := downloader.NewArtifactFetcher(pool)
 	
 	a.emit("downloadStatus", fmt.Sprintf("Starting download for version: %s", versionID))
 	
-	
 	if err := fetcher.DownloadVersion(ctx, versionID); err != nil {
-		
 		pool.Wait() 
 		if err == context.Canceled {
 			a.emit("downloadStatus", "Download cancelled by user")

@@ -62,6 +62,10 @@ export function LoginElyBy(arg1, arg2) {
   return window['go']['main']['App']['LoginElyBy'](arg1, arg2);
 }
 
+export function ScanJavaInstallations() {
+  return window['go']['main']['App']['ScanJavaInstallations']();
+}
+
 export function SetActiveAccount(arg1) {
   return window['go']['main']['App']['SetActiveAccount'](arg1);
 }

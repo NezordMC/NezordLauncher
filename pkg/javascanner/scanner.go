@@ -1,112 +1,169 @@
 package javascanner
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
+	"strconv"
 	"strings"
 )
 
-type JavaInstallation struct {
-	Path      string
-	Version   string
-	Vendor    string
-	IsTemurin bool
+
+type JavaInfo struct {
+	Path    string `json:"path"`
+	Version string `json:"version"`
+	Major   int    `json:"major"`
 }
 
-func ScanJavaInstallations() ([]JavaInstallation, error) {
-	var installations []JavaInstallation
-	
-	searchPaths := []string{
-		"/usr/lib/jvm",
-		"/opt/java",
-		"/usr/java",
-	}
+func ScanJavaInstallations() ([]JavaInfo, error) {
+	var installs []JavaInfo
+	paths := getCandidatePaths()
 
-	for _, searchPath := range searchPaths {
-		entries, err := os.ReadDir(searchPath)
-		if err != nil {
-			continue
-		}
-
-		for _, entry := range entries {
-			if !entry.IsDir() {
-				continue
-			}
-
-			fullPath := filepath.Join(searchPath, entry.Name())
-			javaBin := filepath.Join(fullPath, "bin", "java")
-
-			if _, err := os.Stat(javaBin); err == nil {
-				if install, err := validateJavaBinary(javaBin); err == nil {
-					installations = append(installations, install)
-				}
-			}
-		}
-	}
-
-	systemJava, err := exec.LookPath("java")
-	if err == nil {
-		if install, err := validateJavaBinary(systemJava); err == nil {
-			isDuplicate := false
-			for _, existing := range installations {
-				if existing.Path == install.Path {
-					isDuplicate = true
+	for _, p := range paths {
+		if info, err := checkJava(p); err == nil {
+			
+			found := false
+			for _, existing := range installs {
+				if existing.Path == info.Path {
+					found = true
 					break
 				}
 			}
-			if !isDuplicate {
-				installations = append(installations, install)
+			if !found {
+				installs = append(installs, *info)
 			}
 		}
 	}
 
-	return installations, nil
+	return installs, nil
 }
 
-func validateJavaBinary(path string) (JavaInstallation, error) {
+func getCandidatePaths() []string {
+	var paths []string
+
+	
+	if home := os.Getenv("JAVA_HOME"); home != "" {
+		bin := filepath.Join(home, "bin", "java")
+		if runtime.GOOS == "windows" {
+			bin += ".exe"
+		}
+		paths = append(paths, bin)
+	}
+
+	
+	pathVar := os.Getenv("PATH")
+	separator := ":"
+	if runtime.GOOS == "windows" {
+		separator = ";"
+	}
+	
+	for _, dir := range strings.Split(pathVar, separator) {
+		bin := filepath.Join(dir, "java")
+		if runtime.GOOS == "windows" {
+			bin += ".exe"
+		}
+		if _, err := os.Stat(bin); err == nil {
+			paths = append(paths, bin)
+		}
+	}
+
+	
+	if runtime.GOOS == "linux" {
+		common := []string{
+			"/usr/bin/java",
+			"/usr/lib/jvm",
+		}
+		for _, c := range common {
+			if info, err := os.Stat(c); err == nil {
+				if !info.IsDir() {
+					paths = append(paths, c)
+				} else {
+					
+					entries, _ := os.ReadDir(c)
+					for _, e := range entries {
+						bin := filepath.Join(c, e.Name(), "bin", "java")
+						if _, err := os.Stat(bin); err == nil {
+							paths = append(paths, bin)
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	
+	if runtime.GOOS == "windows" {
+		
+		progFiles := []string{os.Getenv("ProgramFiles"), os.Getenv("ProgramFiles(x86)")}
+		for _, pf := range progFiles {
+			if pf == "" { continue }
+			javaDir := filepath.Join(pf, "Java")
+			entries, _ := os.ReadDir(javaDir)
+			for _, e := range entries {
+				bin := filepath.Join(javaDir, e.Name(), "bin", "java.exe")
+				if _, err := os.Stat(bin); err == nil {
+					paths = append(paths, bin)
+				}
+			}
+			
+			eclipseDir := filepath.Join(pf, "Eclipse Foundation")
+			entries2, _ := os.ReadDir(eclipseDir)
+			for _, e := range entries2 {
+				bin := filepath.Join(eclipseDir, e.Name(), "bin", "java.exe")
+				if _, err := os.Stat(bin); err == nil {
+					paths = append(paths, bin)
+				}
+			}
+		}
+	}
+
+	return paths
+}
+
+func checkJava(path string) (*JavaInfo, error) {
 	cmd := exec.Command(path, "-version")
-	output, err := cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return JavaInstallation{}, fmt.Errorf("failed to execute java binary: %w", err)
+		return nil, err
 	}
 
-	versionStr := string(output)
-	version := parseJavaVersion(versionStr)
-	vendor := "Unknown"
-	isTemurin := false
-
-	if strings.Contains(strings.ToLower(versionStr), "temurin") || strings.Contains(strings.ToLower(versionStr), "adoptium") {
-		vendor = "Eclipse Temurin"
-		isTemurin = true
-	} else if strings.Contains(strings.ToLower(versionStr), "openjdk") {
-		vendor = "OpenJDK"
-	} else if strings.Contains(strings.ToLower(versionStr), "oracle") {
-		vendor = "Oracle"
+	version := parseJavaVersion(string(out))
+	if version == "" {
+		return nil, nil 
 	}
 
-	return JavaInstallation{
-		Path:      path,
-		Version:   version,
-		Vendor:    vendor,
-		IsTemurin: isTemurin,
+	major := parseMajorVersion(version)
+
+	return &JavaInfo{
+		Path:    path,
+		Version: version,
+		Major:   major,
 	}, nil
 }
 
 func parseJavaVersion(output string) string {
+	
 	re := regexp.MustCompile(`version "([^"]+)"`)
 	matches := re.FindStringSubmatch(output)
 	if len(matches) > 1 {
 		return matches[1]
 	}
-	
-	reSimple := regexp.MustCompile(` ([\d\.]+) `)
-	matchesSimple := reSimple.FindStringSubmatch(output)
-	if len(matchesSimple) > 1 {
-		return matchesSimple[1]
-	}
+	return ""
+}
 
-	return "unknown"
+func parseMajorVersion(version string) int {
+	parts := strings.Split(version, ".")
+	if len(parts) > 0 {
+		if parts[0] == "1" && len(parts) > 1 {
+			
+			v, _ := strconv.Atoi(parts[1])
+			return v
+		}
+		
+		v, _ := strconv.Atoi(parts[0])
+		return v
+	}
+	return 0
 }

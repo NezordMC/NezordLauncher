@@ -104,6 +104,27 @@ export namespace instances {
 
 }
 
+export namespace javascanner {
+	
+	export class JavaInfo {
+	    path: string;
+	    version: string;
+	    major: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new JavaInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.version = source["version"];
+	        this.major = source["major"];
+	    }
+	}
+
+}
+
 export namespace models {
 	
 	export class Version {
