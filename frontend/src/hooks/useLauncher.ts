@@ -3,6 +3,7 @@ import {
   LaunchInstance,
   CreateInstance,
   GetInstances,
+  DownloadVersion,
   GetAccounts,
   AddOfflineAccount,
   LoginElyBy,
@@ -12,6 +13,7 @@ import {
   GetFabricLoaders,
   GetQuiltLoaders,
   ScanJavaInstallations,
+  UpdateInstanceSettings, // NEW
 } from "../../wailsjs/go/main/App";
 import { EventsOn } from "../../wailsjs/runtime/runtime";
 import { ModloaderType } from "../components/ModloaderSelector";
@@ -27,6 +29,16 @@ export interface Version {
   type: string;
 }
 
+export interface InstanceSettings {
+  ramMB: number;
+  javaPath: string;
+  resolutionW: number;
+  resolutionH: number;
+  jvmArgs: string;
+  overrideJava: boolean;
+  overrideRam: boolean;
+}
+
 export interface Instance {
   id: string;
   name: string;
@@ -36,6 +48,7 @@ export interface Instance {
   created: string;
   lastPlayed: string;
   playTime: number;
+  settings: InstanceSettings; // NEW
 }
 
 export interface JavaInfo {
@@ -113,6 +126,16 @@ export function useLauncher() {
     try {
       await CreateInstance(name, version, type, loaderVersion);
       await refreshInstances();
+    } catch (e) {
+      throw e;
+    }
+  };
+
+  // NEW: Update Settings
+  const updateInstance = async (id: string, settings: InstanceSettings) => {
+    try {
+      await UpdateInstanceSettings(id, settings);
+      await refreshInstances(); // Reload to reflect changes
     } catch (e) {
       throw e;
     }
@@ -200,6 +223,7 @@ export function useLauncher() {
     instances,
     scanJava,
     createInstance,
+    updateInstance,
     refreshInstances,
     launchInstance,
   };
