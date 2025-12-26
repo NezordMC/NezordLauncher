@@ -3,7 +3,6 @@ import {
   LaunchInstance,
   CreateInstance,
   GetInstances,
-  DownloadVersion,
   GetAccounts,
   AddOfflineAccount,
   LoginElyBy,
@@ -39,7 +38,6 @@ export interface Instance {
   playTime: number;
 }
 
-
 export interface JavaInfo {
   path: string;
   version: string;
@@ -50,17 +48,11 @@ export function useLauncher() {
   const [isLaunching, setIsLaunching] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
 
-  
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [activeAccount, setActiveAccountState] = useState<Account | null>(null);
-
-  
   const [minecraftVersions, setMinecraftVersions] = useState<Version[]>([]);
-
-  
   const [instances, setInstances] = useState<Instance[]>([]);
 
-  
   useEffect(() => {
     refreshAccounts();
     fetchVersions();
@@ -112,6 +104,20 @@ export function useLauncher() {
     }
   };
 
+  const createInstance = async (
+    name: string,
+    version: string,
+    type: string,
+    loaderVersion: string,
+  ) => {
+    try {
+      await CreateInstance(name, version, type, loaderVersion);
+      await refreshInstances();
+    } catch (e) {
+      throw e;
+    }
+  };
+
   const fetchModloaders = async (
     mcVersion: string,
     type: ModloaderType,
@@ -126,10 +132,8 @@ export function useLauncher() {
     return [];
   };
 
-  
   const scanJava = async (): Promise<JavaInfo[]> => {
     try {
-      
       return await ScanJavaInstallations();
     } catch (e) {
       console.error("Java scan failed", e);
@@ -164,12 +168,7 @@ export function useLauncher() {
     }
   };
 
-  const launch = async (config: {
-    version: string;
-    ram: number;
-    modloaderType: string;
-    loaderVersion: string;
-  }) => {
+  const launchInstance = async (id: string) => {
     if (isLaunching) return;
     if (!activeAccount) {
       setLogs((p) => [...p, `[ERROR] No account selected!`]);
@@ -180,27 +179,8 @@ export function useLauncher() {
     setLogs([]);
 
     try {
-      const tempInstanceName = `QuickPlay-${config.version}`;
-      setLogs((p) => [
-        ...p,
-        `[SYSTEM] Creating temporary instance: ${tempInstanceName}...`,
-      ]);
-
-      const inst = await CreateInstance(
-        tempInstanceName,
-        config.version,
-        config.modloaderType,
-        config.loaderVersion,
-      );
-
-      setLogs((p) => [
-        ...p,
-        `[COMMAND] Checking artifacts for ${config.version}...`,
-      ]);
-      await DownloadVersion(config.version);
-
-      setLogs((p) => [...p, `[COMMAND] Launching Instance ${inst.id}...`]);
-      await LaunchInstance(inst.id);
+      setLogs((p) => [...p, `[COMMAND] Launching Instance ${id}...`]);
+      await LaunchInstance(id);
     } catch (e) {
       setLogs((p) => [...p, `[FATAL] Sequence aborted: ${e}`]);
       setIsLaunching(false);
@@ -210,7 +190,6 @@ export function useLauncher() {
   return {
     isLaunching,
     logs,
-    launch,
     accounts,
     activeAccount,
     addOfflineAccount,
@@ -220,5 +199,8 @@ export function useLauncher() {
     fetchModloaders,
     instances,
     scanJava,
+    createInstance,
+    refreshInstances,
+    launchInstance,
   };
 }
