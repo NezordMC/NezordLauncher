@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useLauncherContext } from "@/context/LauncherContext";
-import { Plus, Play, Box, Clock } from "lucide-react";
+import { Plus, Play, Box, Clock, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddInstanceModal } from "@/components/AddInstanceModal";
 import { useNavigate } from "react-router-dom";
 
 export function HomePage() {
-  const { instances, launchInstance, isLaunching } = useLauncherContext();
+  const { instances, launchInstance, isLaunching, stopLaunch } =
+    useLauncherContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -70,17 +71,27 @@ export function HomePage() {
                 </div>
 
                 <div className="p-3 bg-zinc-900 flex gap-2">
-                  <Button
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs h-8 gap-1.5"
-                    disabled={isLaunching}
-                    onClick={() => launchInstance(inst.id)}
-                  >
-                    <Play size={12} fill="currentColor" /> PLAY
-                  </Button>
+                  {isLaunching ? (
+                    <Button
+                      className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold text-xs h-8 gap-1.5 animate-pulse"
+                      onClick={stopLaunch}
+                    >
+                      <Square size={10} fill="currentColor" /> CANCEL
+                    </Button>
+                  ) : (
+                    <Button
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs h-8 gap-1.5"
+                      onClick={() => launchInstance(inst.id)}
+                    >
+                      <Play size={12} fill="currentColor" /> PLAY
+                    </Button>
+                  )}
+
                   <Button
                     variant="outline"
                     className="h-8 w-8 px-0 border-zinc-700 hover:bg-zinc-800 text-zinc-400"
                     onClick={() => navigate(`/instance/${inst.id}`)}
+                    disabled={isLaunching}
                   >
                     <Box size={14} />
                   </Button>

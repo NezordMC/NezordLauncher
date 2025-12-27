@@ -3,7 +3,6 @@ import {
   LaunchInstance,
   CreateInstance,
   GetInstances,
-  DownloadVersion,
   GetAccounts,
   AddOfflineAccount,
   LoginElyBy,
@@ -13,7 +12,8 @@ import {
   GetFabricLoaders,
   GetQuiltLoaders,
   ScanJavaInstallations,
-  UpdateInstanceSettings, // NEW
+  UpdateInstanceSettings,
+  CancelDownload, 
 } from "../../wailsjs/go/main/App";
 import { EventsOn } from "../../wailsjs/runtime/runtime";
 import { ModloaderType } from "../components/ModloaderSelector";
@@ -48,7 +48,7 @@ export interface Instance {
   created: string;
   lastPlayed: string;
   playTime: number;
-  settings: InstanceSettings; // NEW
+  settings: InstanceSettings;
 }
 
 export interface JavaInfo {
@@ -131,11 +131,10 @@ export function useLauncher() {
     }
   };
 
-  // NEW: Update Settings
   const updateInstance = async (id: string, settings: InstanceSettings) => {
     try {
       await UpdateInstanceSettings(id, settings);
-      await refreshInstances(); // Reload to reflect changes
+      await refreshInstances();
     } catch (e) {
       throw e;
     }
@@ -204,9 +203,21 @@ export function useLauncher() {
     try {
       setLogs((p) => [...p, `[COMMAND] Launching Instance ${id}...`]);
       await LaunchInstance(id);
-    } catch (e) {
-      setLogs((p) => [...p, `[FATAL] Sequence aborted: ${e}`]);
+    } catch (e: any) {
+      if (e && e.includes && e.includes("cancelled")) {
+        setLogs((p) => [...p, `[SYSTEM] Launch cancelled.`]);
+      } else {
+        setLogs((p) => [...p, `[FATAL] Sequence aborted: ${e}`]);
+      }
       setIsLaunching(false);
+    }
+  };
+
+  const stopLaunch = async () => {
+    try {
+      await CancelDownload();
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -226,5 +237,6 @@ export function useLauncher() {
     updateInstance,
     refreshInstances,
     launchInstance,
+    stopLaunch, 
   };
 }

@@ -200,19 +200,19 @@ func (a *App) DownloadVersion(versionID string) error {
 	
 	fetcher := downloader.NewArtifactFetcher(pool)
 	
-	a.emit("downloadStatus", fmt.Sprintf("Starting download for version: %s", versionID))
+	a.emit("downloadStatus", fmt.Sprintf("Checking artifacts for: %s", versionID))
 	
 	if err := fetcher.DownloadVersion(ctx, versionID); err != nil {
 		pool.Wait() 
 		if err == context.Canceled {
 			a.emit("downloadStatus", "Download cancelled by user")
-			return fmt.Errorf("download cancelled")
+			return fmt.Errorf("cancelled")
 		}
 		return fmt.Errorf("download failed: %w", err)
 	}
 
 	pool.Wait()
-	a.emit("downloadStatus", "Download completed successfully")
+	a.emit("downloadStatus", "Artifacts verification complete")
 	return nil
 }
 
@@ -221,7 +221,7 @@ func (a *App) CancelDownload() {
 	defer a.downloadMu.Unlock()
 	if a.downloadCancel != nil {
 		a.downloadCancel()
-		a.emit("downloadStatus", "Cancelling download...")
+		a.emit("downloadStatus", "Stopping...")
 	}
 }
 
@@ -238,28 +238,32 @@ func (a *App) LaunchInstance(instanceID string) error {
 
 	a.instanceManager.UpdatePlayTime(instanceID, 0)
 
-	finalVersionID := inst.GetLaunchVersionID()
-	baseGameVersion := inst.GameVersion
+	if err := a.DownloadVersion(inst.GameVersion); err != nil {
+		return err
+	}
 
+	finalVersionID := inst.GetLaunchVersionID()
+	
 	if inst.ModloaderType == instances.ModloaderFabric {
 		a.emit("launchStatus", "Verifying Fabric...")
-		installedID, err := fabric.InstallFabric(baseGameVersion, inst.ModloaderVersion)
+		installedID, err := fabric.InstallFabric(inst.GameVersion, inst.ModloaderVersion)
 		if err != nil {
 			return fmt.Errorf("failed to install fabric: %w", err)
 		}
-		if installedID != finalVersionID {
-			fmt.Printf("Warning: Calculated ID %s differs from installed ID %s\n", finalVersionID, installedID)
-			finalVersionID = installedID
-		}
-		a.emit("launchStatus", "Fabric ready: "+installedID)
+		finalVersionID = installedID
 	} else if inst.ModloaderType == instances.ModloaderQuilt {
 		a.emit("launchStatus", "Verifying Quilt...")
-		installedID, err := quilt.InstallQuilt(baseGameVersion, inst.ModloaderVersion)
+		installedID, err := quilt.InstallQuilt(inst.GameVersion, inst.ModloaderVersion)
 		if err != nil {
 			return fmt.Errorf("failed to install quilt: %w", err)
 		}
 		finalVersionID = installedID
-		a.emit("launchStatus", "Quilt ready: "+installedID)
+	}
+
+	if finalVersionID != inst.GameVersion {
+		if err := a.DownloadVersion(finalVersionID); err != nil {
+			return err
+		}
 	}
 
 	instanceDir := filepath.Join(constants.GetInstancesDir(), inst.ID, ".minecraft")
