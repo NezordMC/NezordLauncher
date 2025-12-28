@@ -14,12 +14,13 @@ import {
   Trash2,
   Loader2,
   HardDrive,
+  Lock,
 } from "lucide-react";
 
 export function InstanceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { instances, updateInstance, launchInstance, isLaunching } =
+  const { instances, updateInstance, launchInstance, isLaunching, defaults } =
     useLauncherContext();
 
   const instance = instances.find((i) => i.id === id);
@@ -31,17 +32,17 @@ export function InstanceDetailPage() {
   useEffect(() => {
     if (instance) {
       setSettings({
-        ramMB: instance.settings.ramMB || 4096,
+        ramMB: instance.settings.ramMB || defaults.ram,
         javaPath: instance.settings.javaPath || "",
-        resolutionW: instance.settings.resolutionW || 854,
-        resolutionH: instance.settings.resolutionH || 480,
+        resolutionW: instance.settings.resolutionW || defaults.width,
+        resolutionH: instance.settings.resolutionH || defaults.height,
         jvmArgs: instance.settings.jvmArgs || "",
         overrideJava: instance.settings.overrideJava || false,
         overrideRam: instance.settings.overrideRam || false,
       });
       setIsDirty(false);
     }
-  }, [instance]);
+  }, [instance, defaults]);
 
   const handleSave = async () => {
     if (!instance || !settings) return;
@@ -62,10 +63,26 @@ export function InstanceDetailPage() {
     setIsDirty(true);
   };
 
+  const handleOverrideToggle = (
+    key: "overrideRam" | "overrideJava",
+    checked: boolean,
+  ) => {
+    if (!settings) return;
+
+    let newSettings = { ...settings, [key]: checked };
+
+    if (key === "overrideRam" && !checked) {
+      newSettings.ramMB = defaults.ram;
+    }
+
+    setSettings(newSettings);
+    setIsDirty(true);
+  };
+
   if (!instance || !settings) {
     return (
       <div className="p-8 text-center text-zinc-500">
-        Instance not found or loading...
+        Loading instance data...
       </div>
     );
   }
@@ -123,7 +140,9 @@ export function InstanceDetailPage() {
               <input
                 type="checkbox"
                 checked={settings.overrideRam}
-                onChange={(e) => handleChange("overrideRam", e.target.checked)}
+                onChange={(e) =>
+                  handleOverrideToggle("overrideRam", e.target.checked)
+                }
                 className="accent-emerald-500"
               />
               <span
@@ -137,11 +156,21 @@ export function InstanceDetailPage() {
           </div>
 
           <div
-            className={`p-4 border border-zinc-800 rounded-lg bg-zinc-900/50 transition-opacity ${settings.overrideRam ? "opacity-100" : "opacity-50 pointer-events-none"}`}
+            className={`p-4 border border-zinc-800 rounded-lg bg-zinc-900/50 relative transition-all ${settings.overrideRam ? "" : "opacity-75"}`}
           >
+            {!settings.overrideRam && (
+              <div className="absolute inset-0 bg-black/40 z-10 flex items-center justify-center backdrop-blur-[1px] rounded-lg">
+                <div className="bg-zinc-900 border border-zinc-700 px-3 py-1.5 rounded text-xs flex items-center gap-2 text-zinc-300 shadow-xl">
+                  <Lock size={12} /> Using Global Setting ({defaults.ram} MB)
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between mb-4">
               <span className="text-xs font-mono text-zinc-400">Total RAM</span>
-              <span className="text-sm font-bold text-emerald-400">
+              <span
+                className={`text-sm font-bold ${settings.overrideRam ? "text-emerald-400" : "text-zinc-500"}`}
+              >
                 {settings.ramMB} MB
               </span>
             </div>
@@ -152,7 +181,8 @@ export function InstanceDetailPage() {
               step="512"
               value={settings.ramMB}
               onChange={(e) => handleChange("ramMB", parseInt(e.target.value))}
-              className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+              disabled={!settings.overrideRam}
+              className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 disabled:cursor-not-allowed"
             />
             <div className="flex justify-between text-[10px] text-zinc-600 font-mono mt-2">
               <span>1 GB</span>
@@ -171,7 +201,9 @@ export function InstanceDetailPage() {
               <input
                 type="checkbox"
                 checked={settings.overrideJava}
-                onChange={(e) => handleChange("overrideJava", e.target.checked)}
+                onChange={(e) =>
+                  handleOverrideToggle("overrideJava", e.target.checked)
+                }
                 className="accent-emerald-500"
               />
               <span
@@ -241,7 +273,7 @@ export function InstanceDetailPage() {
             value={settings.jvmArgs}
             onChange={(e) => handleChange("jvmArgs", e.target.value)}
             className="w-full bg-zinc-900 border border-zinc-800 rounded-md p-3 text-xs font-mono h-24 focus:outline-none focus:ring-1 focus:ring-emerald-600 text-zinc-300 resize-none"
-            placeholder="-XX:+UseG1GC -Xmx4G ..."
+            placeholder="-XX:+UseG1GC ..."
           />
         </section>
 

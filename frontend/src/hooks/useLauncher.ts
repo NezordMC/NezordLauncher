@@ -13,7 +13,7 @@ import {
   GetQuiltLoaders,
   ScanJavaInstallations,
   UpdateInstanceSettings,
-  CancelDownload, 
+  CancelDownload,
 } from "../../wailsjs/go/main/App";
 import { EventsOn } from "../../wailsjs/runtime/runtime";
 import { ModloaderType } from "../components/ModloaderSelector";
@@ -57,6 +57,13 @@ export interface JavaInfo {
   major: number;
 }
 
+export interface GlobalDefaults {
+  ram: number;
+  width: number;
+  height: number;
+  jvmArgs: string;
+}
+
 export function useLauncher() {
   const [isLaunching, setIsLaunching] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
@@ -66,10 +73,18 @@ export function useLauncher() {
   const [minecraftVersions, setMinecraftVersions] = useState<Version[]>([]);
   const [instances, setInstances] = useState<Instance[]>([]);
 
+  const [defaults, setDefaults] = useState<GlobalDefaults>({
+    ram: 4096,
+    width: 854,
+    height: 480,
+    jvmArgs: "",
+  });
+
   useEffect(() => {
     refreshAccounts();
     fetchVersions();
     refreshInstances();
+    loadDefaults();
 
     const cleanups = [
       EventsOn("downloadStatus", (msg: string) =>
@@ -87,6 +102,20 @@ export function useLauncher() {
     ];
     return () => cleanups.forEach((c) => c());
   }, []);
+
+  const loadDefaults = () => {
+    const ram = localStorage.getItem("nezord_default_ram");
+    const w = localStorage.getItem("nezord_default_width");
+    const h = localStorage.getItem("nezord_default_height");
+    const args = localStorage.getItem("nezord_global_jvm_args");
+
+    setDefaults({
+      ram: ram ? parseInt(ram) : 4096,
+      width: w ? parseInt(w) : 854,
+      height: h ? parseInt(h) : 480,
+      jvmArgs: args || "",
+    });
+  };
 
   const fetchVersions = async () => {
     try {
@@ -232,11 +261,12 @@ export function useLauncher() {
     minecraftVersions,
     fetchModloaders,
     instances,
+    defaults,
     scanJava,
     createInstance,
     updateInstance,
     refreshInstances,
     launchInstance,
-    stopLaunch, 
+    stopLaunch,
   };
 }
