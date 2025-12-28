@@ -1,58 +1,77 @@
 import { useEffect, useRef } from "react";
-import { Card } from "@/components/ui/card";
-import { Terminal } from "lucide-react";
+import { Terminal, X, Trash2, ArrowDown } from "lucide-react";
+import { useLauncherContext } from "@/context/LauncherContext";
+import { Button } from "@/components/ui/button";
 
-interface ConsoleProps {
-  logs: string[];
-}
-
-export function Console({ logs }: ConsoleProps) {
+export function Console() {
+  const { logs, isConsoleOpen, toggleConsole } = useLauncherContext();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [logs]);
+    if (isConsoleOpen && bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [logs, isConsoleOpen]);
 
   return (
-    <Card className="w-full h-full bg-black/80 border-zinc-800 p-3 font-mono text-[10px] overflow-hidden flex flex-col no-drag shadow-inner relative group">
-      <div className="absolute top-2 right-2 opacity-20 group-hover:opacity-50 transition-opacity">
-        <Terminal size={14} />
+    <div
+      className={`fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 shadow-2xl transition-all duration-300 ease-in-out z-50 flex flex-col ${
+        isConsoleOpen ? "h-64 translate-y-0" : "h-64 translate-y-full"
+      }`}
+    >
+      <div className="h-8 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between px-4 select-none">
+        <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+          <Terminal size={12} className="text-emerald-500" />
+          <span>NEZORD CONSOLE</span>
+          <span className="bg-zinc-800 px-1.5 rounded text-[10px]">
+            {logs.length} lines
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-zinc-500 hover:text-white"
+            onClick={toggleConsole}
+          >
+            <ArrowDown size={14} />
+          </Button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-1 pr-2 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-        {logs.length === 0 && (
-          <div className="text-zinc-700 italic flex items-center gap-2 h-full justify-center">
-            <div className="w-2 h-2 bg-zinc-800 animate-pulse rounded-full"></div>
-            System Idle. Ready for commands.
+      <div className="flex-1 overflow-y-auto p-4 font-mono text-[10px] space-y-1 bg-black/50 backdrop-blur-sm">
+        {logs.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-zinc-600 italic">
+            Ready. Waiting for commands...
           </div>
-        )}
-        {logs.map((log, index) => (
-          <div
-            key={index}
-            className="break-all flex leading-relaxed hover:bg-white/5 px-1 rounded transition-colors"
-          >
-            <span className="text-zinc-700 mr-2 select-none shrink-0">
-              &gt;
-            </span>
-            <span
-              className={
-                log.includes("[ERROR]") || log.includes("[FATAL]")
-                  ? "text-red-500 font-bold"
-                  : log.includes("[GAME]")
-                    ? "text-blue-400"
-                    : log.includes("[DOWNLOAD]")
-                      ? "text-emerald-500"
-                      : log.includes("[COMMAND]")
-                        ? "text-yellow-500"
-                        : "text-zinc-400"
-              }
+        ) : (
+          logs.map((log, index) => (
+            <div
+              key={index}
+              className="break-all whitespace-pre-wrap flex gap-2"
             >
-              {log}
-            </span>
-          </div>
-        ))}
+              <span className="text-zinc-600 select-none">[{index + 1}]</span>
+              <span
+                className={
+                  log.includes("[ERROR]") || log.includes("[FATAL]")
+                    ? "text-red-400"
+                    : log.includes("[SYSTEM]")
+                      ? "text-blue-400"
+                      : log.includes("[COMMAND]")
+                        ? "text-emerald-400"
+                        : log.includes("[DOWNLOAD]")
+                          ? "text-yellow-400"
+                          : "text-zinc-300"
+                }
+              >
+                {log}
+              </span>
+            </div>
+          ))
+        )}
         <div ref={bottomRef} />
       </div>
-    </Card>
+    </div>
   );
 }

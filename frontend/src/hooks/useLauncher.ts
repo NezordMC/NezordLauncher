@@ -66,6 +66,7 @@ export interface GlobalDefaults {
 
 export function useLauncher() {
   const [isLaunching, setIsLaunching] = useState(false);
+  const [isConsoleOpen, setConsoleOpen] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
 
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -98,6 +99,7 @@ export function useLauncher() {
       EventsOn("launchError", (msg: string) => {
         setLogs((p) => [...p, `[ERROR] ${msg}`]);
         setIsLaunching(false);
+        setConsoleOpen(true);
       }),
     ];
     return () => cleanups.forEach((c) => c());
@@ -223,10 +225,12 @@ export function useLauncher() {
     if (isLaunching) return;
     if (!activeAccount) {
       setLogs((p) => [...p, `[ERROR] No account selected!`]);
+      setConsoleOpen(true);
       return;
     }
 
     setIsLaunching(true);
+    setConsoleOpen(true);
     setLogs([]);
 
     try {
@@ -250,9 +254,13 @@ export function useLauncher() {
     }
   };
 
+  const toggleConsole = () => setConsoleOpen(!isConsoleOpen);
+
   return {
     isLaunching,
     logs,
+    isConsoleOpen,
+    toggleConsole,
     accounts,
     activeAccount,
     addOfflineAccount,
