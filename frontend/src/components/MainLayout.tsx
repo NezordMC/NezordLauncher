@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
-import { Console } from "@/components/Console";
+import { Console } from "@/components/ui/Console";
 
 export function MainLayout() {
   return (

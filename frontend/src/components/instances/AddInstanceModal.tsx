@@ -3,7 +3,7 @@ import { X, Loader2, Plus, Box } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ModloaderSelector, ModloaderType } from "./ModloaderSelector";
-import { useLauncherContext } from "@/context/LauncherContext";
+import { useInstanceStore } from "@/stores/instanceStore";
 
 interface AddInstanceModalProps {
   isOpen: boolean;
@@ -16,7 +16,7 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
     fetchModloaders,
     createInstance,
     refreshInstances,
-  } = useLauncherContext();
+  } = useInstanceStore();
 
   const [name, setName] = useState("");
   const [gameVersion, setGameVersion] = useState("1.20.1");

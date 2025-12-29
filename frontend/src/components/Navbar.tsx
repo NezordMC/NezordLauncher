@@ -1,16 +1,12 @@
 import { Settings, User, Plus, Terminal } from "lucide-react";
-import { useLauncherContext } from "@/context/LauncherContext";
+import { useAccountStore } from "@/stores/accountStore";
+import { useLaunchStore } from "@/stores/launchStore";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 export function Navbar() {
-  const {
-    accounts,
-    activeAccount,
-    switchAccount,
-    toggleConsole,
-    isConsoleOpen,
-  } = useLauncherContext();
+  const { accounts, activeAccount, switchAccount } = useAccountStore();
+  const { toggleConsole, isConsoleOpen } = useLaunchStore();
   const navigate = useNavigate();
 
   return (

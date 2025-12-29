@@ -1,13 +1,17 @@
 import { useState } from "react";
-import { useLauncherContext } from "@/context/LauncherContext";
-import { Plus, Play, Box, Clock, Square } from "lucide-react";
+import { useInstanceStore } from "@/stores/instanceStore";
+import { useLaunchStore } from "@/stores/launchStore";
+import { useAccountStore } from "@/stores/accountStore";
+import { Plus, Box } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AddInstanceModal } from "@/components/AddInstanceModal";
+import { AddInstanceModal } from "@/components/instances/AddInstanceModal";
 import { useNavigate } from "react-router-dom";
+import { InstanceCard } from "@/components/home/InstanceCard";
 
 export function HomePage() {
-  const { instances, launchInstance, isLaunching, stopLaunch } =
-    useLauncherContext();
+  const { instances } = useInstanceStore();
+  const { launchInstance, isLaunching, stopLaunch } = useLaunchStore();
+  const { activeAccount } = useAccountStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -40,63 +44,15 @@ export function HomePage() {
             </div>
           ) : (
             instances.map((inst) => (
-              <div
+              <InstanceCard
                 key={inst.id}
-                className="group relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-700 transition-all duration-200 hover:shadow-xl hover:shadow-black/50"
-              >
-                <div className="aspect-video bg-zinc-950 relative">
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 to-transparent opacity-80" />
-
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <h3 className="font-bold text-white truncate text-sm mb-0.5">
-                      {inst.name}
-                    </h3>
-                    <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-mono">
-                      <span className="bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-300">
-                        {inst.gameVersion}
-                      </span>
-                      {inst.modloaderType !== "vanilla" && (
-                        <span className="uppercase text-emerald-500">
-                          {inst.modloaderType}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="bg-black/60 backdrop-blur text-white text-[10px] font-mono px-2 py-1 rounded flex items-center gap-1">
-                      <Clock size={10} /> {Math.floor(inst.playTime / 60)}m
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-zinc-900 flex gap-2">
-                  {isLaunching ? (
-                    <Button
-                      className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold text-xs h-8 gap-1.5 animate-pulse"
-                      onClick={stopLaunch}
-                    >
-                      <Square size={10} fill="currentColor" /> CANCEL
-                    </Button>
-                  ) : (
-                    <Button
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs h-8 gap-1.5"
-                      onClick={() => launchInstance(inst.id)}
-                    >
-                      <Play size={12} fill="currentColor" /> PLAY
-                    </Button>
-                  )}
-
-                  <Button
-                    variant="outline"
-                    className="h-8 w-8 px-0 border-zinc-700 hover:bg-zinc-800 text-zinc-400"
-                    onClick={() => navigate(`/instance/${inst.id}`)}
-                    disabled={isLaunching}
-                  >
-                    <Box size={14} />
-                  </Button>
-                </div>
-              </div>
+                instance={inst}
+                isLaunching={isLaunching}
+                activeAccount={activeAccount}
+                onLaunch={launchInstance}
+                onStop={stopLaunch}
+                onManage={(id) => navigate(`/instance/${id}`)}
+              />
             ))
           )}
         </div>

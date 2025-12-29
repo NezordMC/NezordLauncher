@@ -1,6 +1,6 @@
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
-import { LauncherProvider } from "@/context/LauncherContext";
-import { MainLayout } from "@/layouts/MainLayout";
+
+import { MainLayout } from "@/components/MainLayout";
 import { HomePage } from "@/pages/Home";
 import { SettingsPage } from "@/pages/Settings";
 import { SetupWizardPage } from "@/pages/SetupWizard";
@@ -15,30 +15,44 @@ function RequireSetup({ children }: { children: JSX.Element }) {
   return children;
 }
 
+import { AccountProvider } from "@/stores/accountStore";
+import { InstanceProvider } from "@/stores/instanceStore";
+import { LaunchProvider } from "@/stores/launchStore";
+import { SettingsProvider } from "@/stores/settingStore";
+
 function App() {
   return (
-    <LauncherProvider>
-      <HashRouter>
-        <Routes>
-          <Route path="/setup" element={<SetupWizardPage />} />
+    <AccountProvider>
+      <SettingsProvider>
+        <InstanceProvider>
+          <LaunchProvider>
+            <HashRouter>
+              <Routes>
+                <Route path="/setup" element={<SetupWizardPage />} />
 
-          <Route
-            element={
-              <RequireSetup>
-                <MainLayout />
-              </RequireSetup>
-            }
-          >
-            <Route path="/" element={<HomePage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/instance/:id" element={<InstanceDetailPage />} />{" "}
-            {/* NEW */}
-          </Route>
+                <Route
+                  element={
+                    <RequireSetup>
+                      <MainLayout />
+                    </RequireSetup>
+                  }
+                >
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route
+                    path="/instance/:id"
+                    element={<InstanceDetailPage />}
+                  />{" "}
+                  {/* NEW */}
+                </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </HashRouter>
-    </LauncherProvider>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </HashRouter>
+          </LaunchProvider>
+        </InstanceProvider>
+      </SettingsProvider>
+    </AccountProvider>
   );
 }
 

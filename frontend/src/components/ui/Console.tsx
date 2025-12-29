@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 import { Terminal, X, Trash2, ArrowDown } from "lucide-react";
-import { useLauncherContext } from "@/context/LauncherContext";
+import { useLaunchStore } from "@/stores/launchStore";
 import { Button } from "@/components/ui/button";
 
 export function Console() {
-  const { logs, isConsoleOpen, toggleConsole } = useLauncherContext();
+  const { logs, isConsoleOpen, toggleConsole } = useLaunchStore();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
