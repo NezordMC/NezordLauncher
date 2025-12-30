@@ -1,9 +1,6 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"NezordLauncher/pkg/auth"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/downloader"
@@ -16,6 +13,10 @@ import (
 	"NezordLauncher/pkg/quilt"
 	"NezordLauncher/pkg/services"
 	"NezordLauncher/pkg/system"
+	"NezordLauncher/pkg/validation"
+	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -138,14 +139,23 @@ func (a *App) GetAccounts() []auth.Account {
 }
 
 func (a *App) AddOfflineAccount(username string) (*auth.Account, error) {
+	if err := validation.ValidateUsername(username); err != nil {
+		return nil, err
+	}
 	return a.accountManager.AddOfflineAccount(username)
 }
 
 func (a *App) LoginElyBy(username, password string) (*auth.Account, error) {
+	if username == "" || password == "" {
+		return nil, fmt.Errorf("username and password required")
+	}
 	return a.accountManager.AddElyByAccount(username, password)
 }
 
 func (a *App) SetActiveAccount(uuid string) error {
+	if err := validation.ValidateUUID(uuid); err != nil {
+		return err
+	}
 	return a.accountManager.SetActiveAccount(uuid)
 }
 
@@ -154,6 +164,12 @@ func (a *App) GetActiveAccount() *auth.Account {
 }
 
 func (a *App) CreateInstance(name, gameVersion, modloaderType, modloaderVersion string) (*instances.Instance, error) {
+	if err := validation.ValidateInstanceName(name); err != nil {
+		return nil, err
+	}
+	if err := validation.ValidateVersionID(gameVersion); err != nil {
+		return nil, err
+	}
 	return a.instanceManager.CreateInstance(name, gameVersion, instances.ModloaderType(modloaderType), modloaderVersion)
 }
 
@@ -178,6 +194,9 @@ func (a *App) ScanJavaInstallations() ([]javascanner.JavaInfo, error) {
 }
 
 func (a *App) DownloadVersion(versionID string) error {
+	if err := validation.ValidateVersionID(versionID); err != nil {
+		return err
+	}
 	a.downloadMu.Lock()
 	if a.downloadCancel != nil {
 		a.downloadCancel()
