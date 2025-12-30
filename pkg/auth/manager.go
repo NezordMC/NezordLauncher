@@ -21,8 +21,8 @@ type Account struct {
 	UUID           string        `json:"uuid"`
 	Username       string        `json:"username"`
 	Type           AccountType   `json:"type"`
-	AccessToken    string        `json:"accessToken"`
-	ClientToken    string        `json:"clientToken"`
+	AccessToken    string        `json:"-"`
+	ClientToken    string        `json:"-"`
 	UserProperties []interface{} `json:"userProperties,omitempty"`
 }
 
@@ -64,7 +64,21 @@ func (m *AccountManager) Load() error {
 		return fmt.Errorf("failed to read accounts file: %w", err)
 	}
 
-	return json.Unmarshal(data, &m.Data)
+	if err := json.Unmarshal(data, &m.Data); err != nil {
+		return err
+	}
+
+	for i := range m.Data.Accounts {
+		acc := &m.Data.Accounts[i]
+		if acc.Type != AccountTypeOffline {
+			at, _ := GetSecureToken(acc.Username, "AccessToken")
+			ct, _ := GetSecureToken(acc.Username, "ClientToken")
+			acc.AccessToken = at
+			acc.ClientToken = ct
+		}
+	}
+
+	return nil
 }
 
 
@@ -72,6 +86,13 @@ func (m *AccountManager) saveInternal() error {
 	dir := filepath.Dir(m.filePath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	for _, acc := range m.Data.Accounts {
+		if acc.Type != AccountTypeOffline && acc.AccessToken != "" {
+			_ = SetSecureToken(acc.Username, "AccessToken", acc.AccessToken)
+			_ = SetSecureToken(acc.Username, "ClientToken", acc.ClientToken)
+		}
 	}
 
 	data, err := json.MarshalIndent(m.Data, "", "  ")
@@ -91,7 +112,6 @@ func (m *AccountManager) AddOfflineAccount(username string) (*Account, error) {
 
 	for _, acc := range m.Data.Accounts {
 		if acc.UUID == uuid {
-			// Account exists, set as active and update
 			m.Data.ActiveUUID = uuid
 			m.saveInternal()
 			accCopy := acc
