@@ -12,13 +12,14 @@ import { Account } from "../types";
 function useGameLaunchLogic() {
   const [isLaunching, setIsLaunching] = useState(false);
   const [isConsoleOpen, setConsoleOpen] = useState(false);
-  const [logs, setLogs] = useState<string[]>([]);
+  const [downloadProgress, setDownloadProgress] = useState<string>("");
 
   useEffect(() => {
     const cleanups = [
       EventsOn("downloadStatus", (msg: string) =>
         setLogs((p) => [...p, `[DOWNLOAD] ${msg}`]),
       ),
+      EventsOn("downloadProgress", (msg: string) => setDownloadProgress(msg)),
       EventsOn("launchStatus", (msg: string) => {
         setLogs((p) => [...p, `[SYSTEM] ${msg}`]);
         if (msg.includes("Game closed")) setIsLaunching(false);
@@ -71,6 +72,7 @@ function useGameLaunchLogic() {
   return {
     isLaunching,
     logs,
+    downloadProgress,
     isConsoleOpen,
     toggleConsole,
     launchInstance,

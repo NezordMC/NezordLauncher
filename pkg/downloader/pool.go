@@ -1,9 +1,9 @@
 package downloader
 
 import (
+	"NezordLauncher/pkg/network"
 	"context"
 	"fmt"
-	"NezordLauncher/pkg/network"
 	"os"
 	"path/filepath"
 	"sync"
@@ -16,13 +16,15 @@ type WorkerPool struct {
 	errors     chan error
 	errorList  []error
 	errorMutex sync.Mutex
+	Progress   *DownloadProgress
 }
 
 func NewWorkerPool(workers int, bufferSize int) *WorkerPool {
 	return &WorkerPool{
-		tasks:   make(chan Task, bufferSize),
-		errors:  make(chan error, bufferSize),
-		workers: workers,
+		tasks:    make(chan Task, bufferSize),
+		errors:   make(chan error, bufferSize),
+		workers:  workers,
+		Progress: NewProgress(0),
 	}
 }
 
@@ -103,5 +105,10 @@ func (p *WorkerPool) process(t Task, client *network.HttpClient) error {
 		return err
 	}
 
-	return os.WriteFile(t.Path, data, 0644)
+	if err := os.WriteFile(t.Path, data, 0644); err != nil {
+		return err
+	}
+	
+	p.Progress.Increment(int64(len(data)))
+	return nil
 }

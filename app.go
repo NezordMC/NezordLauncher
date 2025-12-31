@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -215,22 +216,49 @@ func (a *App) DownloadVersion(versionID string) error {
 	}()
 
 	pool := downloader.NewWorkerPool(10, 100)
-	pool.Start(ctx)
 	
+	totalAssets := 0
+	
+	versionDetail, _ := a.getVersionDetails(versionID) 
+	if versionDetail != nil {
+		totalAssets = len(versionDetail.Libraries) + 1 
+		if versionDetail.AssetIndex.ID != "" {
+			totalAssets += 1000 
+		}
+		pool.Progress = downloader.NewProgress(totalAssets)
+	}
+
+	pool.Start(ctx)
 	fetcher := downloader.NewArtifactFetcher(pool)
 	
-	a.emit("downloadStatus", fmt.Sprintf("Checking artifacts for: %s", versionID))
+	a.emit("downloadStatus", fmt.Sprintf("Starting download for: %s", versionID))
 	
+	progressTicker := time.NewTicker(100 * time.Millisecond)
+	go func() {
+		for {
+			select {
+			case <-progressTicker.C:
+				status := pool.Progress.GetStatus()
+				a.emit("downloadProgress", status)
+			case <-ctx.Done():
+				progressTicker.Stop()
+				return
+			}
+		}
+	}()
+
 	if err := fetcher.DownloadVersion(ctx, versionID); err != nil {
 		pool.Wait() 
+		progressTicker.Stop()
 		if err == context.Canceled {
-			a.emit("downloadStatus", "Download cancelled by user")
+			a.emit("downloadStatus", "Download cancelled")
 			return fmt.Errorf("cancelled")
 		}
 		return fmt.Errorf("download failed: %w", err)
 	}
 
 	pool.Wait()
+	progressTicker.Stop()
 	a.emit("downloadStatus", "Artifacts verification complete")
 	return nil
 }
