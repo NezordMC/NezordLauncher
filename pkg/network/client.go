@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"runtime"
 	"time"
@@ -14,9 +15,16 @@ type HttpClient struct {
 }
 
 func NewHttpClient() *HttpClient {
+	t := &http.Transport{
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 20,
+		IdleConnTimeout:     90 * time.Second,
+	}
+	
 	return &HttpClient{
 		client: &http.Client{
-			Timeout: 30 * time.Second,
+			Transport: t,
+			Timeout:   30 * time.Second,
 		},
 	}
 }
@@ -26,24 +34,41 @@ func (c *HttpClient) getUserAgent() string {
 }
 
 func (c *HttpClient) Get(url string) ([]byte, error) {
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
+	var lastErr error
+	maxRetries := 3
+
+	for i := 0; i < maxRetries; i++ {
+		if i > 0 {
+			time.Sleep(time.Duration(math.Pow(2, float64(i))) * time.Second)
+		}
+
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("User-Agent", c.getUserAgent())
+
+		resp, err := c.client.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			lastErr = fmt.Errorf("request failed with status: %d", resp.StatusCode)
+			if resp.StatusCode >= 500 {
+				continue
+			}
+			return nil, lastErr
+		}
+
+		return io.ReadAll(resp.Body)
 	}
-
-	req.Header.Set("User-Agent", c.getUserAgent())
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("request failed with status: %d", resp.StatusCode)
-	}
-
-	return io.ReadAll(resp.Body)
+	
+	return nil, lastErr
 }
 
 func (c *HttpClient) PostJSON(url string, body []byte) ([]byte, error) {
