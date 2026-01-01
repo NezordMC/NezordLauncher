@@ -12,21 +12,29 @@ import { Account } from "../types";
 function useGameLaunchLogic() {
   const [isLaunching, setIsLaunching] = useState(false);
   const [isConsoleOpen, setConsoleOpen] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
   const [downloadProgress, setDownloadProgress] = useState<string>("");
+
+  const addLog = (msg: string) => {
+    setLogs((prev) => {
+      if (prev.length > 1000) {
+        return [...prev.slice(prev.length - 1000), msg];
+      }
+      return [...prev, msg];
+    });
+  };
 
   useEffect(() => {
     const cleanups = [
-      EventsOn("downloadStatus", (msg: string) =>
-        setLogs((p) => [...p, `[DOWNLOAD] ${msg}`]),
-      ),
+      EventsOn("downloadStatus", (msg: string) => addLog(`[DOWNLOAD] ${msg}`)),
       EventsOn("downloadProgress", (msg: string) => setDownloadProgress(msg)),
       EventsOn("launchStatus", (msg: string) => {
-        setLogs((p) => [...p, `[SYSTEM] ${msg}`]);
+        addLog(`[SYSTEM] ${msg}`);
         if (msg.includes("Game closed")) setIsLaunching(false);
       }),
-      EventsOn("gameLog", (msg: string) => setLogs((p) => [...p, msg])),
+      EventsOn("gameLog", (msg: string) => addLog(msg)),
       EventsOn("launchError", (msg: string) => {
-        setLogs((p) => [...p, `[ERROR] ${msg}`]);
+        addLog(`[ERROR] ${msg}`);
         setIsLaunching(false);
         setConsoleOpen(true);
       }),
@@ -37,7 +45,7 @@ function useGameLaunchLogic() {
   const launchInstance = async (id: string, activeAccount: Account | null) => {
     if (isLaunching) return;
     if (!activeAccount) {
-      setLogs((p) => [...p, `[ERROR] No account selected!`]);
+      addLog(`[ERROR] No account selected!`);
       setConsoleOpen(true);
       return;
     }
@@ -47,13 +55,13 @@ function useGameLaunchLogic() {
     setLogs([]);
 
     try {
-      setLogs((p) => [...p, `[COMMAND] Launching Instance ${id}...`]);
+      addLog(`[COMMAND] Launching Instance ${id}...`);
       await LaunchInstance(id);
     } catch (e: any) {
       if (e && e.includes && e.includes("cancelled")) {
-        setLogs((p) => [...p, `[SYSTEM] Launch cancelled.`]);
+        addLog(`[SYSTEM] Launch cancelled.`);
       } else {
-        setLogs((p) => [...p, `[FATAL] Sequence aborted: ${e}`]);
+        addLog(`[FATAL] Sequence aborted: ${e}`);
       }
       setIsLaunching(false);
     }
