@@ -12,6 +12,7 @@ import (
 	"NezordLauncher/pkg/network"
 	"NezordLauncher/pkg/quilt"
 	"NezordLauncher/pkg/services"
+	"NezordLauncher/pkg/settings"
 	"NezordLauncher/pkg/system"
 	"NezordLauncher/pkg/validation"
 	"context"
@@ -30,6 +31,7 @@ type App struct {
 	isTestMode      bool
 	accountManager  *auth.AccountManager
 	instanceManager *instances.Manager
+	settingsManager *settings.Manager
 	
 	downloadCancel context.CancelFunc
 	downloadMu     sync.Mutex
@@ -39,6 +41,7 @@ func NewApp() *App {
 	return &App{
 		accountManager:  auth.NewAccountManager(),
 		instanceManager: instances.NewManager(),
+		settingsManager: settings.NewManager(),
 	}
 }
 
@@ -84,6 +87,10 @@ func (a *App) startup(ctx context.Context) {
 
 	if err := a.instanceManager.Load(); err != nil {
 		fmt.Printf("Failed to load instances: %s\n", err)
+	}
+
+	if err := a.settingsManager.Load(); err != nil {
+		fmt.Printf("Failed to load settings: %s\n", err)
 	}
 }
 
@@ -188,6 +195,14 @@ func (a *App) UpdateInstanceSettings(id string, settings instances.InstanceSetti
 
 func (a *App) GetSystemPlatform() system.SystemInfo {
 	return system.GetSystemInfo()
+}
+
+func (a *App) GetSettings() settings.LauncherSettings {
+	return a.settingsManager.Get()
+}
+
+func (a *App) UpdateGlobalSettings(s settings.LauncherSettings) error {
+	return a.settingsManager.Update(s)
 }
 
 func (a *App) ScanJavaInstallations() ([]javascanner.JavaInfo, error) {
