@@ -46,6 +46,10 @@ export function GetQuiltLoaders(arg1) {
   return window['go']['main']['App']['GetQuiltLoaders'](arg1);
 }
 
+export function GetSettings() {
+  return window['go']['main']['App']['GetSettings']();
+}
+
 export function GetSystemPlatform() {
   return window['go']['main']['App']['GetSystemPlatform']();
 }
@@ -68,6 +72,10 @@ export function ScanJavaInstallations() {
 
 export function SetActiveAccount(arg1) {
   return window['go']['main']['App']['SetActiveAccount'](arg1);
+}
+
+export function UpdateGlobalSettings(arg1) {
+  return window['go']['main']['App']['UpdateGlobalSettings'](arg1);
 }
 
 export function UpdateInstanceSettings(arg1, arg2) {

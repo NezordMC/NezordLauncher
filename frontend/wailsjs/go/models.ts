@@ -4,8 +4,6 @@ export namespace auth {
 	    uuid: string;
 	    username: string;
 	    type: string;
-	    accessToken: string;
-	    clientToken: string;
 	    userProperties?: any[];
 	
 	    static createFrom(source: any = {}) {
@@ -17,8 +15,6 @@ export namespace auth {
 	        this.uuid = source["uuid"];
 	        this.username = source["username"];
 	        this.type = source["type"];
-	        this.accessToken = source["accessToken"];
-	        this.clientToken = source["clientToken"];
 	        this.userProperties = source["userProperties"];
 	    }
 	}
@@ -170,6 +166,29 @@ export namespace models {
 		    }
 		    return a;
 		}
+	}
+
+}
+
+export namespace settings {
+	
+	export class LauncherSettings {
+	    language: string;
+	    theme: string;
+	    closeAction: string;
+	    dataPath: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LauncherSettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.language = source["language"];
+	        this.theme = source["theme"];
+	        this.closeAction = source["closeAction"];
+	        this.dataPath = source["dataPath"];
+	    }
 	}
 
 }

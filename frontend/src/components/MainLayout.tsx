@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Console } from "@/components/ui/Console";
+import { Toaster } from "@/components/ui/sonner";
 
 export function MainLayout() {
   return (
@@ -12,6 +13,7 @@ export function MainLayout() {
       </main>
 
       <Console />
+      <Toaster theme="dark" position="bottom-right" />
     </div>
   );
 }

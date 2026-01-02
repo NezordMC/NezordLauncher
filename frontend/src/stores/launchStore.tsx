@@ -8,6 +8,7 @@ import {
 import { LaunchInstance, CancelDownload } from "../../wailsjs/go/main/App";
 import { EventsOn } from "../../wailsjs/runtime/runtime";
 import { Account } from "../types";
+import { toast } from "sonner";
 
 function useGameLaunchLogic() {
   const [isLaunching, setIsLaunching] = useState(false);
@@ -46,6 +47,7 @@ function useGameLaunchLogic() {
     if (isLaunching) return;
     if (!activeAccount) {
       addLog(`[ERROR] No account selected!`);
+      toast.error("No account selected! Please select an account first.");
       setConsoleOpen(true);
       return;
     }
@@ -60,8 +62,10 @@ function useGameLaunchLogic() {
     } catch (e: any) {
       if (e && e.includes && e.includes("cancelled")) {
         addLog(`[SYSTEM] Launch cancelled.`);
+        toast.info("Launch cancelled.");
       } else {
         addLog(`[FATAL] Sequence aborted: ${e}`);
+        toast.error(`Launch failed: ${e}`);
       }
       setIsLaunching(false);
     }
