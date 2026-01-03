@@ -8,7 +8,7 @@ interface FinishStepProps {
 export function FinishStep({ onFinish }: FinishStepProps) {
   return (
     <div className="space-y-6 text-center animate-in zoom-in-95 duration-500">
-      <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto text-emerald-500 mb-2">
+      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary mb-2">
         <CheckCircle size={32} />
       </div>
       <div className="space-y-1">
@@ -18,7 +18,7 @@ export function FinishStep({ onFinish }: FinishStepProps) {
 
       <Button
         onClick={onFinish}
-        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+        className="w-full bg-primary hover:bg-primary/90 text-white font-bold"
       >
         Go to Dashboard
       </Button>

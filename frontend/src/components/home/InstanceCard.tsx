@@ -33,7 +33,7 @@ export function InstanceCard({
               {instance.gameVersion}
             </span>
             {instance.modloaderType !== "vanilla" && (
-              <span className="uppercase text-emerald-500">
+              <span className="uppercase text-primary font-bold">
                 {instance.modloaderType}
               </span>
             )}
@@ -57,7 +57,7 @@ export function InstanceCard({
           </Button>
         ) : (
           <Button
-            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs h-8 gap-1.5"
+            className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold text-xs h-8 gap-1.5"
             onClick={() => onLaunch(instance.id, activeAccount)}
           >
             <Play size={12} fill="currentColor" /> PLAY

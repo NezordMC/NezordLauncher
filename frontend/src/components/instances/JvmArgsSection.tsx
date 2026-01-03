@@ -15,7 +15,7 @@ export function JvmArgsSection({ settings, onChange }: JvmArgsSectionProps) {
       <textarea
         value={settings.jvmArgs}
         onChange={(e) => onChange("jvmArgs", e.target.value)}
-        className="w-full bg-zinc-900 border border-zinc-800 rounded-md p-3 text-xs font-mono h-24 focus:outline-none focus:ring-1 focus:ring-emerald-600 text-zinc-300 resize-none"
+        className="w-full bg-zinc-900 border border-zinc-800 rounded-md p-3 text-xs font-mono h-24 focus:outline-none focus:ring-1 focus:ring-primary text-zinc-300 resize-none"
         placeholder="-XX:+UseG1GC ..."
       />
     </section>

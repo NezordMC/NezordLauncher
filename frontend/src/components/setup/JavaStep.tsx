@@ -40,7 +40,7 @@ export function JavaStep({ loading, detectedJava, onNext }: JavaStepProps) {
                   {j.path}
                 </div>
               </div>
-              <Check size={14} className="text-emerald-500" />
+              <Check size={14} className="text-primary" />
             </div>
           ))
         )}

@@ -34,7 +34,7 @@ export function GeneralSettings({
             <span className="text-xs font-mono text-zinc-400">
               Allocated RAM
             </span>
-            <span className="text-sm font-bold text-emerald-400">
+            <span className="text-sm font-bold text-primary">
               {defaultRam} MB
             </span>
           </div>
@@ -45,7 +45,7 @@ export function GeneralSettings({
             step="512"
             value={defaultRam}
             onChange={(e) => setDefaultRam(parseInt(e.target.value))}
-            className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+            className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-primary"
           />
           <p className="text-[10px] text-zinc-500 mt-2">
             This value will be applied to all new instances by default.
@@ -89,7 +89,7 @@ export function GeneralSettings({
         <textarea
           value={jvmArgs}
           onChange={(e) => setJvmArgs(e.target.value)}
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-md p-3 text-xs font-mono h-24 focus:outline-none focus:ring-1 focus:ring-emerald-600 text-zinc-300 resize-none"
+          className="w-full bg-zinc-900 border border-zinc-800 rounded-md p-3 text-xs font-mono h-24 focus:outline-none focus:ring-1 focus:ring-primary text-zinc-300 resize-none"
           placeholder="-XX:+UseG1GC -Dsun.rmi.dgc.server.gcInterval=2147483646 ..."
         />
       </section>

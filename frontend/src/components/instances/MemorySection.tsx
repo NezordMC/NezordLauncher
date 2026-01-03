@@ -25,7 +25,7 @@ export function MemorySection({
             type="checkbox"
             checked={settings.overrideRam}
             onChange={(e) => onOverrideToggle("overrideRam", e.target.checked)}
-            className="accent-emerald-500"
+            className="accent-primary"
           />
           <span
             className={settings.overrideRam ? "text-white" : "text-zinc-500"}
@@ -52,7 +52,7 @@ export function MemorySection({
           <span className="text-xs font-mono text-zinc-400">Total RAM</span>
           <span
             className={`text-sm font-bold ${
-              settings.overrideRam ? "text-emerald-400" : "text-zinc-500"
+              settings.overrideRam ? "text-primary" : "text-zinc-500"
             }`}
           >
             {settings.ramMB} MB
@@ -66,7 +66,7 @@ export function MemorySection({
           value={settings.ramMB}
           onChange={(e) => onChange("ramMB", parseInt(e.target.value))}
           disabled={!settings.overrideRam}
-          className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 disabled:cursor-not-allowed"
+          className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-primary disabled:cursor-not-allowed"
         />
         <div className="flex justify-between text-[10px] text-zinc-600 font-mono mt-2">
           <span>1 GB</span>

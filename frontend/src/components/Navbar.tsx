@@ -20,7 +20,7 @@ export function Navbar() {
           >
             <User
               size={16}
-              className={activeAccount ? "text-emerald-500" : "text-zinc-500"}
+              className={activeAccount ? "text-primary" : "text-zinc-500"}
             />
             <span className="font-mono text-xs font-bold max-w-[150px] truncate">
               {activeAccount ? activeAccount.username : "No Account"}
@@ -47,7 +47,7 @@ export function Navbar() {
             <div className="h-px bg-zinc-800 my-1"></div>
             <button
               onClick={() => navigate("/setup")}
-              className="w-full text-left px-3 py-2 text-xs font-mono rounded-sm text-emerald-500 hover:bg-zinc-800 flex items-center gap-2"
+              className="w-full text-left px-3 py-2 text-xs font-mono rounded-sm text-primary hover:bg-zinc-800 flex items-center gap-2"
             >
               <Plus size={12} /> ADD ACCOUNT
             </button>
@@ -59,7 +59,7 @@ export function Navbar() {
         <Button
           variant="ghost"
           size="icon"
-          className={`text-zinc-400 hover:text-white hover:bg-zinc-800 ${isConsoleOpen ? "bg-zinc-800 text-emerald-500" : ""}`}
+          className={`text-zinc-400 hover:text-white hover:bg-zinc-800 ${isConsoleOpen ? "bg-zinc-800 text-primary" : ""}`}
           onClick={toggleConsole}
           title="Toggle Console"
         >

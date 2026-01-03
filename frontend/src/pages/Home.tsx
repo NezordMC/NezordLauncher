@@ -26,7 +26,7 @@ export function HomePage() {
         </h1>
         <Button
           onClick={() => setIsModalOpen(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 text-xs tracking-wider gap-2"
+          className="bg-primary hover:bg-primary/90 text-white font-bold h-9 text-xs tracking-wider gap-2"
         >
           <Plus size={14} /> NEW INSTANCE
         </Button>

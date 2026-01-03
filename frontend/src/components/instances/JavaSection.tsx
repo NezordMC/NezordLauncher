@@ -24,7 +24,7 @@ export function JavaSection({
             type="checkbox"
             checked={settings.overrideJava}
             onChange={(e) => onOverrideToggle("overrideJava", e.target.checked)}
-            className="accent-emerald-500"
+            className="accent-primary"
           />
           <span
             className={settings.overrideJava ? "text-white" : "text-zinc-500"}

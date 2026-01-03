@@ -21,7 +21,7 @@ export function Console() {
     >
       <div className="h-8 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between px-4 select-none">
         <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
-          <Terminal size={12} className="text-emerald-500" />
+          <Terminal size={12} className="text-primary" />
           <span>NEZORD CONSOLE</span>
           <span className="bg-zinc-800 px-1.5 rounded text-[10px]">
             {logs.length} lines
@@ -59,7 +59,7 @@ export function Console() {
                     : log.includes("[SYSTEM]")
                       ? "text-blue-400"
                       : log.includes("[COMMAND]")
-                        ? "text-emerald-400"
+                        ? "text-primary font-bold"
                         : log.includes("[DOWNLOAD]")
                           ? "text-yellow-400"
                           : "text-zinc-300"

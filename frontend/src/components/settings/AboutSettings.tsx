@@ -1,7 +1,7 @@
 export function AboutSettings() {
   return (
     <div className="space-y-6 text-center pt-10 animate-in fade-in zoom-in-95 duration-300">
-      <h1 className="text-4xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 to-cyan-500">
+      <h1 className="text-4xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-primary to-fuchsia-500">
         NEZORD
       </h1>
       <p className="text-zinc-500 font-mono text-xs">v1.3.0-beta</p>

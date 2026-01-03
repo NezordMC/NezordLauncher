@@ -40,7 +40,7 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
       <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/50">
           <h2 className="font-bold text-xs tracking-widest text-zinc-100 flex items-center gap-2 font-mono">
-            <KeyRound size={14} className="text-emerald-500" /> ELY.BY LOGIN
+            <KeyRound size={14} className="text-primary" /> ELY.BY LOGIN
           </h2>
           <button
             onClick={onClose}
@@ -100,7 +100,7 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
           <Button
             type="submit"
             disabled={isLoading || !username || !password}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold tracking-wider text-xs h-10 mt-2"
+            className="w-full bg-primary hover:bg-primary/90 text-white font-bold tracking-wider text-xs h-10 mt-2"
           >
             {isLoading ? (
               <Loader2 className="animate-spin" size={14} />

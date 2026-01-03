@@ -76,7 +76,7 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
       <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/50">
           <h2 className="font-bold text-sm tracking-wide text-zinc-100 flex items-center gap-2">
-            <Plus size={16} className="text-emerald-500" /> CREATE INSTANCE
+            <Plus size={16} className="text-primary" /> CREATE INSTANCE
           </h2>
           <button
             onClick={onClose}
@@ -94,7 +94,7 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="bg-black/50 border-zinc-800 text-zinc-300 font-mono text-xs focus-visible:ring-emerald-600"
+              className="bg-black/50 border-zinc-800 text-zinc-300 font-mono text-xs focus-visible:ring-primary"
               placeholder="My Survival World"
               autoFocus
             />
@@ -136,7 +136,7 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
                 isCreating ||
                 (modloader !== "vanilla" && !loaderVersion)
               }
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold tracking-wider text-xs h-10"
+              className="w-full bg-primary hover:bg-primary/90 text-white font-bold tracking-wider text-xs h-10"
             >
               {isCreating ? (
                 <Loader2 className="animate-spin" size={14} />

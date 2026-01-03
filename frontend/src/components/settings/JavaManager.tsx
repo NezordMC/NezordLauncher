@@ -63,7 +63,7 @@ export function JavaManager({
               </div>
               <CheckCircle
                 size={16}
-                className="text-emerald-500 opacity-50 group-hover:opacity-100"
+                className="text-primary opacity-50 group-hover:opacity-100"
               />
             </div>
           ))

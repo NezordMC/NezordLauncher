@@ -48,7 +48,7 @@ export function InstanceHeader({
           disabled={!isDirty || isSaving}
           className={`font-bold text-xs gap-2 transition-all ${
             isDirty
-              ? "bg-emerald-600 hover:bg-emerald-500"
+              ? "bg-primary hover:bg-primary/90"
               : "bg-zinc-800 text-zinc-500"
           }`}
         >
@@ -62,7 +62,7 @@ export function InstanceHeader({
         <Button
           onClick={() => onLaunch(instance.id, activeAccount)}
           disabled={isLaunching}
-          className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-2 min-w-[120px]"
+          className="bg-primary hover:bg-primary/90 text-white font-bold text-xs gap-2 min-w-[120px]"
         >
           <Play size={14} fill="currentColor" />{" "}
           {isLaunching ? "LAUNCHING..." : "PLAY"}
