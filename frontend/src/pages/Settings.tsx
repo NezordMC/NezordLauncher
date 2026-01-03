@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useSettingStore } from "@/stores/settingStore";
 import { JavaInfo } from "@/types";
 import { ArrowLeft } from "lucide-react";
-import { SettingsSidebar, Tab } from "@/components/settings/SettingsSidebar";
 import { GeneralSettings } from "@/components/settings/GeneralSettings";
 import { JavaManager } from "@/components/settings/JavaManager";
 import { AboutSettings } from "@/components/settings/AboutSettings";
@@ -13,7 +12,6 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const { scanJava } = useSettingStore();
 
-  const [activeTab, setActiveTab] = useState<Tab>("general");
   const [javaList, setJavaList] = useState<JavaInfo[]>([]);
   const [isScanning, setIsScanning] = useState(false);
 
@@ -59,8 +57,8 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center gap-4 border-b border-zinc-800 pb-4 mb-6 shrink-0">
+    <div className="h-full flex flex-col p-6 overflow-y-auto">
+      <div className="flex items-center gap-4 mb-6">
         <Button
           variant="ghost"
           size="icon"
@@ -72,30 +70,23 @@ export function SettingsPage() {
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        <SettingsSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        <div className="flex-1 pl-6 overflow-y-auto pr-2 pb-20">
-          {activeTab === "general" && (
-            <GeneralSettings
-              defaultRam={defaultRam}
-              setDefaultRam={setDefaultRam}
-              resW={resW}
-              setResW={setResW}
-              resH={resH}
-              setResH={setResH}
-              jvmArgs={jvmArgs}
-              setJvmArgs={setJvmArgs}
-            />
-          )}
-          {activeTab === "java" && (
-            <JavaManager
-              javaList={javaList}
-              isScanning={isScanning}
-              onScan={handleScanJava}
-            />
-          )}
-          {activeTab === "about" && <AboutSettings />}
-        </div>
+      <div className="space-y-8 max-w-4xl mx-auto w-full pb-20">
+        <GeneralSettings
+          defaultRam={defaultRam}
+          setDefaultRam={setDefaultRam}
+          resW={resW}
+          setResW={setResW}
+          resH={resH}
+          setResH={setResH}
+          jvmArgs={jvmArgs}
+          setJvmArgs={setJvmArgs}
+        />
+        <JavaManager
+          javaList={javaList}
+          isScanning={isScanning}
+          onScan={handleScanJava}
+        />
+        <AboutSettings />
       </div>
     </div>
   );
