@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useSettingStore } from "@/stores/settingStore";
 import { JavaInfo } from "@/types";
 import { ArrowLeft } from "lucide-react";
-import { GeneralSettings } from "@/components/settings/GeneralSettings";
+import { GeneralCard } from "@/components/settings/GeneralCard";
 import { JavaManager } from "@/components/settings/JavaManager";
 import { AboutSettings } from "@/components/settings/AboutSettings";
 
@@ -15,20 +15,36 @@ export function SettingsPage() {
   const [javaList, setJavaList] = useState<JavaInfo[]>([]);
   const [isScanning, setIsScanning] = useState(false);
 
-  const [defaultRam, setDefaultRam] = useState(4096);
+  const [minRam, setMinRam] = useState(2048);
+  const [maxRam, setMaxRam] = useState(4096);
   const [resW, setResW] = useState(854);
   const [resH, setResH] = useState(480);
+  const [windowMode, setWindowMode] = useState("Windowed");
   const [jvmArgs, setJvmArgs] = useState("");
 
   useEffect(() => {
+    // Migration from old single RAM value
     const storedRam = localStorage.getItem("nezord_default_ram");
-    if (storedRam) setDefaultRam(parseInt(storedRam));
+    if (storedRam) {
+      const ram = parseInt(storedRam);
+      setMaxRam(ram);
+      setMinRam(Math.max(1024, ram / 2)); // Default min to half of max
+    } else {
+      // Check new keys
+      const storedMin = localStorage.getItem("nezord_min_ram");
+      const storedMax = localStorage.getItem("nezord_max_ram");
+      if (storedMin) setMinRam(parseInt(storedMin));
+      if (storedMax) setMaxRam(parseInt(storedMax));
+    }
 
     const storedW = localStorage.getItem("nezord_default_width");
     if (storedW) setResW(parseInt(storedW));
 
     const storedH = localStorage.getItem("nezord_default_height");
     if (storedH) setResH(parseInt(storedH));
+
+    const storedMode = localStorage.getItem("nezord_window_mode");
+    if (storedMode) setWindowMode(storedMode);
 
     const storedArgs = localStorage.getItem("nezord_global_jvm_args");
     if (storedArgs) setJvmArgs(storedArgs);
@@ -37,13 +53,21 @@ export function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("nezord_default_ram", defaultRam.toString());
-  }, [defaultRam]);
+    localStorage.setItem("nezord_min_ram", minRam.toString());
+    localStorage.setItem("nezord_max_ram", maxRam.toString());
+    // Also update legacy key for compatibility if needed, or remove it.
+    // Let's keep legacy key updated with maxRam to be safe for other parts of the app
+    localStorage.setItem("nezord_default_ram", maxRam.toString());
+  }, [minRam, maxRam]);
 
   useEffect(() => {
     localStorage.setItem("nezord_default_width", resW.toString());
     localStorage.setItem("nezord_default_height", resH.toString());
   }, [resW, resH]);
+
+  useEffect(() => {
+    localStorage.setItem("nezord_window_mode", windowMode);
+  }, [windowMode]);
 
   useEffect(() => {
     localStorage.setItem("nezord_global_jvm_args", jvmArgs);
@@ -71,15 +95,17 @@ export function SettingsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto w-full pb-20">
-        <GeneralSettings
-          defaultRam={defaultRam}
-          setDefaultRam={setDefaultRam}
+        <GeneralCard
+          minRam={minRam}
+          setMinRam={setMinRam}
+          maxRam={maxRam}
+          setMaxRam={setMaxRam}
           resW={resW}
           setResW={setResW}
           resH={resH}
           setResH={setResH}
-          jvmArgs={jvmArgs}
-          setJvmArgs={setJvmArgs}
+          windowMode={windowMode}
+          setWindowMode={setWindowMode}
         />
         <JavaManager
           javaList={javaList}
