@@ -70,7 +70,7 @@ export function SettingsPage() {
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
       </div>
 
-      <div className="space-y-8 max-w-4xl mx-auto w-full pb-20">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto w-full pb-20">
         <GeneralSettings
           defaultRam={defaultRam}
           setDefaultRam={setDefaultRam}
@@ -86,7 +86,9 @@ export function SettingsPage() {
           isScanning={isScanning}
           onScan={handleScanJava}
         />
-        <AboutSettings />
+        <div className="lg:col-span-2">
+          <AboutSettings />
+        </div>
       </div>
     </div>
   );
