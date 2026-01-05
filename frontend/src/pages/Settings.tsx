@@ -5,7 +5,7 @@ import { useSettingStore } from "@/stores/settingStore";
 import { JavaInfo } from "@/types";
 import { ArrowLeft } from "lucide-react";
 import { GeneralCard } from "@/components/settings/GeneralCard";
-import { JavaManager } from "@/components/settings/JavaManager";
+import { JavaCard } from "@/components/settings/JavaCard";
 import { AboutSettings } from "@/components/settings/AboutSettings";
 
 export function SettingsPage() {
@@ -107,10 +107,12 @@ export function SettingsPage() {
           windowMode={windowMode}
           setWindowMode={setWindowMode}
         />
-        <JavaManager
+        <JavaCard
           javaList={javaList}
           isScanning={isScanning}
           onScan={handleScanJava}
+          jvmArgs={jvmArgs}
+          setJvmArgs={setJvmArgs}
         />
         <div className="lg:col-span-2">
           <AboutSettings />
