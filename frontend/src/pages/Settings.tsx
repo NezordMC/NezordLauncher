@@ -6,7 +6,7 @@ import { JavaInfo } from "@/types";
 import { ArrowLeft } from "lucide-react";
 import { GeneralCard } from "@/components/settings/GeneralCard";
 import { JavaCard } from "@/components/settings/JavaCard";
-import { AboutSettings } from "@/components/settings/AboutSettings";
+import { UpdaterAboutCard } from "@/components/settings/UpdaterAboutCard";
 
 export function SettingsPage() {
   const navigate = useNavigate();
@@ -115,7 +115,7 @@ export function SettingsPage() {
           setJvmArgs={setJvmArgs}
         />
         <div className="lg:col-span-2">
-          <AboutSettings />
+          <UpdaterAboutCard />
         </div>
       </div>
     </div>
