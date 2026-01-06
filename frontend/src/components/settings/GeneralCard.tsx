@@ -40,7 +40,7 @@ export function GeneralCard({
   };
 
   return (
-    <Card className="border-zinc-800 bg-zinc-900/50">
+    <Card className="border-zinc-800 bg-zinc-900">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
           <Gamepad2 className="text-primary" /> General
@@ -61,7 +61,7 @@ export function GeneralCard({
                 type="number"
                 value={resW}
                 onChange={(e) => setResW(parseInt(e.target.value) || 0)}
-                className="font-mono"
+                className="font-mono bg-zinc-950/50"
               />
             </div>
             <div className="space-y-1">

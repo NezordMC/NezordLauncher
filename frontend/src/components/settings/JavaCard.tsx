@@ -30,7 +30,7 @@ export function JavaCard({
   const [showArgs, setShowArgs] = useState(false);
 
   return (
-    <Card className="border-zinc-800 bg-zinc-900/50 h-fit">
+    <Card className="border-zinc-800 bg-zinc-900 h-fit">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
         <CardTitle className="flex items-center gap-2 text-xl">
           <Coffee className="text-primary" /> Java
@@ -59,7 +59,7 @@ export function JavaCard({
               {javaList.map((java, idx) => (
                 <div
                   key={idx}
-                  className="p-3 border border-zinc-800 bg-zinc-900/30 rounded-lg flex items-center justify-between group hover:border-primary/50 hover:bg-zinc-900/50 transition-all cursor-pointer"
+                  className="p-3 border border-zinc-800 bg-zinc-950 rounded-lg flex items-center justify-between group hover:border-primary/50 hover:bg-zinc-800 transition-all cursor-pointer"
                 >
                   <div className="overflow-hidden mr-4">
                     <div className="flex items-center gap-2">

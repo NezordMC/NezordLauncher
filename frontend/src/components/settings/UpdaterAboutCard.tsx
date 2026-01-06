@@ -37,7 +37,7 @@ export function UpdaterAboutCard() {
   };
 
   return (
-    <Card className="border-zinc-800 bg-zinc-900/50">
+    <Card className="border-zinc-800 bg-zinc-900">
       <CardContent className="p-8">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
           {/* Left Side: Updater */}
