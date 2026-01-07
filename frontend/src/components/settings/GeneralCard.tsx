@@ -2,6 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Gamepad2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface GeneralCardProps {
   minRam: number;
@@ -72,7 +79,7 @@ export function GeneralCard({
                 type="number"
                 value={resH}
                 onChange={(e) => setResH(parseInt(e.target.value) || 0)}
-                className="font-mono"
+                className="font-mono bg-zinc-950/50"
               />
             </div>
           </div>
@@ -152,23 +159,16 @@ export function GeneralCard({
           <label className="text-sm font-medium text-zinc-300">
             Game Window Mode
           </label>
-          <div className="relative">
-            <select
-              value={windowMode}
-              onChange={(e) => setWindowMode(e.target.value)}
-              className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="Windowed" className="bg-zinc-900">
-                Windowed
-              </option>
-              <option value="Fullscreen" className="bg-zinc-900">
-                Fullscreen
-              </option>
-              <option value="Borderless" className="bg-zinc-900">
-                Borderless
-              </option>
-            </select>
-          </div>
+          <Select value={windowMode} onValueChange={setWindowMode}>
+            <SelectTrigger className="w-full bg-zinc-950/50 border-zinc-800">
+              <SelectValue placeholder="Select mode" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Windowed">Windowed</SelectItem>
+              <SelectItem value="Fullscreen">Fullscreen</SelectItem>
+              <SelectItem value="Borderless">Borderless</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </CardContent>
     </Card>

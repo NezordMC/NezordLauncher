@@ -37,7 +37,6 @@ export function UpdaterAboutCard() {
   };
 
   return (
-  return (
     <Card className="border-zinc-800 bg-zinc-900">
       <CardContent className="p-6">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
