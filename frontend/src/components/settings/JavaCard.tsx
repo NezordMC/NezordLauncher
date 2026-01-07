@@ -18,6 +18,8 @@ interface JavaCardProps {
   onScan: () => void;
   jvmArgs: string;
   setJvmArgs: (val: string) => void;
+  selectedPath: string;
+  onSelect: (path: string) => void;
 }
 
 export function JavaCard({
@@ -26,6 +28,8 @@ export function JavaCard({
   onScan,
   jvmArgs,
   setJvmArgs,
+  selectedPath,
+  onSelect,
 }: JavaCardProps) {
   const [showArgs, setShowArgs] = useState(false);
 
@@ -56,42 +60,69 @@ export function JavaCard({
             </div>
           ) : (
             <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1 custom-scrollbar">
-              {javaList.map((java, idx) => (
-                <div
-                  key={idx}
-                  className="p-3 border border-zinc-800 bg-zinc-950 rounded-lg flex items-center justify-between group hover:border-primary/50 hover:bg-zinc-800 transition-all cursor-pointer"
-                >
-                  <div className="overflow-hidden mr-4">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-zinc-200">
-                        Java {java.version}
-                      </span>
-                      <span
+              {javaList.map((java, idx) => {
+                const isSelected = java.path === selectedPath;
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => onSelect(java.path)}
+                    className={cn(
+                      "p-3 border rounded-lg flex items-center justify-between group transition-all cursor-pointer relative overflow-hidden",
+                      isSelected
+                        ? "border-primary bg-primary/5 shadow-[0_0_15px_-5px_var(--color-primary)]"
+                        : "border-zinc-800 bg-zinc-950 hover:border-zinc-600 hover:bg-zinc-900",
+                    )}
+                  >
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent pointer-events-none" />
+                    )}
+                    <div className="overflow-hidden mr-4 relative z-10">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "font-bold text-sm",
+                            isSelected ? "text-white" : "text-zinc-200",
+                          )}
+                        >
+                          Java {java.version}
+                        </span>
+                        <span
+                          className={cn(
+                            "text-[10px] px-1.5 py-0.5 rounded font-mono font-bold border",
+                            java.major >= 17
+                              ? "bg-green-500/10 text-green-400 border-green-500/20"
+                              : java.major >= 11
+                                ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                : "bg-orange-500/10 text-orange-400 border-orange-500/20",
+                          )}
+                        >
+                          v{java.major}
+                        </span>
+                      </div>
+                      <div
                         className={cn(
-                          "text-[10px] px-1.5 py-0.5 rounded font-mono font-bold border",
-                          java.major >= 17
-                            ? "bg-green-500/10 text-green-400 border-green-500/20"
-                            : java.major >= 11
-                              ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                              : "bg-orange-500/10 text-orange-400 border-orange-500/20",
+                          "text-[10px] truncate font-mono mt-1 transition-colors",
+                          isSelected
+                            ? "text-primary-foreground/70"
+                            : "text-zinc-500 group-hover:text-zinc-400",
                         )}
+                        title={java.path}
                       >
-                        v{java.major}
-                      </span>
+                        {java.path}
+                      </div>
                     </div>
-                    <div
-                      className="text-[10px] text-zinc-500 truncate font-mono mt-1 group-hover:text-zinc-400 transition-colors"
-                      title={java.path}
-                    >
-                      {java.path}
-                    </div>
+                    <CheckCircle
+                      size={18}
+                      className={cn(
+                        "transition-all duration-300 relative z-10",
+                        isSelected
+                          ? "text-primary opacity-100 scale-100"
+                          : "text-zinc-600 opacity-0 scale-75 group-hover:opacity-100",
+                      )}
+                    />
                   </div>
-                  <CheckCircle
-                    size={18}
-                    className="text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-                  />
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

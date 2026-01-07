@@ -21,6 +21,7 @@ export function SettingsPage() {
   const [resH, setResH] = useState(480);
   const [windowMode, setWindowMode] = useState("Windowed");
   const [jvmArgs, setJvmArgs] = useState("");
+  const [selectedJavaPath, setSelectedJavaPath] = useState("");
 
   useEffect(() => {
     // Migration from old single RAM value
@@ -49,6 +50,9 @@ export function SettingsPage() {
     const storedArgs = localStorage.getItem("nezord_global_jvm_args");
     if (storedArgs) setJvmArgs(storedArgs);
 
+    const storedJava = localStorage.getItem("nezord_java_path");
+    if (storedJava) setSelectedJavaPath(storedJava);
+
     handleScanJava();
   }, []);
 
@@ -73,10 +77,22 @@ export function SettingsPage() {
     localStorage.setItem("nezord_global_jvm_args", jvmArgs);
   }, [jvmArgs]);
 
+  useEffect(() => {
+    localStorage.setItem("nezord_java_path", selectedJavaPath);
+  }, [selectedJavaPath]);
+
   const handleScanJava = async () => {
     setIsScanning(true);
     const list = await scanJava();
     setJavaList(list);
+
+    // Auto-select valid Java if none selected
+    if (!selectedJavaPath || !list.some((j) => j.path === selectedJavaPath)) {
+      // Prefer Java 17+ or just first
+      const best = list.find((j) => j.major >= 17) || list[0];
+      if (best) setSelectedJavaPath(best.path);
+    }
+
     setIsScanning(false);
   };
 
@@ -113,6 +129,8 @@ export function SettingsPage() {
           onScan={handleScanJava}
           jvmArgs={jvmArgs}
           setJvmArgs={setJvmArgs}
+          selectedPath={selectedJavaPath}
+          onSelect={setSelectedJavaPath}
         />
         <div className="lg:col-span-2">
           <UpdaterAboutCard />
