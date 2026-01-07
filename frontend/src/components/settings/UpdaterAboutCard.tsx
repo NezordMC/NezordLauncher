@@ -37,12 +37,13 @@ export function UpdaterAboutCard() {
   };
 
   return (
+  return (
     <Card className="border-zinc-800 bg-zinc-900">
-      <CardContent className="p-8">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-          {/* Left Side: Updater */}
-          <div className="flex-1 space-y-6 w-full lg:w-auto">
-            <div className="flex items-center gap-4">
+      <CardContent className="p-6">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+          {/* Main Content */}
+          <div className="flex-1 w-full flex flex-col lg:flex-row items-center gap-6">
+            <div className="flex items-center gap-4 min-w-fit">
               <div
                 className={cn(
                   "p-3 rounded-full bg-zinc-800 text-zinc-400",
@@ -54,79 +55,63 @@ export function UpdaterAboutCard() {
               <div>
                 <h3 className="font-bold text-lg">Updater</h3>
                 <p className="text-xs text-zinc-500 font-mono">
-                  Current Version: 1.3.0-beta
+                  v1.3.0-beta
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-4 border border-zinc-800 rounded-lg bg-zinc-900/30">
-              <span className="text-sm font-medium text-zinc-300">
-                Auto-update
-              </span>
+            <div className="h-8 w-[1px] bg-zinc-800 hidden lg:block" />
+
+            <div className="flex items-center gap-3 bg-zinc-950/50 p-2 pr-4 rounded-full border border-zinc-800/50">
               <button
                 onClick={() => setAutoUpdate(!autoUpdate)}
                 className={cn(
-                  "w-11 h-6 rounded-full transition-colors relative",
+                  "w-10 h-5 rounded-full transition-colors relative flex-shrink-0",
                   autoUpdate ? "bg-primary" : "bg-zinc-700",
                 )}
               >
                 <div
                   className={cn(
-                    "w-4 h-4 rounded-full bg-white absolute top-1 transition-all",
+                    "w-3 h-3 rounded-full bg-white absolute top-1 transition-all",
                     autoUpdate ? "left-6" : "left-1",
                   )}
                 />
               </button>
+              <span className="text-xs font-medium text-zinc-400">
+                Auto-update
+              </span>
             </div>
 
             <Button
               variant="outline"
-              className="w-full border-zinc-700 hover:bg-zinc-800"
+              size="sm"
+              className="border-zinc-700 hover:bg-zinc-800 text-xs h-9"
               onClick={handleCheckUpdate}
               disabled={checking}
             >
-              {checking ? "Checking for updates..." : "Check for Updates"}
+              {checking ? "Checking..." : "Check for Updates"}
             </Button>
           </div>
 
-          {/* Right Side: Branding & Reset */}
-          <div className="flex-1 flex flex-col items-center justify-center space-y-6 w-full lg:w-auto text-center lg:border-l lg:border-zinc-800 lg:pl-8">
-            <div className="space-y-2">
-              <h1 className="text-5xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-primary to-fuchsia-500 select-none">
-                NEZORD
-              </h1>
-              <p className="text-zinc-600 text-sm">
-                Designed for performance and simplicity
-              </p>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noreferrer"
-                className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg transition-all"
-              >
-                <Github size={20} />
-              </a>
-              <a
-                href="https://discord.com"
-                target="_blank"
-                rel="noreferrer"
-                className="p-2 text-zinc-500 hover:text-[#5865F2] hover:bg-zinc-800 rounded-lg transition-all"
-              >
-                <DiscordIcon className="w-5 h-5" />
-              </a>
-            </div>
+          {/* Actions */}
+          <div className="flex items-center gap-3 w-full lg:w-auto justify-end">
+            <a
+              href="https://github.com"
+              target="_blank"
+              rel="noreferrer"
+              className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-md transition-all border border-transparent hover:border-zinc-700"
+            >
+              <Github size={18} />
+            </a>
 
             <Button
               variant="destructive"
               size="sm"
               onClick={handleReset}
-              className="mt-4 bg-red-900/20 text-red-400 hover:bg-red-900/40 border border-red-900/50"
+              className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20 h-9 transition-colors"
             >
               <RotateCcw size={14} className="mr-2" />
-              Reset to Defaults
+              Reset Defaults
             </Button>
           </div>
         </div>
