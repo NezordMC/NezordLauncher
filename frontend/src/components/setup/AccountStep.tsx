@@ -1,15 +1,24 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, Check } from "lucide-react";
+import {
+  User,
+  Key,
+  UserCircle,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Account } from "@/types";
 import { LoginModal } from "@/components/account/LoginModal";
+import { cn } from "@/lib/utils";
 
 interface AccountStepProps {
   accounts: Account[];
   addOfflineAccount: (name: string) => Promise<void>;
   loginElyBy: (u: string, p: string) => Promise<void>;
   onNext: () => void;
+  onBack: () => void;
 }
 
 export function AccountStep({
@@ -17,90 +26,130 @@ export function AccountStep({
   addOfflineAccount,
   loginElyBy,
   onNext,
+  onBack,
 }: AccountStepProps) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [newOfflineName, setNewOfflineName] = useState("");
   const [isAddingOffline, setIsAddingOffline] = useState(false);
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-      <div className="text-center space-y-1 mb-6">
-        <User className="mx-auto text-zinc-400 mb-2" size={24} />
-        <h2 className="text-lg font-bold">Add Account</h2>
+    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+      <div className="text-center space-y-1">
+        <User className="mx-auto text-primary mb-2" size={28} />
+        <h2 className="text-xl font-bold text-white">Add Account</h2>
+        <p className="text-zinc-500 text-xs">Choose how you want to play</p>
       </div>
 
-      <div className="space-y-2">
-        {accounts.length > 0 && (
-          <div className="border border-zinc-800 rounded-md p-2 space-y-1 bg-zinc-900/50 mb-4">
-            {accounts.map((acc) => (
-              <div
-                key={acc.uuid}
-                className="flex items-center justify-between p-2 bg-zinc-800/30 rounded text-xs"
-              >
-                <span className="font-bold">{acc.username}</span>
-                <span className="uppercase text-zinc-500">{acc.type}</span>
+      {accounts.length > 0 && (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="border border-primary/30 rounded-lg p-3 bg-primary/5">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                <UserCircle size={16} className="text-primary" />
               </div>
-            ))}
+              <div className="flex-1">
+                <span className="font-bold text-sm text-white">
+                  {accounts[accounts.length - 1].username}
+                </span>
+                <p className="text-[10px] uppercase text-zinc-500">
+                  {accounts[accounts.length - 1].type}
+                </p>
+              </div>
+              <Check size={16} className="text-primary" />
+            </div>
           </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            variant="outline"
-            className="h-12 border-zinc-800 hover:bg-zinc-900 gap-2"
-            onClick={() => setIsLoginModalOpen(true)}
-          >
-            <span className="text-xs">Ely.by</span>
-          </Button>
-          <Button
-            variant="outline"
-            className="h-12 border-zinc-800 hover:bg-zinc-900 gap-2"
-            onClick={() => setIsAddingOffline(true)}
-          >
-            <span className="text-xs">Offline</span>
-          </Button>
         </div>
+      )}
 
-        {isAddingOffline && (
-          <div className="flex gap-2 animate-in fade-in slide-in-from-top-1 pt-2">
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => setIsLoginModalOpen(true)}
+          className="group p-4 border border-zinc-800 rounded-xl bg-zinc-900/50 hover:border-primary/50 hover:bg-primary/5 transition-all flex flex-col items-center gap-3"
+        >
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Key size={20} className="text-blue-400" />
+          </div>
+          <span className="text-sm font-bold text-zinc-300 group-hover:text-white transition-colors">
+            Ely.by
+          </span>
+        </button>
+
+        <button
+          onClick={() => setIsAddingOffline(true)}
+          className="group p-4 border border-zinc-800 rounded-xl bg-zinc-900/50 hover:border-primary/50 hover:bg-primary/5 transition-all flex flex-col items-center gap-3"
+        >
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-zinc-500/20 to-zinc-600/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <UserCircle size={20} className="text-zinc-400" />
+          </div>
+          <span className="text-sm font-bold text-zinc-300 group-hover:text-white transition-colors">
+            Offline
+          </span>
+        </button>
+      </div>
+
+      {isAddingOffline && (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-200 space-y-2">
+          <div className="flex gap-2">
             <Input
               autoFocus
-              placeholder="Username"
-              className="bg-zinc-900 border-zinc-800 h-9 text-xs"
+              placeholder="Enter username"
+              className="bg-zinc-900 border-zinc-800 h-10 text-sm"
               value={newOfflineName}
               onChange={(e) => setNewOfflineName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && newOfflineName) {
-                  addOfflineAccount(newOfflineName);
+                if (e.key === "Enter" && newOfflineName.trim()) {
+                  addOfflineAccount(newOfflineName.trim());
                   setNewOfflineName("");
                   setIsAddingOffline(false);
+                }
+                if (e.key === "Escape") {
+                  setIsAddingOffline(false);
+                  setNewOfflineName("");
                 }
               }}
             />
             <Button
-              size="icon"
-              className="h-9 w-9 bg-white text-black hover:bg-zinc-200"
               onClick={() => {
-                if (newOfflineName) {
-                  addOfflineAccount(newOfflineName);
+                if (newOfflineName.trim()) {
+                  addOfflineAccount(newOfflineName.trim());
                   setNewOfflineName("");
                   setIsAddingOffline(false);
                 }
               }}
+              className="bg-white text-black hover:bg-zinc-200 h-10 px-4"
             >
-              <Check size={14} />
+              <Check size={16} />
             </Button>
           </div>
-        )}
-      </div>
+          <p className="text-[10px] text-zinc-600 text-center">
+            Press Enter to confirm or Escape to cancel
+          </p>
+        </div>
+      )}
 
-      <Button
-        onClick={onNext}
-        disabled={accounts.length === 0}
-        className="w-full bg-white text-black hover:bg-zinc-200 font-bold mt-4"
-      >
-        Continue
-      </Button>
+      <div className="flex gap-2 pt-2">
+        <Button
+          onClick={onBack}
+          variant="outline"
+          className="flex-1 border-zinc-800 hover:bg-zinc-900 font-medium"
+        >
+          <ChevronLeft size={16} />
+          <span>Back</span>
+        </Button>
+        <Button
+          onClick={onNext}
+          disabled={accounts.length === 0}
+          className={cn(
+            "flex-1 font-bold gap-2",
+            accounts.length === 0
+              ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+              : "bg-white text-black hover:bg-zinc-200",
+          )}
+        >
+          <span>Continue</span>
+          <ChevronRight size={16} />
+        </Button>
+      </div>
 
       <LoginModal
         isOpen={isLoginModalOpen}
