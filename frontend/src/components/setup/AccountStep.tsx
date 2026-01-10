@@ -3,14 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   User,
-  Key,
   UserCircle,
   Check,
   ChevronLeft,
   ChevronRight,
+  Eye,
+  EyeOff,
+  Loader2,
 } from "lucide-react";
 import { Account } from "@/types";
-import { LoginModal } from "@/components/account/LoginModal";
 import { cn } from "@/lib/utils";
 
 interface AccountStepProps {
@@ -28,9 +29,34 @@ export function AccountStep({
   onNext,
   onBack,
 }: AccountStepProps) {
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [newOfflineName, setNewOfflineName] = useState("");
   const [isAddingOffline, setIsAddingOffline] = useState(false);
+  const [isAddingElyby, setIsAddingElyby] = useState(false);
+  const [elybyEmail, setElybyEmail] = useState("");
+  const [elybyPassword, setElybyPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleElybyLogin = async () => {
+    if (!elybyEmail.trim() || !elybyPassword.trim()) return;
+    setIsLoading(true);
+    try {
+      await loginElyBy(elybyEmail.trim(), elybyPassword);
+      setElybyEmail("");
+      setElybyPassword("");
+      setIsAddingElyby(false);
+    } catch (e) {
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOfflineAdd = async () => {
+    if (!newOfflineName.trim()) return;
+    await addOfflineAccount(newOfflineName.trim());
+    setNewOfflineName("");
+    setIsAddingOffline(false);
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
@@ -63,11 +89,23 @@ export function AccountStep({
 
       <div className="grid grid-cols-2 gap-3">
         <button
-          onClick={() => setIsLoginModalOpen(true)}
-          className="group p-4 border border-zinc-800 rounded-xl bg-zinc-900/50 hover:border-primary/50 hover:bg-primary/5 transition-all flex flex-col items-center gap-3"
+          onClick={() => {
+            setIsAddingElyby(true);
+            setIsAddingOffline(false);
+          }}
+          className={cn(
+            "group p-4 border rounded-xl bg-zinc-900/50 transition-all flex flex-col items-center gap-3",
+            isAddingElyby
+              ? "border-primary bg-primary/5"
+              : "border-zinc-800 hover:border-primary/50 hover:bg-primary/5",
+          )}
         >
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Key size={20} className="text-blue-400" />
+          <div className="w-12 h-12 rounded-full overflow-hidden group-hover:scale-110 transition-transform">
+            <img
+              src="/elyby-logo.png"
+              alt="Ely.by"
+              className="w-full h-full object-cover"
+            />
           </div>
           <span className="text-sm font-bold text-zinc-300 group-hover:text-white transition-colors">
             Ely.by
@@ -75,8 +113,16 @@ export function AccountStep({
         </button>
 
         <button
-          onClick={() => setIsAddingOffline(true)}
-          className="group p-4 border border-zinc-800 rounded-xl bg-zinc-900/50 hover:border-primary/50 hover:bg-primary/5 transition-all flex flex-col items-center gap-3"
+          onClick={() => {
+            setIsAddingOffline(true);
+            setIsAddingElyby(false);
+          }}
+          className={cn(
+            "group p-4 border rounded-xl bg-zinc-900/50 transition-all flex flex-col items-center gap-3",
+            isAddingOffline
+              ? "border-primary bg-primary/5"
+              : "border-zinc-800 hover:border-primary/50 hover:bg-primary/5",
+          )}
         >
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-zinc-500/20 to-zinc-600/20 flex items-center justify-center group-hover:scale-110 transition-transform">
             <UserCircle size={20} className="text-zinc-400" />
@@ -86,6 +132,65 @@ export function AccountStep({
           </span>
         </button>
       </div>
+
+      {isAddingElyby && (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-200 space-y-3">
+          <div className="flex gap-2">
+            <Input
+              autoFocus
+              type="email"
+              placeholder="Email or username"
+              className="bg-zinc-900 border-zinc-800 h-10 text-sm flex-1"
+              value={elybyEmail}
+              onChange={(e) => setElybyEmail(e.target.value)}
+              disabled={isLoading}
+            />
+          </div>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                className="bg-zinc-900 border-zinc-800 h-10 text-sm pr-10"
+                value={elybyPassword}
+                onChange={(e) => setElybyPassword(e.target.value)}
+                disabled={isLoading}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleElybyLogin();
+                  if (e.key === "Escape") {
+                    setIsAddingElyby(false);
+                    setElybyEmail("");
+                    setElybyPassword("");
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <Button
+              onClick={handleElybyLogin}
+              disabled={
+                isLoading || !elybyEmail.trim() || !elybyPassword.trim()
+              }
+              className="bg-white text-black hover:bg-zinc-200 h-10 px-4"
+            >
+              {isLoading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Check size={16} />
+              )}
+            </Button>
+          </div>
+          <p className="text-[10px] text-zinc-600 text-center">
+            Press Enter to login or Escape to cancel
+          </p>
+        </div>
+      )}
 
       {isAddingOffline && (
         <div className="animate-in fade-in slide-in-from-top-2 duration-200 space-y-2">
@@ -98,9 +203,7 @@ export function AccountStep({
               onChange={(e) => setNewOfflineName(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newOfflineName.trim()) {
-                  addOfflineAccount(newOfflineName.trim());
-                  setNewOfflineName("");
-                  setIsAddingOffline(false);
+                  handleOfflineAdd();
                 }
                 if (e.key === "Escape") {
                   setIsAddingOffline(false);
@@ -109,13 +212,8 @@ export function AccountStep({
               }}
             />
             <Button
-              onClick={() => {
-                if (newOfflineName.trim()) {
-                  addOfflineAccount(newOfflineName.trim());
-                  setNewOfflineName("");
-                  setIsAddingOffline(false);
-                }
-              }}
+              onClick={handleOfflineAdd}
+              disabled={!newOfflineName.trim()}
               className="bg-white text-black hover:bg-zinc-200 h-10 px-4"
             >
               <Check size={16} />
@@ -150,12 +248,6 @@ export function AccountStep({
           <ChevronRight size={16} />
         </Button>
       </div>
-
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onLogin={loginElyBy}
-      />
     </div>
   );
 }
