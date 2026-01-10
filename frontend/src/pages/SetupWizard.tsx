@@ -4,11 +4,9 @@ import { useSettingStore } from "@/stores/settingStore";
 import { useAccountStore } from "@/stores/accountStore";
 import { JavaInfo } from "@/types";
 import { StepIndicator } from "@/components/setup/StepIndicator";
-import { WelcomeStep } from "@/components/setup/WelcomeStep";
-import { JavaStep } from "@/components/setup/JavaStep";
+import { WelcomeJavaStep } from "@/components/setup/WelcomeJavaStep";
 import { AccountStep } from "@/components/setup/AccountStep";
-import { MemoryStep } from "@/components/setup/MemoryStep";
-import { FinishStep } from "@/components/setup/FinishStep";
+import { MemoryFinishStep } from "@/components/setup/MemoryFinishStep";
 
 export function SetupWizardPage() {
   const navigate = useNavigate();
@@ -18,54 +16,68 @@ export function SetupWizardPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [detectedJava, setDetectedJava] = useState<JavaInfo[]>([]);
+  const [selectedJava, setSelectedJava] = useState("");
   const [ramValue, setRamValue] = useState(4096);
 
   useEffect(() => {
-    if (step === 2 && detectedJava.length === 0) {
-      setLoading(true);
-      scanJava().then((res) => {
-        setDetectedJava(res);
-        setLoading(false);
-      });
-    }
-  }, [step]);
+    handleScanJava();
+  }, []);
 
-  const handleNext = () => setStep((p) => p + 1);
+  const handleScanJava = async () => {
+    setLoading(true);
+    const res = await scanJava();
+    setDetectedJava(res);
+    setLoading(false);
+  };
+
+  const handleNext = () => setStep((p) => Math.min(p + 1, 3));
+  const handleBack = () => setStep((p) => Math.max(p - 1, 1));
 
   const handleFinish = () => {
     localStorage.setItem("setup_completed", "true");
     localStorage.setItem("nezord_default_ram", ramValue.toString());
+    localStorage.setItem("nezord_max_ram", ramValue.toString());
+    localStorage.setItem("nezord_min_ram", Math.floor(ramValue / 2).toString());
+    if (selectedJava) {
+      localStorage.setItem("nezord_java_path", selectedJava);
+    }
     navigate("/");
   };
 
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-zinc-950 text-zinc-200 p-6 select-none">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-md">
         <StepIndicator step={step} />
-        {step === 1 && <WelcomeStep onNext={handleNext} />}
-        {step === 2 && (
-          <JavaStep
+
+        {step === 1 && (
+          <WelcomeJavaStep
             loading={loading}
             detectedJava={detectedJava}
+            selectedJava={selectedJava}
+            onSelectJava={setSelectedJava}
+            onScan={handleScanJava}
             onNext={handleNext}
           />
         )}
-        {step === 3 && (
+
+        {step === 2 && (
           <AccountStep
             accounts={accounts}
             addOfflineAccount={addOfflineAccount}
             loginElyBy={loginElyBy}
             onNext={handleNext}
+            onBack={handleBack}
           />
         )}
-        {step === 4 && (
-          <MemoryStep
+
+        {step === 3 && (
+          <MemoryFinishStep
             ramValue={ramValue}
             setRamValue={setRamValue}
-            onNext={handleNext}
+            onBack={handleBack}
+            onFinish={handleFinish}
           />
         )}
-        {step === 5 && <FinishStep onFinish={handleFinish} />}
       </div>
     </div>
   );
