@@ -209,6 +209,27 @@ func (a *App) ScanJavaInstallations() ([]javascanner.JavaInfo, error) {
 	return javascanner.ScanJavaInstallations()
 }
 
+func (a *App) OpenInstanceFolder(instanceID string) error {
+	inst, ok := a.instanceManager.Get(instanceID)
+	if !ok {
+		return fmt.Errorf("instance not found: %s", instanceID)
+	}
+	instanceDir := filepath.Join(constants.GetInstancesDir(), inst.ID, ".minecraft")
+	if err := os.MkdirAll(instanceDir, 0755); err != nil {
+		return fmt.Errorf("failed to create instance dir: %w", err)
+	}
+	runtime.BrowserOpenURL(a.ctx, "file://"+instanceDir)
+	return nil
+}
+
+func (a *App) StartInstanceDownload(instanceID string) error {
+	inst, ok := a.instanceManager.Get(instanceID)
+	if !ok {
+		return fmt.Errorf("instance not found: %s", instanceID)
+	}
+	return a.DownloadVersion(inst.GameVersion)
+}
+
 func (a *App) DownloadVersion(versionID string) error {
 	if err := validation.ValidateVersionID(versionID); err != nil {
 		return err

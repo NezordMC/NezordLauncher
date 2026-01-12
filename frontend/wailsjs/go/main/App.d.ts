@@ -39,9 +39,13 @@ export function LaunchInstance(arg1:string):Promise<void>;
 
 export function LoginElyBy(arg1:string,arg2:string):Promise<auth.Account>;
 
+export function OpenInstanceFolder(arg1:string):Promise<void>;
+
 export function ScanJavaInstallations():Promise<Array<javascanner.JavaInfo>>;
 
 export function SetActiveAccount(arg1:string):Promise<void>;
+
+export function StartInstanceDownload(arg1:string):Promise<void>;
 
 export function UpdateGlobalSettings(arg1:settings.LauncherSettings):Promise<void>;
 

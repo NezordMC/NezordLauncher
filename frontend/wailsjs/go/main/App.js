@@ -66,12 +66,20 @@ export function LoginElyBy(arg1, arg2) {
   return window['go']['main']['App']['LoginElyBy'](arg1, arg2);
 }
 
+export function OpenInstanceFolder(arg1) {
+  return window['go']['main']['App']['OpenInstanceFolder'](arg1);
+}
+
 export function ScanJavaInstallations() {
   return window['go']['main']['App']['ScanJavaInstallations']();
 }
 
 export function SetActiveAccount(arg1) {
   return window['go']['main']['App']['SetActiveAccount'](arg1);
+}
+
+export function StartInstanceDownload(arg1) {
+  return window['go']['main']['App']['StartInstanceDownload'](arg1);
 }
 
 export function UpdateGlobalSettings(arg1) {

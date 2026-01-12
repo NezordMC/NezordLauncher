@@ -5,16 +5,31 @@ import {
   useState,
   useEffect,
 } from "react";
-import { LaunchInstance, CancelDownload } from "../../wailsjs/go/main/App";
+import {
+  LaunchInstance,
+  CancelDownload,
+  StartInstanceDownload,
+} from "../../wailsjs/go/main/App";
 import { EventsOn } from "../../wailsjs/runtime/runtime";
 import { Account } from "../types";
 import { toast } from "sonner";
+
+interface DownloadProgress {
+  current: number;
+  total: number;
+  status: "downloading" | "completed" | "failed" | "idle";
+}
 
 function useGameLaunchLogic() {
   const [isLaunching, setIsLaunching] = useState(false);
   const [isConsoleOpen, setConsoleOpen] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
-  const [downloadProgress, setDownloadProgress] = useState<string>("");
+  const [downloadProgress, setDownloadProgress] = useState<
+    Record<string, DownloadProgress>
+  >({});
+  const [currentDownloadId, setCurrentDownloadId] = useState<string | null>(
+    null,
+  );
 
   const addLog = (msg: string) => {
     setLogs((prev) => {
@@ -28,7 +43,43 @@ function useGameLaunchLogic() {
   useEffect(() => {
     const cleanups = [
       EventsOn("downloadStatus", (msg: string) => addLog(`[DOWNLOAD] ${msg}`)),
-      EventsOn("downloadProgress", (msg: string) => setDownloadProgress(msg)),
+      EventsOn("downloadProgress", (msg: string) => {
+        if (currentDownloadId) {
+          const parts = msg.split("/");
+          if (parts.length === 2) {
+            const current = parseInt(parts[0], 10);
+            const total = parseInt(parts[1], 10);
+            setDownloadProgress((prev) => ({
+              ...prev,
+              [currentDownloadId]: { current, total, status: "downloading" },
+            }));
+          }
+        }
+      }),
+      EventsOn("downloadComplete", () => {
+        if (currentDownloadId) {
+          setDownloadProgress((prev) => ({
+            ...prev,
+            [currentDownloadId]: {
+              ...prev[currentDownloadId],
+              status: "completed",
+            },
+          }));
+          setCurrentDownloadId(null);
+        }
+      }),
+      EventsOn("downloadError", () => {
+        if (currentDownloadId) {
+          setDownloadProgress((prev) => ({
+            ...prev,
+            [currentDownloadId]: {
+              ...prev[currentDownloadId],
+              status: "failed",
+            },
+          }));
+          setCurrentDownloadId(null);
+        }
+      }),
       EventsOn("launchStatus", (msg: string) => {
         addLog(`[SYSTEM] ${msg}`);
         if (msg.includes("Game closed")) setIsLaunching(false);
@@ -41,7 +92,34 @@ function useGameLaunchLogic() {
       }),
     ];
     return () => cleanups.forEach((c) => c());
-  }, []);
+  }, [currentDownloadId]);
+
+  const startDownload = async (instanceId: string) => {
+    setCurrentDownloadId(instanceId);
+    setDownloadProgress((prev) => ({
+      ...prev,
+      [instanceId]: { current: 0, total: 0, status: "downloading" },
+    }));
+    setConsoleOpen(true);
+
+    try {
+      addLog(`[COMMAND] Starting download for instance ${instanceId}...`);
+      await StartInstanceDownload(instanceId);
+      setDownloadProgress((prev) => ({
+        ...prev,
+        [instanceId]: { ...prev[instanceId], status: "completed" },
+      }));
+    } catch (e: any) {
+      addLog(`[ERROR] Download failed: ${e}`);
+      setDownloadProgress((prev) => ({
+        ...prev,
+        [instanceId]: { ...prev[instanceId], status: "failed" },
+      }));
+      toast.error(`Download failed: ${e}`);
+    } finally {
+      setCurrentDownloadId(null);
+    }
+  };
 
   const launchInstance = async (id: string, activeAccount: Account | null) => {
     if (isLaunching) return;
@@ -89,6 +167,8 @@ function useGameLaunchLogic() {
     toggleConsole,
     launchInstance,
     stopLaunch,
+    startDownload,
+    setConsoleOpen,
   };
 }
 
