@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
-import { Console } from "@/components/ui/Console";
+import { FloatingConsole } from "@/components/layout/FloatingConsole";
 import { Toaster } from "@/components/ui/sonner";
 
 export function MainLayout() {
@@ -8,11 +8,11 @@ export function MainLayout() {
     <div className="flex flex-col h-screen w-screen bg-zinc-950 text-white overflow-hidden relative">
       <Navbar />
 
-      <main className="flex-1 overflow-hidden relative p-6 bg-[url('/bg-pattern.png')]">
+      <main className="flex-1 overflow-hidden relative">
         <Outlet />
       </main>
 
-      <Console />
+      <FloatingConsole />
       <Toaster theme="dark" position="bottom-right" />
     </div>
   );
