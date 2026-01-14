@@ -4,7 +4,6 @@ import { MainLayout } from "@/components/MainLayout";
 import { HomePage } from "@/pages/Home";
 import { SettingsPage } from "@/pages/Settings";
 import { SetupWizardPage } from "@/pages/SetupWizard";
-import { InstanceDetailPage } from "@/pages/InstanceDetail";
 import { JSX } from "react";
 
 function RequireSetup({ children }: { children: JSX.Element }) {
@@ -39,11 +38,6 @@ function App() {
                 >
                   <Route path="/" element={<HomePage />} />
                   <Route path="/settings" element={<SettingsPage />} />
-                  <Route
-                    path="/instance/:id"
-                    element={<InstanceDetailPage />}
-                  />{" "}
-                  {/* NEW */}
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />
