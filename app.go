@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sync"
 	"time"
@@ -218,8 +219,8 @@ func (a *App) OpenInstanceFolder(instanceID string) error {
 	if err := os.MkdirAll(instanceDir, 0755); err != nil {
 		return fmt.Errorf("failed to create instance dir: %w", err)
 	}
-	runtime.BrowserOpenURL(a.ctx, "file://"+instanceDir)
-	return nil
+	cmd := exec.Command("xdg-open", instanceDir)
+	return cmd.Start()
 }
 
 func (a *App) StartInstanceDownload(instanceID string) error {
