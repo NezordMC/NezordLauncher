@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Loader2, Plus, Box } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ModloaderSelector, ModloaderType } from "./ModloaderSelector";
@@ -72,12 +72,16 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950/50">
-          <h2 className="font-bold text-sm tracking-wide text-zinc-100 flex items-center gap-2">
-            <Plus size={16} className="text-primary" /> CREATE INSTANCE
-          </h2>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
+          <h2 className="font-semibold text-white">Create Instance</h2>
           <button
             onClick={onClose}
             className="text-zinc-500 hover:text-white transition-colors"
@@ -86,37 +90,31 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
-              Instance Name
-            </label>
+            <label className="text-xs text-zinc-500">Instance Name</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="bg-black/50 border-zinc-800 text-zinc-300 font-mono text-xs focus-visible:ring-primary"
+              className="bg-zinc-800 border-zinc-700 text-white text-sm"
               placeholder="My Survival World"
               autoFocus
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-              <Box size={10} /> Game Version
-            </label>
-            <div className="relative">
-              <select
-                className="w-full bg-black/50 border border-zinc-800 text-zinc-300 text-xs font-mono h-9 px-3 rounded-md appearance-none focus:outline-none focus:ring-1 focus:ring-zinc-600 cursor-pointer"
-                value={gameVersion}
-                onChange={(e) => setGameVersion(e.target.value)}
-              >
-                {minecraftVersions.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.id}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <label className="text-xs text-zinc-500">Game Version</label>
+            <select
+              className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm h-9 px-3 rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+              value={gameVersion}
+              onChange={(e) => setGameVersion(e.target.value)}
+            >
+              {minecraftVersions.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.id}
+                </option>
+              ))}
+            </select>
           </div>
 
           <ModloaderSelector
@@ -128,23 +126,19 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
             isLoadingLoaders={isLoadingLoaders}
           />
 
-          <div className="pt-2">
-            <Button
-              type="submit"
-              disabled={
-                !name ||
-                isCreating ||
-                (modloader !== "vanilla" && !loaderVersion)
-              }
-              className="w-full bg-primary hover:bg-primary/90 text-white font-bold tracking-wider text-xs h-10"
-            >
-              {isCreating ? (
-                <Loader2 className="animate-spin" size={14} />
-              ) : (
-                "CREATE"
-              )}
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            disabled={
+              !name || isCreating || (modloader !== "vanilla" && !loaderVersion)
+            }
+            className="w-full bg-primary hover:bg-primary/90 text-white font-medium text-sm h-10"
+          >
+            {isCreating ? (
+              <Loader2 className="animate-spin" size={14} />
+            ) : (
+              "Create"
+            )}
+          </Button>
         </form>
       </div>
     </div>
