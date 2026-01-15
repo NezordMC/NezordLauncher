@@ -14,7 +14,7 @@ const modloaderLogos: Record<string, string> = {
 
 interface InstanceCardProps {
   instance: Instance;
-  isLaunching: boolean;
+  launchingInstanceId: string | null;
   activeAccount: Account | null;
   downloadProgress?: {
     current: number;
@@ -29,7 +29,7 @@ interface InstanceCardProps {
 
 export function InstanceCard({
   instance,
-  isLaunching,
+  launchingInstanceId,
   activeAccount,
   downloadProgress,
   onLaunch,
@@ -38,6 +38,7 @@ export function InstanceCard({
   onSettings,
 }: InstanceCardProps) {
   const logo = modloaderLogos[instance.modloaderType] || modloaderLogos.vanilla;
+  const isThisLaunching = launchingInstanceId === instance.id;
   const isDownloading = downloadProgress?.status === "downloading";
   const needsDownload =
     !downloadProgress ||
@@ -101,7 +102,7 @@ export function InstanceCard({
             <div
               className="h-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-300"
               style={{
-                width: `${(downloadProgress.current / downloadProgress.total) * 100}%`,
+                width: `${downloadProgress.total > 0 ? (downloadProgress.current / downloadProgress.total) * 100 : 0}%`,
               }}
             />
           </div>
@@ -115,7 +116,7 @@ export function InstanceCard({
       )}
 
       <div className="flex gap-2">
-        {isLaunching ? (
+        {isThisLaunching ? (
           <Button
             onClick={onStop}
             className="flex-1 h-9 bg-red-600 hover:bg-red-500 text-white font-medium text-xs gap-2"

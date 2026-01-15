@@ -21,7 +21,9 @@ interface DownloadProgress {
 }
 
 function useGameLaunchLogic() {
-  const [isLaunching, setIsLaunching] = useState(false);
+  const [launchingInstanceId, setLaunchingInstanceId] = useState<string | null>(
+    null,
+  );
   const [isConsoleOpen, setConsoleOpen] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [downloadProgress, setDownloadProgress] = useState<
@@ -44,6 +46,7 @@ function useGameLaunchLogic() {
     const cleanups = [
       EventsOn("downloadStatus", (msg: string) => addLog(`[DOWNLOAD] ${msg}`)),
       EventsOn("downloadProgress", (msg: string) => {
+        addLog(`[DOWNLOAD] Progress: ${msg}`);
         if (currentDownloadId) {
           const parts = msg.split("/");
           if (parts.length === 2) {
@@ -82,12 +85,12 @@ function useGameLaunchLogic() {
       }),
       EventsOn("launchStatus", (msg: string) => {
         addLog(`[SYSTEM] ${msg}`);
-        if (msg.includes("Game closed")) setIsLaunching(false);
+        if (msg.includes("Game closed")) setLaunchingInstanceId(null);
       }),
-      EventsOn("gameLog", (msg: string) => addLog(msg)),
+      EventsOn("gameLog", (msg: string) => addLog(`[GAME] ${msg}`)),
       EventsOn("launchError", (msg: string) => {
         addLog(`[ERROR] ${msg}`);
-        setIsLaunching(false);
+        setLaunchingInstanceId(null);
         setConsoleOpen(true);
       }),
     ];
@@ -122,7 +125,7 @@ function useGameLaunchLogic() {
   };
 
   const launchInstance = async (id: string, activeAccount: Account | null) => {
-    if (isLaunching) return;
+    if (launchingInstanceId) return;
     if (!activeAccount) {
       addLog(`[ERROR] No account selected!`);
       toast.error("No account selected! Please select an account first.");
@@ -130,7 +133,8 @@ function useGameLaunchLogic() {
       return;
     }
 
-    setIsLaunching(true);
+    setLaunchingInstanceId(id);
+    setCurrentDownloadId(id);
     setConsoleOpen(true);
     setLogs([]);
 
@@ -145,13 +149,14 @@ function useGameLaunchLogic() {
         addLog(`[FATAL] Sequence aborted: ${e}`);
         toast.error(`Launch failed: ${e}`);
       }
-      setIsLaunching(false);
+      setLaunchingInstanceId(null);
     }
   };
 
   const stopLaunch = async () => {
     try {
       await CancelDownload();
+      setLaunchingInstanceId(null);
     } catch (e) {
       console.error(e);
     }
@@ -160,7 +165,7 @@ function useGameLaunchLogic() {
   const toggleConsole = () => setConsoleOpen(!isConsoleOpen);
 
   return {
-    isLaunching,
+    launchingInstanceId,
     logs,
     downloadProgress,
     isConsoleOpen,

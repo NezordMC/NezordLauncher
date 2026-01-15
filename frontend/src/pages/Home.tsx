@@ -14,7 +14,7 @@ export function HomePage() {
   const { instances } = useInstanceStore();
   const {
     launchInstance,
-    isLaunching,
+    launchingInstanceId,
     stopLaunch,
     downloadProgress,
     startDownload,
@@ -81,7 +81,7 @@ export function HomePage() {
               <InstanceCard
                 key={inst.id}
                 instance={inst}
-                isLaunching={isLaunching}
+                launchingInstanceId={launchingInstanceId}
                 activeAccount={activeAccount}
                 downloadProgress={getInstanceProgress(inst.id)}
                 onLaunch={launchInstance}
