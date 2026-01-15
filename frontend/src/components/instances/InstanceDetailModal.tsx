@@ -9,6 +9,7 @@ import { MemorySection } from "./MemorySection";
 import { JavaSection } from "./JavaSection";
 import { ResolutionSection } from "./ResolutionSection";
 import { JvmArgsSection } from "./JvmArgsSection";
+import { toast } from "sonner";
 
 import vanillaLogo from "@/assets/images/vanilla.png";
 import fabricLogo from "@/assets/images/fabric.png";
@@ -77,8 +78,9 @@ export function InstanceDetailModal({
     try {
       await updateInstance(instance.id, settings);
       setIsDirty(false);
-    } catch (e) {
-      console.error(e);
+      toast.success("Settings saved successfully");
+    } catch (e: any) {
+      toast.error(`Failed to save: ${e}`);
     } finally {
       setIsSaving(false);
     }
