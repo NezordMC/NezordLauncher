@@ -275,8 +275,8 @@ func (a *App) DownloadVersion(versionID string) error {
 		for {
 			select {
 			case <-progressTicker.C:
-				status := pool.Progress.GetStatus()
-				a.emit("downloadProgress", status)
+				current, total := pool.Progress.GetCounts()
+				a.emit("downloadProgress", fmt.Sprintf("%d/%d", current, total))
 			case <-ctx.Done():
 				progressTicker.Stop()
 				return

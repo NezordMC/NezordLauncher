@@ -47,6 +47,12 @@ func (p *DownloadProgress) GetStatus() string {
 	return fmt.Sprintf("Downloading... %.1f%% (%d/%d) - %s", percentage, p.CompletedFiles, p.TotalFiles, speedStr)
 }
 
+func (p *DownloadProgress) GetCounts() (int, int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.CompletedFiles, p.TotalFiles
+}
+
 func formatBytes(bytes float64) string {
 	units := []string{"B", "KB", "MB", "GB"}
 	i := 0
