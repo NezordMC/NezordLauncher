@@ -1,3 +1,11 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 export type ModloaderType = "vanilla" | "fabric" | "quilt";
 
 interface ModloaderSelectorProps {
@@ -19,7 +27,7 @@ export function ModloaderSelector({
 }: ModloaderSelectorProps) {
   const getButtonClass = (type: ModloaderType) => {
     const base =
-      "flex-1 h-9 text-xs font-medium uppercase tracking-wide border transition-all cursor-pointer";
+      "flex-1 h-9 text-xs font-medium uppercase tracking-wide border transition-all cursor-pointer rounded-md";
     if (selectedType === type) {
       return `${base} bg-primary text-white border-primary`;
     }
@@ -34,47 +42,49 @@ export function ModloaderSelector({
         <button
           type="button"
           onClick={() => onTypeChange("vanilla")}
-          className={`${getButtonClass("vanilla")} rounded-md`}
+          className={getButtonClass("vanilla")}
         >
           Vanilla
         </button>
         <button
           type="button"
           onClick={() => onTypeChange("fabric")}
-          className={`${getButtonClass("fabric")} rounded-md`}
+          className={getButtonClass("fabric")}
         >
           Fabric
         </button>
         <button
           type="button"
           onClick={() => onTypeChange("quilt")}
-          className={`${getButtonClass("quilt")} rounded-md`}
+          className={getButtonClass("quilt")}
         >
           Quilt
         </button>
       </div>
 
       {selectedType !== "vanilla" && (
-        <select
-          className="w-full bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs h-9 px-3 rounded-md focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
+        <Select
           value={loaderVersion}
-          onChange={(e) => onLoaderVersionChange(e.target.value)}
+          onValueChange={onLoaderVersionChange}
           disabled={isLoadingLoaders}
         >
-          {isLoadingLoaders ? (
-            <option>Loading...</option>
-          ) : availableLoaders.length > 0 ? (
-            availableLoaders.map((v) => (
-              <option key={v} value={v}>
+          <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-white text-sm h-9">
+            <SelectValue
+              placeholder={isLoadingLoaders ? "Loading..." : "Select version"}
+            />
+          </SelectTrigger>
+          <SelectContent className="max-h-48 bg-zinc-900 border-zinc-700">
+            {availableLoaders.map((v) => (
+              <SelectItem
+                key={v}
+                value={v}
+                className="text-zinc-300 focus:bg-zinc-800 focus:text-white"
+              >
                 {v}
-              </option>
-            ))
-          ) : (
-            <option value="" disabled>
-              Select version
-            </option>
-          )}
-        </select>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       )}
     </div>
   );

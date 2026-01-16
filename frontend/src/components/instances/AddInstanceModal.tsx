@@ -2,6 +2,13 @@ import { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ModloaderSelector, ModloaderType } from "./ModloaderSelector";
 import { useInstanceStore } from "@/stores/instanceStore";
 
@@ -104,17 +111,22 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
 
           <div className="space-y-1.5">
             <label className="text-xs text-zinc-500">Game Version</label>
-            <select
-              className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm h-9 px-3 rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
-              value={gameVersion}
-              onChange={(e) => setGameVersion(e.target.value)}
-            >
-              {minecraftVersions.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.id}
-                </option>
-              ))}
-            </select>
+            <Select value={gameVersion} onValueChange={setGameVersion}>
+              <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-white text-sm h-9">
+                <SelectValue placeholder="Select version" />
+              </SelectTrigger>
+              <SelectContent className="max-h-48 bg-zinc-900 border-zinc-700">
+                {minecraftVersions.map((v) => (
+                  <SelectItem
+                    key={v.id}
+                    value={v.id}
+                    className="text-zinc-300 focus:bg-zinc-800 focus:text-white"
+                  >
+                    {v.id}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <ModloaderSelector
