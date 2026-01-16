@@ -44,7 +44,6 @@ export function InstanceCard({
     !downloadProgress ||
     downloadProgress.status === "idle" ||
     downloadProgress.status === "failed";
-  const isReady = downloadProgress?.status === "completed";
 
   const getModloaderColor = () => {
     switch (instance.modloaderType) {
@@ -58,7 +57,7 @@ export function InstanceCard({
   };
 
   return (
-    <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4 hover:border-zinc-700 transition-all duration-200">
+    <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-all">
       <div className="flex items-start gap-3 mb-4">
         <img
           src={logo}
@@ -66,17 +65,7 @@ export function InstanceCard({
           className="w-12 h-12 rounded-lg object-cover"
         />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-white truncate">
-              {instance.name}
-            </h3>
-            <button
-              onClick={() => onSettings(instance.id)}
-              className="text-zinc-500 hover:text-white transition-colors"
-            >
-              <Settings size={14} />
-            </button>
-          </div>
+          <h3 className="font-semibold text-white truncate">{instance.name}</h3>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-xs text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded">
               {instance.gameVersion}
@@ -88,6 +77,12 @@ export function InstanceCard({
             </span>
           </div>
         </div>
+        <button
+          onClick={() => onSettings(instance.id)}
+          className="text-zinc-500 hover:text-white transition-colors p-1"
+        >
+          <Settings size={16} />
+        </button>
       </div>
 
       {isDownloading && downloadProgress && (
@@ -95,12 +90,12 @@ export function InstanceCard({
           <div className="flex items-center justify-between text-xs text-zinc-400 mb-1.5">
             <span>Downloading...</span>
             <span>
-              {downloadProgress.current}/{downloadProgress.total} files
+              {downloadProgress.current}/{downloadProgress.total}
             </span>
           </div>
           <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-primary to-purple-500 transition-all duration-300"
+              className="h-full bg-primary transition-all duration-300"
               style={{
                 width: `${downloadProgress.total > 0 ? (downloadProgress.current / downloadProgress.total) * 100 : 0}%`,
               }}
@@ -111,7 +106,7 @@ export function InstanceCard({
 
       {downloadProgress?.status === "failed" && (
         <div className="mb-3 p-2 bg-red-500/10 border border-red-500/20 rounded text-xs text-red-400">
-          Download failed. Click retry to try again.
+          Download failed. Click retry.
         </div>
       )}
 
@@ -119,35 +114,33 @@ export function InstanceCard({
         {isThisLaunching ? (
           <Button
             onClick={onStop}
-            className="flex-1 h-9 bg-red-600 hover:bg-red-500 text-white font-medium text-xs gap-2"
+            className="flex-1 h-10 bg-red-600 hover:bg-red-500 text-white font-medium text-sm gap-2"
           >
-            <Square size={12} fill="currentColor" />
-            Cancel
+            <Square size={14} fill="currentColor" />
+            Stop
           </Button>
         ) : isDownloading ? (
           <Button
             disabled
-            className="flex-1 h-9 bg-zinc-800 text-zinc-400 font-medium text-xs gap-2"
+            className="flex-1 h-10 bg-zinc-800 text-zinc-400 font-medium text-sm gap-2"
           >
-            <Loader2 size={14} className="animate-spin" />
+            <Loader2 size={16} className="animate-spin" />
             Downloading...
           </Button>
         ) : needsDownload ? (
           <Button
             onClick={() => onDownload(instance.id)}
-            className="flex-1 h-9 bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-xs gap-2"
+            className="flex-1 h-10 bg-zinc-800 hover:bg-zinc-700 text-white font-medium text-sm gap-2"
           >
-            <Download size={14} />
-            {downloadProgress?.status === "failed"
-              ? "Retry Download"
-              : "Download"}
+            <Download size={16} />
+            {downloadProgress?.status === "failed" ? "Retry" : "Download"}
           </Button>
         ) : (
           <Button
             onClick={() => onLaunch(instance.id, activeAccount)}
-            className="flex-1 h-9 bg-primary hover:bg-primary/90 text-white font-medium text-xs gap-2"
+            className="flex-1 h-10 bg-primary hover:bg-primary/90 text-white font-medium text-sm gap-2"
           >
-            <Play size={12} fill="currentColor" />
+            <Play size={14} fill="currentColor" />
             Play
           </Button>
         )}
