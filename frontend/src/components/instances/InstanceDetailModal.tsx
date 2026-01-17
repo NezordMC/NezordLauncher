@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, FolderOpen, Save, Loader2 } from "lucide-react";
+import { X, FolderOpen, Save, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Instance, InstanceSettings } from "@/types";
 import { useInstanceStore } from "@/stores/instanceStore";
@@ -30,11 +30,12 @@ export function InstanceDetailModal({
   instance,
   onClose,
 }: InstanceDetailModalProps) {
-  const { updateInstance } = useInstanceStore();
+  const { updateInstance, deleteInstance } = useInstanceStore();
   const { defaults } = useSettingStore();
   const [settings, setSettings] = useState<InstanceSettings | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (instance) {
@@ -94,6 +95,16 @@ export function InstanceDetailModal({
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      await deleteInstance(instance.id);
+      toast.success("Instance deleted");
+      onClose();
+    } catch (e: any) {
+      toast.error(`Failed to delete: ${e}`);
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-150"
@@ -145,18 +156,52 @@ export function InstanceDetailModal({
         </div>
 
         <div className="p-4 border-t border-zinc-800 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleOpenFolder}
-            className="gap-2 text-zinc-400 hover:text-white"
-          >
-            <FolderOpen size={16} />
-            Open Folder
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleOpenFolder}
+              className="gap-2 text-zinc-400 hover:text-white"
+            >
+              <FolderOpen size={16} />
+              Open Folder
+            </Button>
+
+            {showDeleteConfirm ? (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDelete}
+                className="gap-2 bg-red-600 hover:bg-red-700 text-white animate-in zoom-in-95 duration-200"
+              >
+                <Trash2 size={16} />
+                Confirm?
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="gap-2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10"
+              >
+                <Trash2 size={16} />
+              </Button>
+            )}
+            {showDeleteConfirm && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="text-zinc-500 hover:text-white"
+              >
+                Cancel
+              </Button>
+            )}
+          </div>
+
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={onClose}>
-              Cancel
+              Close
             </Button>
             <Button
               size="sm"

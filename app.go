@@ -455,6 +455,8 @@ func (a *App) LaunchInstance(instanceID string) error {
 	return nil
 }
 
+
+
 func (a *App) getVersionDetails(versionID string) (*models.VersionDetail, error) {
 	localPath := filepath.Join(constants.GetVersionsDir(), versionID, fmt.Sprintf("%s.json", versionID))
 	if _, err := os.Stat(localPath); err == nil {

@@ -12,6 +12,7 @@ import {
   GetFabricLoaders,
   GetQuiltLoaders,
   UpdateInstanceSettings,
+  DeleteInstance,
 } from "../../wailsjs/go/main/App";
 import { Instance, Version, InstanceSettings } from "../types";
 import { ModloaderType } from "../components/instances/ModloaderSelector";
@@ -66,6 +67,15 @@ function useInstanceLogic() {
     }
   };
 
+  const deleteInstance = async (id: string) => {
+    try {
+      await DeleteInstance(id);
+      await refreshInstances();
+    } catch (e) {
+      throw e;
+    }
+  };
+
   const fetchModloaders = async (
     mcVersion: string,
     type: ModloaderType,
@@ -85,6 +95,7 @@ function useInstanceLogic() {
     instances,
     createInstance,
     updateInstance,
+    deleteInstance,
     refreshInstances,
     fetchModloaders,
   };
