@@ -1,13 +1,13 @@
 package downloader
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/models"
 	"NezordLauncher/pkg/network"
 	"NezordLauncher/pkg/system"
+	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -108,6 +108,7 @@ func (f *ArtifactFetcher) downloadClient(ctx context.Context, v *models.VersionD
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
+			f.pool.Progress.AddTotal(1)
 			f.pool.Submit(Task{
 				URL:  v.Downloads.Client.URL,
 				Path: path,
@@ -134,6 +135,7 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 		if lib.Downloads.Artifact.URL != "" {
 			path := lib.Downloads.Artifact.GetPath()
 			fullPath := filepath.Join(libDir, path)
+			f.pool.Progress.AddTotal(1)
 			f.pool.Submit(Task{
 				URL:  lib.Downloads.Artifact.URL,
 				Path: fullPath,
@@ -154,6 +156,7 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 				fullUrl := baseURL + relPath
 				fullPath := filepath.Join(libDir, relPath)
 				
+				f.pool.Progress.AddTotal(1)
 				f.pool.Submit(Task{
 					URL:  fullUrl,
 					Path: fullPath,
@@ -166,6 +169,7 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 				if artifact, exists := lib.Downloads.Classifiers[nativeKey]; exists {
 					path := artifact.GetPath()
 					fullPath := filepath.Join(libDir, path)
+					f.pool.Progress.AddTotal(1)
 					f.pool.Submit(Task{
 						URL:  artifact.URL,
 						Path: fullPath,
@@ -221,6 +225,7 @@ func (f *ArtifactFetcher) downloadAssets(ctx context.Context, v *models.VersionD
 		path := filepath.Join(objectsDir, obj.Hash[:2], obj.Hash)
 		url := fmt.Sprintf("%s%s/%s", baseAssetURL, obj.Hash[:2], obj.Hash)
 		
+		f.pool.Progress.AddTotal(1)
 		f.pool.Submit(Task{
 			URL:  url,
 			Path: path,

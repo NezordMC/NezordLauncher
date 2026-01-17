@@ -254,16 +254,8 @@ func (a *App) DownloadVersion(versionID string) error {
 
 	pool := downloader.NewWorkerPool(10, 100)
 	
-	totalAssets := 0
-	
-	versionDetail, _ := a.getVersionDetails(versionID) 
-	if versionDetail != nil {
-		totalAssets = len(versionDetail.Libraries) + 1 
-		if versionDetail.AssetIndex.ID != "" {
-			totalAssets += 1000 
-		}
-		pool.Progress = downloader.NewProgress(totalAssets)
-	}
+	// Progress initialized by pool creation, fetcher will add total dynamically
+	_ = versionID
 
 	pool.Start(ctx)
 	fetcher := downloader.NewArtifactFetcher(pool)

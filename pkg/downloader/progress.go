@@ -29,6 +29,12 @@ func (p *DownloadProgress) Increment(bytes int64) {
 	p.DownloadedBytes += bytes
 }
 
+func (p *DownloadProgress) AddTotal(count int) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.TotalFiles += count
+}
+
 func (p *DownloadProgress) GetStatus() string {
 	p.mu.Lock()
 	defer p.mu.Unlock()
