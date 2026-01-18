@@ -93,6 +93,19 @@ function useGameLaunchLogic() {
         setLaunchingInstanceId(null);
         setConsoleOpen(true);
       }),
+      EventsOn("game_exit", () => {
+        setLaunchingInstanceId(null);
+        if (currentDownloadId) {
+          setDownloadProgress((prev) => ({
+            ...prev,
+            [currentDownloadId]: {
+              ...prev[currentDownloadId],
+              status: "idle",
+            },
+          }));
+          setCurrentDownloadId(null);
+        }
+      }),
     ];
     return () => cleanups.forEach((c) => c());
   }, [currentDownloadId]);

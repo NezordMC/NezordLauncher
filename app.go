@@ -447,8 +447,10 @@ func (a *App) LaunchInstance(instanceID string) error {
 	go func() {
 		if err := launch.ExecuteGame(javaPath, args, instanceDir, logCallback); err != nil {
 			a.emit("launchError", err.Error())
+			a.emit("game_exit", "error")
 		} else {
 			a.emit("launchStatus", "Game closed successfully")
+			a.emit("game_exit", "success")
 		}
 	}()
 
