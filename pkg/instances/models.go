@@ -18,7 +18,8 @@ type Instance struct {
 	GameVersion     string        `json:"gameVersion"`
 	ModloaderType   ModloaderType `json:"modloaderType"`
 	ModloaderVersion string       `json:"modloaderVersion"`
-	Settings InstanceSettings `json:"settings"`
+	InstallState    string        `json:"installState"`
+	Settings        InstanceSettings `json:"settings"`
 	Created time.Time `json:"created"`
 	LastPlayed time.Time `json:"lastPlayed"`
 	PlayTime int64 `json:"playTime"`

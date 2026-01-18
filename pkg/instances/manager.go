@@ -1,9 +1,9 @@
 package instances
 
 import (
+	"NezordLauncher/pkg/constants"
 	"encoding/json"
 	"fmt"
-	"NezordLauncher/pkg/constants"
 	"os"
 	"path/filepath"
 	"sort"
@@ -114,14 +114,29 @@ func (m *Manager) SaveInstance(inst *Instance) error {
 }
 
 func (m *Manager) CreateInstance(name, gameVersion string, loaderType ModloaderType, loaderVersion string) (*Instance, error) {
-	id := fmt.Sprintf("%s-%d", slugify(name), time.Now().Unix())
+	baseID := slugify(name)
+	id := baseID
+	counter := 1
 	
+	m.mu.RLock()
+	for {
+		if _, exists := m.instances[id]; !exists {
+			if _, err := os.Stat(filepath.Join(m.baseDir, id)); os.IsNotExist(err) {
+				break
+			}
+		}
+		id = fmt.Sprintf("%s-%d", baseID, counter)
+		counter++
+	}
+	m.mu.RUnlock()
+
 	inst := &Instance{
 		ID:               id,
 		Name:             name,
 		GameVersion:      gameVersion,
 		ModloaderType:    loaderType,
 		ModloaderVersion: loaderVersion,
+		InstallState:     "not_installed",
 		Created:          time.Now(),
 		Settings: InstanceSettings{
 			RamMB: 4096,
@@ -182,5 +197,18 @@ func (m *Manager) UpdatePlayTime(id string, durationSec int64) error {
 }
 
 func slugify(s string) string {
-	return s 
+	var result string
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			result += string(r)
+		} else if r >= 'A' && r <= 'Z' {
+			result += string(r + 32)
+		} else if r == ' ' || r == '-' || r == '_' {
+			result += "-"
+		}
+	}
+	if len(result) == 0 {
+		return "instance"
+	}
+	return result
 }
