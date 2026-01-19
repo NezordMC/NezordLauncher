@@ -14,6 +14,7 @@ import {
   UpdateInstanceSettings,
   DeleteInstance,
 } from "../../wailsjs/go/main/App";
+import { EventsOn } from "../../wailsjs/runtime/runtime";
 import { Instance, Version, InstanceSettings } from "../types";
 import { ModloaderType } from "../components/instances/ModloaderSelector";
 
@@ -24,6 +25,14 @@ function useInstanceLogic() {
   useEffect(() => {
     fetchVersions();
     refreshInstances();
+
+    const cleanup = EventsOn("instance_update", (updatedInst: Instance) => {
+      setInstances((prev) =>
+        prev.map((inst) => (inst.id === updatedInst.id ? updatedInst : inst)),
+      );
+    });
+
+    return () => cleanup();
   }, []);
 
   const fetchVersions = async () => {

@@ -28,6 +28,7 @@ export interface Instance {
   created: string;
   lastPlayed: string;
   playTime: number;
+  installState: string;
   settings: InstanceSettings;
 }
 
