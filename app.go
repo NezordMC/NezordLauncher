@@ -228,7 +228,26 @@ func (a *App) StartInstanceDownload(instanceID string) error {
 	if !ok {
 		return fmt.Errorf("instance not found: %s", instanceID)
 	}
-	return a.DownloadVersion(inst.GameVersion)
+
+	inst.InstallState = "downloading"
+	a.instanceManager.SaveInstance(inst)
+
+	// Emit event to update UI immediately
+	a.emit("instance_update", inst)
+
+	if err := a.DownloadVersion(inst.GameVersion); err != nil {
+		inst.InstallState = "not_installed"
+		a.instanceManager.SaveInstance(inst)
+		a.emit("instance_update", inst)
+		return err
+	}
+
+	inst.InstallState = "ready"
+	a.instanceManager.SaveInstance(inst)
+	a.emit("instance_update", inst)
+	
+	a.emit("downloadComplete", instanceID)
+	return nil
 }
 
 func (a *App) DownloadVersion(versionID string) error {
