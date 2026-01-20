@@ -102,12 +102,16 @@ func (f *ArtifactFetcher) getVersionDetails(versionID string) (*models.VersionDe
 
 func (f *ArtifactFetcher) downloadClient(ctx context.Context, v *models.VersionDetail) error {
 	if v.Downloads.Client.URL != "" {
-		path := filepath.Join(constants.GetInstancesDir(), v.ID, fmt.Sprintf("%s.jar", v.ID))
+		// Fix: Save to versions directory instead of instances directory
+		path := filepath.Join(constants.GetVersionsDir(), v.ID, fmt.Sprintf("%s.jar", v.ID))
 		
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
+			// Ensure directory exists
+			os.MkdirAll(filepath.Dir(path), 0755)
+			
 			f.pool.Progress.AddTotal(1)
 			f.pool.Submit(Task{
 				URL:  v.Downloads.Client.URL,
@@ -123,11 +127,10 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 	sysInfo := system.GetSystemInfo()
 	libDir := constants.GetLibrariesDir()
 
-	for _, lib := range v.Libraries {
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
+	// Pre-calculate tasks to update progress total immediately
+	var tasks []Task
 
+	for _, lib := range v.Libraries {
 		if !lib.IsAllowed(sysInfo.OS) {
 			continue
 		}
@@ -135,8 +138,7 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 		if lib.Downloads.Artifact.URL != "" {
 			path := lib.Downloads.Artifact.GetPath()
 			fullPath := filepath.Join(libDir, path)
-			f.pool.Progress.AddTotal(1)
-			f.pool.Submit(Task{
+			tasks = append(tasks, Task{
 				URL:  lib.Downloads.Artifact.URL,
 				Path: fullPath,
 				SHA1: lib.Downloads.Artifact.SHA1,
@@ -156,8 +158,7 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 				fullUrl := baseURL + relPath
 				fullPath := filepath.Join(libDir, relPath)
 				
-				f.pool.Progress.AddTotal(1)
-				f.pool.Submit(Task{
+				tasks = append(tasks, Task{
 					URL:  fullUrl,
 					Path: fullPath,
 				})
@@ -169,8 +170,7 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 				if artifact, exists := lib.Downloads.Classifiers[nativeKey]; exists {
 					path := artifact.GetPath()
 					fullPath := filepath.Join(libDir, path)
-					f.pool.Progress.AddTotal(1)
-					f.pool.Submit(Task{
+					tasks = append(tasks, Task{
 						URL:  artifact.URL,
 						Path: fullPath,
 						SHA1: artifact.SHA1,
@@ -179,6 +179,19 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 			}
 		}
 	}
+
+	// Update total count at once
+	if len(tasks) > 0 {
+		f.pool.Progress.AddTotal(len(tasks))
+		
+		for _, t := range tasks {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			f.pool.Submit(t)
+		}
+	}
+
 	return nil
 }
 
@@ -217,20 +230,29 @@ func (f *ArtifactFetcher) downloadAssets(ctx context.Context, v *models.VersionD
 	baseAssetURL := "https://resources.download.minecraft.net/"
 	objectsDir := filepath.Join(constants.GetAssetsDir(), "objects")
 
+	// Pre-calculate tasks
+	var tasks []Task
 	for _, obj := range indexObj.Objects {
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-
 		path := filepath.Join(objectsDir, obj.Hash[:2], obj.Hash)
 		url := fmt.Sprintf("%s%s/%s", baseAssetURL, obj.Hash[:2], obj.Hash)
 		
-		f.pool.Progress.AddTotal(1)
-		f.pool.Submit(Task{
+		tasks = append(tasks, Task{
 			URL:  url,
 			Path: path,
 			SHA1: obj.Hash,
 		})
+	}
+
+	// Update total count at once
+	if len(tasks) > 0 {
+		f.pool.Progress.AddTotal(len(tasks))
+		
+		for _, t := range tasks {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			f.pool.Submit(t)
+		}
 	}
 
 	return nil
