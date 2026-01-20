@@ -10,10 +10,13 @@ import (
 
 type LogCallback func(text string)
 
-func ExecuteGame(command string, args []string, dir string, onLog LogCallback) error {
+func Launch(command string, args []string, dir string) (*exec.Cmd, error) {
 	cmd := exec.Command(command, args...)
 	cmd.Dir = dir
+	return cmd, nil
+}
 
+func Monitor(cmd *exec.Cmd, onLog LogCallback) error {
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("failed to create stdout pipe: %w", err)
@@ -56,6 +59,12 @@ func ExecuteGame(command string, args []string, dir string, onLog LogCallback) e
 	}
 
 	return nil
+}
+
+// Deprecated: Use Launch and Monitor instead
+func ExecuteGame(command string, args []string, dir string, onLog LogCallback) error {
+	cmd, _ := Launch(command, args, dir)
+	return Monitor(cmd, onLog)
 }
 
 func streamLog(pipe io.ReadCloser, callback LogCallback, prefix string) {

@@ -36,13 +36,17 @@ type App struct {
 	
 	downloadCancel context.CancelFunc
 	downloadMu     sync.Mutex
+
+	runningInstances map[string]*exec.Cmd
+	runningMu        sync.Mutex
 }
 
 func NewApp() *App {
 	return &App{
-		accountManager:  auth.NewAccountManager(),
-		instanceManager: instances.NewManager(),
-		settingsManager: settings.NewManager(),
+		accountManager:   auth.NewAccountManager(),
+		instanceManager:  instances.NewManager(),
+		settingsManager:  settings.NewManager(),
+		runningInstances: make(map[string]*exec.Cmd),
 	}
 }
 
@@ -463,16 +467,50 @@ func (a *App) LaunchInstance(instanceID string) error {
 		fmt.Println(text) 
 	}
 
+	cmd, err := launch.Launch(javaPath, args, instanceDir)
+	if err != nil {
+		a.emit("launchError", err.Error())
+		a.emit("game_exit", "error")
+		return err
+	}
+
+	a.runningMu.Lock()
+	a.runningInstances[instanceID] = cmd
+	a.runningMu.Unlock()
+
 	go func() {
-		if err := launch.ExecuteGame(javaPath, args, instanceDir, logCallback); err != nil {
+		defer func() {
+			a.runningMu.Lock()
+			delete(a.runningInstances, instanceID)
+			a.runningMu.Unlock()
+			a.emit("game_exit", "success") // Or differentiate if error
+		}()
+
+		if err := launch.Monitor(cmd, logCallback); err != nil {
 			a.emit("launchError", err.Error())
-			a.emit("game_exit", "error")
+			// Ideally we would emit game_exit error here, but the defer handles cleanup
 		} else {
 			a.emit("launchStatus", "Game closed successfully")
-			a.emit("game_exit", "success")
 		}
 	}()
 
+	return nil
+}
+
+func (a *App) StopInstance(instanceID string) error {
+	a.runningMu.Lock()
+	defer a.runningMu.Unlock()
+
+	cmd, ok := a.runningInstances[instanceID]
+	if !ok {
+		return fmt.Errorf("instance not running: %s", instanceID)
+	}
+
+	if cmd.Process != nil {
+		if err := cmd.Process.Kill(); err != nil {
+			return fmt.Errorf("failed to kill process: %w", err)
+		}
+	}
 	return nil
 }
 

@@ -163,7 +163,7 @@ func buildClasspath(version *models.VersionDetail) (string, error) {
 		jarID = version.Jar
 	}
 
-	clientJar := filepath.Join(constants.GetInstancesDir(), jarID, fmt.Sprintf("%s.jar", jarID))
+	clientJar := filepath.Join(constants.GetVersionsDir(), jarID, fmt.Sprintf("%s.jar", jarID))
 	paths = append(paths, clientJar)
 
 	return strings.Join(paths, system.GetClasspathSeparator()), nil
