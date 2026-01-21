@@ -146,6 +146,12 @@ function useGameLaunchLogic() {
     try {
       addLog(`[COMMAND] Launching Instance ${id}...`);
       await LaunchInstance(id);
+
+      setDownloadProgress((prev) => ({
+        ...prev,
+        [id]: { ...prev[id], status: "idle" },
+      }));
+      setCurrentDownloadId(null);
     } catch (e: any) {
       if (e && e.includes && e.includes("cancelled")) {
         addLog(`[SYSTEM] Launch cancelled.`);
@@ -155,6 +161,11 @@ function useGameLaunchLogic() {
         toast.error(`Launch failed: ${e}`);
       }
       setLaunchingInstanceId(null);
+      setCurrentDownloadId(null);
+      setDownloadProgress((prev) => ({
+        ...prev,
+        [id]: { ...prev[id], status: "idle" },
+      }));
     }
   };
 
