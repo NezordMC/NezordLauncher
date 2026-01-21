@@ -9,6 +9,7 @@ import {
   LaunchInstance,
   CancelDownload,
   StartInstanceDownload,
+  StopInstance,
 } from "../../wailsjs/go/main/App";
 import { EventsOn } from "../../wailsjs/runtime/runtime";
 import { Account } from "../types";
@@ -95,16 +96,7 @@ function useGameLaunchLogic() {
       }),
       EventsOn("game_exit", () => {
         setLaunchingInstanceId(null);
-        if (currentDownloadId) {
-          setDownloadProgress((prev) => ({
-            ...prev,
-            [currentDownloadId]: {
-              ...prev[currentDownloadId],
-              status: "idle",
-            },
-          }));
-          setCurrentDownloadId(null);
-        }
+        // Do not clear download progress here, it might be relevant
       }),
     ];
     return () => cleanups.forEach((c) => c());
@@ -175,6 +167,17 @@ function useGameLaunchLogic() {
     }
   };
 
+  const stopInstance = async (id: string) => {
+    try {
+      addLog(`[COMMAND] Stopping Instance ${id}...`);
+      await StopInstance(id);
+      // game_exit event will handle state cleanup
+    } catch (e: any) {
+      addLog(`[ERROR] Failed to stop instance: ${e}`);
+      toast.error(`Failed to stop instance: ${e}`);
+    }
+  };
+
   const toggleConsole = () => setConsoleOpen(!isConsoleOpen);
 
   return {
@@ -185,6 +188,7 @@ function useGameLaunchLogic() {
     toggleConsole,
     launchInstance,
     stopLaunch,
+    stopInstance,
     startDownload,
     setConsoleOpen,
   };

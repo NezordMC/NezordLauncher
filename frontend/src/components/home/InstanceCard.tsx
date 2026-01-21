@@ -39,7 +39,10 @@ export function InstanceCard({
 }: InstanceCardProps) {
   const logo = modloaderLogos[instance.modloaderType] || modloaderLogos.vanilla;
   const isThisLaunching = launchingInstanceId === instance.id;
-  const isDownloading = downloadProgress?.status === "downloading";
+  const isDownloading =
+    (instance.installState === "downloading" ||
+      downloadProgress?.status === "downloading") &&
+    !isThisLaunching;
   const needsDownload =
     !downloadProgress ||
     downloadProgress.status === "idle" ||

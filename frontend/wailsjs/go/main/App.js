@@ -82,6 +82,10 @@ export function StartInstanceDownload(arg1) {
   return window['go']['main']['App']['StartInstanceDownload'](arg1);
 }
 
+export function StopInstance(arg1) {
+  return window['go']['main']['App']['StopInstance'](arg1);
+}
+
 export function UpdateGlobalSettings(arg1) {
   return window['go']['main']['App']['UpdateGlobalSettings'](arg1);
 }

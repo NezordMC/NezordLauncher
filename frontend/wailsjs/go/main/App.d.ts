@@ -47,6 +47,8 @@ export function SetActiveAccount(arg1:string):Promise<void>;
 
 export function StartInstanceDownload(arg1:string):Promise<void>;
 
+export function StopInstance(arg1:string):Promise<void>;
+
 export function UpdateGlobalSettings(arg1:settings.LauncherSettings):Promise<void>;
 
 export function UpdateInstanceSettings(arg1:string,arg2:instances.InstanceSettings):Promise<void>;

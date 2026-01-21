@@ -16,6 +16,7 @@ export function HomePage() {
     launchInstance,
     launchingInstanceId,
     stopLaunch,
+    stopInstance,
     downloadProgress,
     startDownload,
   } = useLaunchStore();
@@ -85,7 +86,7 @@ export function HomePage() {
                 activeAccount={activeAccount}
                 downloadProgress={getInstanceProgress(inst.id)}
                 onLaunch={launchInstance}
-                onStop={stopLaunch}
+                onStop={() => stopInstance(inst.id)}
                 onDownload={startDownload}
                 onSettings={(id) =>
                   setSelectedInstance(
