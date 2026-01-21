@@ -43,10 +43,13 @@ export function InstanceCard({
     (instance.installState === "downloading" ||
       downloadProgress?.status === "downloading") &&
     !isThisLaunching;
+  const isReady = instance.installState === "ready";
+
   const needsDownload =
-    !downloadProgress ||
-    downloadProgress.status === "idle" ||
-    downloadProgress.status === "failed";
+    !isReady &&
+    (!downloadProgress ||
+      downloadProgress.status === "idle" ||
+      downloadProgress.status === "failed");
 
   const getModloaderColor = () => {
     switch (instance.modloaderType) {
