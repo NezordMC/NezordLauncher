@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Plus, User, Loader2, KeyRound } from "lucide-react";
+import { X, Plus, User, Loader2, KeyRound, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAccountStore } from "@/stores/accountStore";
@@ -18,6 +18,7 @@ export function AccountManagerModal({
     activeAccount,
     switchAccount,
     addOfflineAccount,
+    removeAccount,
     loginElyBy,
   } = useAccountStore();
   const [showAddForm, setShowAddForm] = useState(false);
@@ -80,27 +81,37 @@ export function AccountManagerModal({
 
         <div className="max-h-64 overflow-y-auto">
           {accounts.map((acc) => (
-            <button
+            <div
               key={acc.uuid}
-              onClick={() => handleSelectAccount(acc.uuid)}
-              className={`w-full px-3 py-2.5 flex items-center gap-3 transition-colors ${
+              className={`w-full group px-3 py-2.5 flex items-center gap-3 transition-colors cursor-pointer border-l-2 ${
                 activeAccount?.uuid === acc.uuid
-                  ? "bg-primary/10 border-l-2 border-primary"
-                  : "hover:bg-zinc-800 border-l-2 border-transparent"
+                  ? "bg-primary/10 border-primary"
+                  : "hover:bg-zinc-800 border-transparent"
               }`}
+              onClick={() => handleSelectAccount(acc.uuid)}
             >
-              <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
                 <User size={14} className="text-zinc-400" />
               </div>
-              <div className="flex-1 text-left">
-                <div className="text-sm font-medium text-zinc-100">
+              <div className="flex-1 text-left min-w-0">
+                <div className="text-sm font-medium text-zinc-100 truncate">
                   {acc.username}
                 </div>
                 <div className="text-[10px] uppercase text-zinc-500">
                   {acc.type}
                 </div>
               </div>
-            </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeAccount(acc.uuid);
+                }}
+                className="opacity-0 group-hover:opacity-100 p-2 text-zinc-500 hover:text-red-400 transition-all"
+                title="Remove account"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           ))}
         </div>
 

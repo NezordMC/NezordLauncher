@@ -11,6 +11,7 @@ import {
   LoginElyBy,
   SetActiveAccount,
   GetActiveAccount,
+  RemoveAccount,
 } from "../../wailsjs/go/main/App";
 import { Account } from "../types";
 
@@ -45,6 +46,16 @@ function useAuthLogic() {
     }
   };
 
+  const removeAccount = async (uuid: string) => {
+    try {
+      await RemoveAccount(uuid);
+      await refreshAccounts();
+    } catch (e) {
+      console.error("Failed to remove account", e);
+      throw e;
+    }
+  };
+
   const loginElyBy = async (u: string, p: string) => {
     try {
       await LoginElyBy(u, p);
@@ -68,6 +79,7 @@ function useAuthLogic() {
     activeAccount,
     isInitialized,
     addOfflineAccount,
+    removeAccount,
     loginElyBy,
     switchAccount,
     refreshAccounts,

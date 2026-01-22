@@ -176,6 +176,13 @@ func (a *App) GetActiveAccount() *auth.Account {
 	return a.accountManager.GetActiveAccount()
 }
 
+func (a *App) RemoveAccount(uuid string) error {
+	if err := validation.ValidateUUID(uuid); err != nil {
+		return err
+	}
+	return a.accountManager.RemoveAccount(uuid)
+}
+
 func (a *App) CreateInstance(name, gameVersion, modloaderType, modloaderVersion string) (*instances.Instance, error) {
 	if err := validation.ValidateInstanceName(name); err != nil {
 		return nil, err

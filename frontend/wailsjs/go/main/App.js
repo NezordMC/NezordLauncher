@@ -70,6 +70,10 @@ export function OpenInstanceFolder(arg1) {
   return window['go']['main']['App']['OpenInstanceFolder'](arg1);
 }
 
+export function RemoveAccount(arg1) {
+  return window['go']['main']['App']['RemoveAccount'](arg1);
+}
+
 export function ScanJavaInstallations() {
   return window['go']['main']['App']['ScanJavaInstallations']();
 }
