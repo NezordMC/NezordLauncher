@@ -6,11 +6,26 @@ import { SettingsPage } from "@/pages/Settings";
 import { SetupWizardPage } from "@/pages/SetupWizard";
 import { JSX } from "react";
 
+import { useAccountStore } from "@/stores/accountStore";
+
 function RequireSetup({ children }: { children: JSX.Element }) {
-  const isSetup = localStorage.getItem("setup_completed") === "true";
-  if (!isSetup) {
+  const { isInitialized, accounts } = useAccountStore();
+  const isSetupCached = localStorage.getItem("setup_completed") === "true";
+
+  // Wait for auth store to load
+  if (!isInitialized) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-zinc-950 text-zinc-500">
+        Loading resources...
+      </div>
+    );
+  }
+
+  // If we have no accounts (fresh backend), force setup even if localStorage thinks otherwise
+  if (!isSetupCached || accounts.length === 0) {
     return <Navigate to="/setup" replace />;
   }
+
   return children;
 }
 

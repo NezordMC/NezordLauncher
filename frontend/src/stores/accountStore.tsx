@@ -18,8 +18,10 @@ function useAuthLogic() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [activeAccount, setActiveAccountState] = useState<Account | null>(null);
 
+  const [isInitialized, setInitialized] = useState(false);
+
   useEffect(() => {
-    refreshAccounts();
+    refreshAccounts().then(() => setInitialized(true));
   }, []);
 
   const refreshAccounts = async () => {
@@ -64,6 +66,7 @@ function useAuthLogic() {
   return {
     accounts,
     activeAccount,
+    isInitialized,
     addOfflineAccount,
     loginElyBy,
     switchAccount,
