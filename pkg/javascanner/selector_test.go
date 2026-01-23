@@ -1,94 +1,86 @@
 package javascanner
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestSelectJava(t *testing.T) {
-	mockInstalls := []JavaInstallation{
-		{Path: "/usr/lib/jvm/java-8", Version: "1.8.0_382", Vendor: "OpenJDK", IsTemurin: false},
-		{Path: "/usr/lib/jvm/java-17", Version: "17.0.8", Vendor: "Eclipse Temurin", IsTemurin: true},
-		{Path: "/opt/java/java-21", Version: "21.0.1", Vendor: "Oracle", IsTemurin: false},
+	installs := []JavaInfo{
+		{Path: "/usr/lib/jvm/java-8/bin/java", Version: "1.8.0_382", Major: 8},
+		{Path: "/usr/lib/jvm/java-17/bin/java", Version: "17.0.8", Major: 17},
+		{Path: "/opt/java/java-21/bin/java", Version: "21.0.1", Major: 21},
 	}
 
 	tests := []struct {
-		mcVersion      string
-		expectedVer    string
-		expectedFuzzy  bool 
-		description    string
+		mcVersion   string
+		expectedVer string
 	}{
-		{
-			mcVersion:   "1.16.5",
-			expectedVer: "1.8.0_382",
-			description: "Should select Java 8 (Exact Match)",
-		},
-		{
-			mcVersion:   "1.20.1",
-			expectedVer: "17.0.8",
-			description: "Should select Java 17 (Exact Match)",
-		},
-		{
-			mcVersion:   "1.20.6",
-			expectedVer: "21.0.1",
-			description: "Should select Java 21 (Exact Match)",
-		},
-		{
-			mcVersion:   "1.21",
-			expectedVer: "21.0.1",
-			description: "Should select Java 21 (Exact Match for 1.21)",
-		},
+		{mcVersion: "1.16.5", expectedVer: "1.8.0_382"},
+		{mcVersion: "1.20.1", expectedVer: "17.0.8"},
+		{mcVersion: "1.20.6", expectedVer: "21.0.1"},
+		{mcVersion: "1.21", expectedVer: "21.0.1"},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.description, func(t *testing.T) {
-			selected, err := SelectJava(mockInstalls, tt.mcVersion)
+		t.Run(tt.mcVersion, func(t *testing.T) {
+			selected, err := SelectJava(installs, tt.mcVersion)
 			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
+				t.Fatalf("unexpected error: %v", err)
 			}
 			if selected.Version != tt.expectedVer {
-				t.Errorf("Expected version %s, got %s", tt.expectedVer, selected.Version)
+				t.Fatalf("expected %s got %s", tt.expectedVer, selected.Version)
 			}
-			t.Logf("[SUCCESS] MC %s -> Java %s (%s)", tt.mcVersion, selected.Version, selected.Vendor)
 		})
 	}
 }
 
-func TestFuzzyFallback(t *testing.T) {
-	onlyJava21 := []JavaInstallation{
-		{Path: "/opt/java/java-21", Version: "21.0.1", Vendor: "Oracle", IsTemurin: false},
+func TestFallbackSelection(t *testing.T) {
+	installs := []JavaInfo{
+		{Path: "/opt/java/java-21/bin/java", Version: "21.0.1", Major: 21},
 	}
-
-	mcVersion := "1.7.10"
-	selected, err := SelectJava(onlyJava21, mcVersion)
-	
+	selected, err := SelectJava(installs, "1.7.10")
 	if err != nil {
-		t.Fatalf("Smart Mode failed, no java selected: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-
-	if selected.Version != "21.0.1" {
-		t.Errorf("Expected fallback to Java 21, got %s", selected.Version)
+	if selected.Major != 21 {
+		t.Fatalf("expected fallback to 21 got %d", selected.Major)
 	}
-
-	t.Logf("[SMART MODE ACTIVE] MC %s (needs Java 8) -> Launched with Java %s", mcVersion, selected.Version)
 }
 
-func TestRequirementLogic(t *testing.T) {
+func TestRequiredJavaMajor(t *testing.T) {
 	expectations := map[string]int{
-		"1.7.10":  8,
-		"1.12.2":  8,
-		"1.16.5":  8,
-		"1.17":    17,
-		"1.18.2":  17,
-		"1.20.4":  17,
-		"1.20.5":  21,
-		"1.21":    21,
-		"1.21.1":  21,
+		"1.7.10": 8,
+		"1.12.2": 8,
+		"1.16.5": 8,
+		"1.17":   17,
+		"1.18.2": 17,
+		"1.20.4": 17,
+		"1.20.5": 21,
+		"1.21":   21,
+		"1.21.1": 21,
 	}
 
 	for ver, req := range expectations {
-		got := getRequiredJavaVersion(ver)
+		got := getRequiredJavaMajor(ver)
 		if got != req {
-			t.Errorf("MC %s should require %d, got %d", ver, req, got)
+			t.Fatalf("mc %s expects %d got %d", ver, req, got)
 		}
+	}
+}
+
+func TestParseMinecraftVersion(t *testing.T) {
+	v, ok := parseMinecraftVersion("1.20.5")
+	if !ok {
+		t.Fatalf("parse failed")
+	}
+	if v.major != 1 || v.minor != 20 || v.patch != 5 {
+		t.Fatalf("unexpected parse result")
+	}
+}
+
+func TestCompareJavaVersion(t *testing.T) {
+	if compareJavaVersion("17.0.8", "17.0.7") <= 0 {
+		t.Fatalf("compare failed")
+	}
+	if compareJavaVersion("1.8.0_382", "1.8.0_362") <= 0 {
+		t.Fatalf("compare failed")
 	}
 }
