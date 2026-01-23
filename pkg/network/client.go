@@ -20,7 +20,7 @@ func NewHttpClient() *HttpClient {
 		MaxIdleConnsPerHost: 20,
 		IdleConnTimeout:     90 * time.Second,
 	}
-	
+
 	return &HttpClient{
 		client: &http.Client{
 			Transport: t,
@@ -54,7 +54,7 @@ func (c *HttpClient) Get(url string) ([]byte, error) {
 			lastErr = err
 			continue
 		}
-		
+
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
@@ -67,7 +67,7 @@ func (c *HttpClient) Get(url string) ([]byte, error) {
 
 		return io.ReadAll(resp.Body)
 	}
-	
+
 	return nil, lastErr
 }
 
@@ -76,10 +76,10 @@ func (c *HttpClient) PostJSON(url string, body []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", c.getUserAgent())
-	
+
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -96,4 +96,11 @@ func (c *HttpClient) PostJSON(url string, body []byte) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+func (c *HttpClient) Do(req *http.Request) (*http.Response, error) {
+	if req.Header.Get("User-Agent") == "" {
+		req.Header.Set("User-Agent", c.getUserAgent())
+	}
+	return c.client.Do(req)
 }

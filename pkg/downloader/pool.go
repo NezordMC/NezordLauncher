@@ -17,6 +17,7 @@ type WorkerPool struct {
 	errorList  []error
 	errorMutex sync.Mutex
 	Progress   *DownloadProgress
+	errDone    chan struct{}
 }
 
 func NewWorkerPool(workers int, bufferSize int) *WorkerPool {
@@ -25,6 +26,7 @@ func NewWorkerPool(workers int, bufferSize int) *WorkerPool {
 		errors:   make(chan error, bufferSize),
 		workers:  workers,
 		Progress: NewProgress(0),
+		errDone:  make(chan struct{}),
 	}
 }
 
@@ -33,8 +35,9 @@ func (p *WorkerPool) Start(ctx context.Context) {
 		p.wg.Add(1)
 		go p.worker(ctx)
 	}
-	
+
 	go func() {
+		defer close(p.errDone)
 		for {
 			select {
 			case <-ctx.Done():
@@ -56,10 +59,19 @@ func (p *WorkerPool) Wait() {
 	close(p.tasks)
 	p.wg.Wait()
 	close(p.errors)
+	<-p.errDone
 }
 
 func (p *WorkerPool) Submit(t Task) {
 	p.tasks <- t
+}
+
+func (p *WorkerPool) Errors() []error {
+	p.errorMutex.Lock()
+	defer p.errorMutex.Unlock()
+	result := make([]error, len(p.errorList))
+	copy(result, p.errorList)
+	return result
 }
 
 func (p *WorkerPool) worker(ctx context.Context) {
@@ -74,7 +86,7 @@ func (p *WorkerPool) worker(ctx context.Context) {
 			if !ok {
 				return
 			}
-			if err := p.process(task, client); err != nil {
+			if err := p.process(ctx, task, client); err != nil {
 				select {
 				case p.errors <- fmt.Errorf("failed to process %s: %w", filepath.Base(task.Path), err):
 				case <-ctx.Done():
@@ -85,13 +97,22 @@ func (p *WorkerPool) worker(ctx context.Context) {
 	}
 }
 
-func (p *WorkerPool) process(t Task, client *network.HttpClient) error {
+func (p *WorkerPool) process(ctx context.Context, t Task, client *network.HttpClient) error {
+	if t.URL == "" || t.Path == "" {
+		return fmt.Errorf("invalid task")
+	}
+
 	if t.SHA1 != "" {
 		if valid, _ := VerifyFileSHA1(t.Path, t.SHA1); valid {
-			return nil 
+			p.Progress.Increment(0)
+			return nil
+		}
+		if _, err := os.Stat(t.Path); err == nil {
+			_ = os.Remove(t.Path)
 		}
 	} else {
 		if _, err := os.Stat(t.Path); err == nil {
+			p.Progress.Increment(0)
 			return nil
 		}
 	}
@@ -100,15 +121,17 @@ func (p *WorkerPool) process(t Task, client *network.HttpClient) error {
 		return err
 	}
 
-	data, err := client.Get(t.URL)
+	partPath := t.Path + ".part"
+
+	n, err := downloadWithResume(ctx, client, t.URL, partPath)
 	if err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(t.Path, data, 0644); err != nil {
+	if err := CommitFile(partPath, t.Path, t.SHA1); err != nil {
 		return err
 	}
-	
-	p.Progress.Increment(int64(len(data)))
+
+	p.Progress.Increment(n)
 	return nil
 }

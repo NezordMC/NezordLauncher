@@ -26,20 +26,24 @@ func TestVerifyFileSHA1(t *testing.T) {
 	hasher.Write(content)
 	validHash := hex.EncodeToString(hasher.Sum(nil))
 
-	err = VerifyFileSHA1(tmpfile.Name(), validHash)
-	if err != nil {
+	ok, err := VerifyFileSHA1(tmpfile.Name(), validHash)
+	if err != nil || !ok {
 		t.Errorf("Verification failed for valid hash: %v", err)
 	}
 
-	err = VerifyFileSHA1(tmpfile.Name(), "badhash12345")
-	if err == nil {
+	ok, err = VerifyFileSHA1(tmpfile.Name(), "badhash12345")
+	if err != nil {
+		t.Errorf("Unexpected error for invalid hash: %v", err)
+	} else if ok {
 		t.Error("Verification should have failed for invalid hash, but it passed")
 	} else {
 		t.Logf("Correctly caught hash mismatch: %v", err)
 	}
 
-	err = VerifyFileSHA1("non_existent_file.txt", validHash)
+	ok, err = VerifyFileSHA1("non_existent_file.txt", validHash)
 	if err == nil {
 		t.Error("Verification should have failed for missing file")
+	} else if ok {
+		t.Error("Verification should have been false for missing file")
 	}
 }
