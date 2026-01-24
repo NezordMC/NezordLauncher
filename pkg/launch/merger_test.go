@@ -22,7 +22,7 @@ func TestMergeVersions(t *testing.T) {
 	child := &models.VersionDetail{
 		ID:           "1.20.1-fabric-0.14.25",
 		InheritsFrom: "1.20.1",
-		MainClass:    "net.fabricmc.loader.impl.launch.knot.KnotClient",
+		MainClass:    models.MainClassData{Client: "net.fabricmc.loader.impl.launch.knot.KnotClient"},
 		Libraries: []models.Library{
 			{Name: "net.fabricmc:fabric-loader:0.14.25"},
 		},
@@ -52,7 +52,7 @@ func TestMergeVersions(t *testing.T) {
 	if len(result.Arguments.JVM) != 2 {
 		t.Errorf("Expected 2 JVM args, got %d", len(result.Arguments.JVM))
 	}
-	
+
 	// Test 5: Jar should point to parent ID (default behavior if empty)
 	if result.Jar != "1.20.1" {
 		t.Errorf("Expected Jar to point to parent ID (1.20.1), got %s", result.Jar)

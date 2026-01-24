@@ -1,10 +1,10 @@
 package launch
 
 import (
-	"archive/zip"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/models"
 	"NezordLauncher/pkg/system"
+	"archive/zip"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,9 +12,9 @@ import (
 
 func TestExtractNatives(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tempDir) 
+	os.Setenv("HOME", tempDir)
 	defer os.Setenv("HOME", originalHome)
 	realMockLibDir := constants.GetLibrariesDir()
 	if err := os.MkdirAll(realMockLibDir, 0755); err != nil {
@@ -24,9 +24,9 @@ func TestExtractNatives(t *testing.T) {
 	mockNativeDir := filepath.Join(tempDir, "natives")
 
 	sysInfo := system.GetSystemInfo()
-	classifierKey := sysInfo.OS 
+	classifierKey := sysInfo.OS
 	classifierValue := "natives-" + sysInfo.OS
-	
+
 	dummyLib := models.Library{
 		Name: "com.example:native:1.0",
 		Natives: map[string]string{
@@ -35,7 +35,7 @@ func TestExtractNatives(t *testing.T) {
 		Downloads: models.LibraryDownloadMap{
 			Classifiers: map[string]models.DownloadInfo{
 				classifierValue: {
-					URL: "http://mock/native.jar",
+					URL:  "http://mock/native.jar",
 					Path: "com/example/native/1.0/native.jar",
 				},
 			},
@@ -62,7 +62,12 @@ func TestExtractNatives(t *testing.T) {
 	if _, err := os.Stat(ignoredFile); !os.IsNotExist(err) {
 		t.Errorf("META-INF should have been ignored/skipped")
 	}
-	
+
+	hashFile := filepath.Join(mockNativeDir, "library.so.sha1")
+	if _, err := os.Stat(hashFile); !os.IsNotExist(err) {
+		t.Errorf("Hash files should be ignored/skipped")
+	}
+
 	t.Log("Native extraction verified successfully")
 }
 
@@ -78,6 +83,9 @@ func createMockJar(t *testing.T, path string) {
 
 	f, _ := writer.Create("library.so")
 	f.Write([]byte("binary data"))
+
+	h, _ := writer.Create("library.so.sha1")
+	h.Write([]byte("dummy hash"))
 
 	m, _ := writer.Create("META-INF/MANIFEST.MF")
 	m.Write([]byte("Manifest-Version: 1.0"))

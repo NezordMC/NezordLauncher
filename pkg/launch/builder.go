@@ -31,13 +31,12 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 		return nil, err
 	}
 
-
 	mcUserType := "mojang"
 	switch options.UserType {
 	case "microsoft":
 		mcUserType = "msa"
 	case "offline":
-		mcUserType = "legacy" 
+		mcUserType = "legacy"
 	case "elyby":
 		mcUserType = "mojang"
 	}
@@ -56,7 +55,7 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 	if clientID == "null" {
 		clientID = options.UUID
 	}
-	
+
 	vars := map[string]string{
 		"${auth_player_name}":  options.PlayerName,
 		"${auth_uuid}":         options.UUID,
@@ -66,7 +65,7 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 		"${version_name}":      options.VersionID,
 		"${game_directory}":    options.GameDir,
 		"${assets_root}":       options.AssetsDir,
-		"${assets_index_name}": version.AssetIndex.ID,
+		"${assets_index_name}": assetIndexName(version),
 		"${auth_xuid}":         clientID,
 		"${clientid}":          clientID,
 		"${version_type}":      version.Type,
@@ -80,6 +79,11 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 
 	args = append(args, fmt.Sprintf("-Xmx%dM", options.RamMB))
 	args = append(args, fmt.Sprintf("-Djava.library.path=%s", options.NativesDir))
+	if options.NativesDir != "" {
+		args = append(args, fmt.Sprintf("-Dorg.lwjgl.librarypath=%s", options.NativesDir))
+	}
+	args = append(args, fmt.Sprintf("-Duser.language=%s", "en"))
+	args = append(args, fmt.Sprintf("-Duser.country=%s", "US"))
 
 	if options.AuthlibInjectorPath != "" {
 		args = append(args, fmt.Sprintf("-javaagent:%s=ely.by", options.AuthlibInjectorPath))
@@ -143,17 +147,17 @@ func buildClasspath(version *models.VersionDetail) (string, error) {
 		if !lib.IsAllowed(sysInfo.OS) {
 			continue
 		}
-		
+
 		path := lib.Downloads.Artifact.GetPath()
-		
+
 		if path == "" {
 			path = lib.GetMavenPath()
 		}
 
 		if path == "" {
-			continue 
+			continue
 		}
-		
+
 		fullPath := filepath.Join(libDir, path)
 		paths = append(paths, fullPath)
 	}
@@ -173,23 +177,19 @@ func checkRules(rules []models.Rule) bool {
 	if len(rules) == 0 {
 		return true
 	}
-	
+
 	sysInfo := system.GetSystemInfo()
 	allowed := false
-	
+
 	for _, rule := range rules {
 		isAllow := rule.Action == "allow"
-		
+
 		if rule.OS.Name == "" {
 			allowed = isAllow
 			continue
 		}
-		
-		match := rule.OS.Name == sysInfo.OS
-		
-		if rule.OS.Name == "osx" && sysInfo.OS == "darwin" {
-			match = true
-		}
+
+		match := normalizeOSName(rule.OS.Name) == normalizeOSName(sysInfo.OS)
 
 		if match {
 			allowed = isAllow
@@ -203,4 +203,23 @@ func replaceVars(str string, vars map[string]string) string {
 		str = strings.ReplaceAll(str, k, v)
 	}
 	return str
+}
+
+func assetIndexName(version *models.VersionDetail) string {
+	if version.AssetIndex.ID != "" {
+		return version.AssetIndex.ID
+	}
+	if version.Assets != "" {
+		return version.Assets
+	}
+	return version.ID
+}
+
+func normalizeOSName(name string) string {
+	switch name {
+	case "darwin":
+		return "osx"
+	default:
+		return name
+	}
 }

@@ -1,12 +1,12 @@
 package launch
 
 import (
-	"archive/zip"
-	"fmt"
-	"io"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/models"
 	"NezordLauncher/pkg/system"
+	"archive/zip"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,9 +45,13 @@ func extractJar(jarPath string, destDir string) error {
 		if file.FileInfo().IsDir() || strings.HasPrefix(file.Name, "META-INF") {
 			continue
 		}
+		lower := strings.ToLower(file.Name)
+		if strings.HasSuffix(lower, ".sha1") || strings.HasSuffix(lower, ".md5") || strings.HasSuffix(lower, ".txt") {
+			continue
+		}
 
 		destPath := filepath.Join(destDir, file.Name)
-		
+
 		if !strings.HasPrefix(destPath, filepath.Clean(destDir)+string(os.PathSeparator)) {
 			return fmt.Errorf("illegal file path detected: %s", file.Name)
 		}

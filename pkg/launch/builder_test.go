@@ -38,12 +38,21 @@ func TestBuildArguments_Modern(t *testing.T) {
 	}
 
 	argStr := strings.Join(args, " ")
-	
+
 	if !strings.Contains(argStr, "-Xmx2048M") {
 		t.Error("Missing RAM argument")
 	}
 	if !strings.Contains(argStr, "-Djava.library.path=/tmp/natives") {
 		t.Error("Missing natives path")
+	}
+	if !strings.Contains(argStr, "-Dorg.lwjgl.librarypath=/tmp/natives") {
+		t.Error("Missing lwjgl natives path")
+	}
+	if !strings.Contains(argStr, "-Duser.language=en") {
+		t.Error("Missing language setting")
+	}
+	if !strings.Contains(argStr, "-Duser.country=US") {
+		t.Error("Missing country setting")
 	}
 
 	if !strings.Contains(argStr, "--username NezordUser") {
@@ -69,7 +78,7 @@ func TestBuildArguments_Authlib(t *testing.T) {
 	}
 
 	argStr := strings.Join(args, " ")
-	
+
 	expected := "-javaagent:/path/to/authlib.jar=ely.by"
 	if !strings.Contains(argStr, expected) {
 		t.Errorf("Missing javaagent argument. Got: %s", argStr)
