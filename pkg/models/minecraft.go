@@ -3,7 +3,9 @@ package models
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -36,7 +38,7 @@ type VersionDetail struct {
 	Assets             string        `json:"assets"`
 	Downloads          DownloadMap   `json:"downloads"`
 	Libraries          []Library     `json:"libraries"`
-	MainClass          MainClassData `json:"mainClass"` 
+	MainClass          MainClassData `json:"mainClass"`
 	MinecraftArguments string        `json:"minecraftArguments,omitempty"`
 	Arguments          Arguments     `json:"arguments,omitempty"`
 	Type               string        `json:"type"`
@@ -85,7 +87,7 @@ func (a *Argument) UnmarshalJSON(data []byte) error {
 		Rules []Rule          `json:"rules"`
 		Value json.RawMessage `json:"value"`
 	}
-	
+
 	if err := json.Unmarshal(data, &obj); err != nil {
 		return err
 	}
@@ -133,9 +135,17 @@ func (d DownloadInfo) GetPath() string {
 	if d.Path != "" {
 		return d.Path
 	}
-	
+
 	if d.URL == "" {
 		return ""
+	}
+
+	parsed, err := url.Parse(d.URL)
+	if err == nil && parsed.Path != "" {
+		path := strings.TrimPrefix(parsed.Path, "/")
+		if path != "" {
+			return path
+		}
 	}
 
 	parts := strings.Split(d.URL, "/")
@@ -144,7 +154,7 @@ func (d DownloadInfo) GetPath() string {
 			return strings.Join(parts[i+1:], "/")
 		}
 	}
-	
+
 	return filepath.Base(d.URL)
 }
 
@@ -168,6 +178,7 @@ type Rule struct {
 
 type OSConfig struct {
 	Name string `json:"name"`
+	Arch string `json:"arch"`
 }
 
 func (l *Library) IsAllowed(osName string) bool {
@@ -176,21 +187,25 @@ func (l *Library) IsAllowed(osName string) bool {
 	}
 
 	allowed := false
+	normalizedOS := normalizeOSName(osName)
 	for _, rule := range l.Rules {
 		isActionAllow := rule.Action == "allow"
-		
+
 		if rule.OS.Name == "" {
 			allowed = isActionAllow
 			continue
 		}
 
-		if rule.OS.Name == osName {
+		ruleOS := normalizeOSName(rule.OS.Name)
+		if ruleOS == normalizedOS {
+			if rule.OS.Arch != "" {
+				if !archMatches(rule.OS.Arch) {
+					allowed = false
+					continue
+				}
+			}
 			allowed = isActionAllow
 			continue
-		}
-		
-		if rule.OS.Name == "osx" && osName == "darwin" {
-			allowed = isActionAllow
 		}
 	}
 	return allowed
@@ -201,10 +216,40 @@ func (l *Library) GetMavenPath() string {
 	if len(parts) < 3 {
 		return ""
 	}
-	
+
 	domain := strings.ReplaceAll(parts[0], ".", "/")
 	name := parts[1]
 	version := parts[2]
-	
+
 	return fmt.Sprintf("%s/%s/%s/%s-%s.jar", domain, name, version, name, version)
+}
+
+func normalizeOSName(name string) string {
+	switch name {
+	case "darwin":
+		return "osx"
+	default:
+		return name
+	}
+}
+
+func archMatches(ruleArch string) bool {
+	switch ruleArch {
+	case "x86":
+		return strings.Contains(systemInfoArch(), "x86")
+	case "x64", "amd64":
+		return strings.Contains(systemInfoArch(), "64")
+	case "arm64", "aarch64":
+		return strings.Contains(systemInfoArch(), "arm64")
+	default:
+		return true
+	}
+}
+
+func systemInfoArch() string {
+	return strings.ToLower(runtimeArch())
+}
+
+func runtimeArch() string {
+	return runtime.GOARCH
 }

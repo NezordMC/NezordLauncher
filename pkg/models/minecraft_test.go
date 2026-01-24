@@ -47,3 +47,28 @@ func TestArgumentParsing(t *testing.T) {
 		t.Error("Failed to parse object argument with array value")
 	}
 }
+
+func TestDownloadInfoPathFromURL(t *testing.T) {
+	info := DownloadInfo{URL: "https://maven.fabricmc.net/net/fabricmc/fabric-loader/0.14.25/fabric-loader-0.14.25.jar"}
+	path := info.GetPath()
+	expected := "net/fabricmc/fabric-loader/0.14.25/fabric-loader-0.14.25.jar"
+	if path != expected {
+		t.Fatalf("expected %s got %s", expected, path)
+	}
+}
+
+func TestLibraryRulesOS(t *testing.T) {
+	lib := Library{
+		Name: "org.lwjgl:lwjgl:3.3.3",
+		Rules: []Rule{
+			{Action: "allow", OS: OSConfig{Name: "linux"}},
+			{Action: "disallow", OS: OSConfig{Name: "windows"}},
+		},
+	}
+	if !lib.IsAllowed("linux") {
+		t.Fatalf("expected allowed on linux")
+	}
+	if lib.IsAllowed("windows") {
+		t.Fatalf("expected disallowed on windows")
+	}
+}
