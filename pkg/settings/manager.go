@@ -23,7 +23,7 @@ type Manager struct {
 
 func NewManager() *Manager {
 	return &Manager{
-		filePath: filepath.Join(constants.GetAppDataDir(), "settings.json"),
+		filePath: filepath.Join(constants.GetConfigDir(), "settings.json"),
 		Data: LauncherSettings{
 			Language:    "en",
 			Theme:       "dark",
@@ -60,7 +60,7 @@ func (m *Manager) Get() LauncherSettings {
 func (m *Manager) Update(settings LauncherSettings) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	m.Data = settings
 	return m.saveInternal()
 }

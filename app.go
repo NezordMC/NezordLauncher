@@ -33,7 +33,7 @@ type App struct {
 	accountManager  *auth.AccountManager
 	instanceManager *instances.Manager
 	settingsManager *settings.Manager
-	
+
 	downloadCancel context.CancelFunc
 	downloadMu     sync.Mutex
 
@@ -68,9 +68,26 @@ func (a *App) emit(eventName string, data ...interface{}) {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	
+
+	if err := a.settingsManager.Load(); err != nil {
+		fmt.Printf("Failed to load settings: %s\n", err)
+	}
+
+	if a.settingsManager.Data.DataPath != "" {
+		absPath, err := filepath.Abs(a.settingsManager.Data.DataPath)
+		if err != nil {
+			fmt.Printf("Failed to resolve data path: %s\n", err)
+		} else {
+			if err := os.Setenv("NEZORD_DATA_DIR", absPath); err != nil {
+				fmt.Printf("Failed to set data path: %s\n", err)
+			} else {
+				fmt.Printf("Using data path: %s\n", absPath)
+			}
+		}
+	}
+
 	dirs := []string{
-		constants.GetAppDataDir(),
+		constants.GetConfigDir(),
 		constants.GetInstancesDir(),
 		constants.GetAssetsDir(),
 		constants.GetLibrariesDir(),
@@ -92,10 +109,6 @@ func (a *App) startup(ctx context.Context) {
 
 	if err := a.instanceManager.Load(); err != nil {
 		fmt.Printf("Failed to load instances: %s\n", err)
-	}
-
-	if err := a.settingsManager.Load(); err != nil {
-		fmt.Printf("Failed to load settings: %s\n", err)
 	}
 }
 
@@ -126,7 +139,7 @@ func (a *App) GetFabricLoaders(mcVersion string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var versions []string
 	for _, l := range loaders {
 		versions = append(versions, l.Loader.Version)
@@ -139,7 +152,7 @@ func (a *App) GetQuiltLoaders(mcVersion string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var versions []string
 	for _, l := range loaders {
 		versions = append(versions, l.Loader.Version)
@@ -243,7 +256,6 @@ func (a *App) StartInstanceDownload(instanceID string) error {
 	inst.InstallState = "downloading"
 	a.instanceManager.SaveInstance(inst)
 
-	// Emit event to update UI immediately
 	a.emit("instance_update", inst)
 
 	if err := a.DownloadVersion(inst.GameVersion); err != nil {
@@ -256,7 +268,7 @@ func (a *App) StartInstanceDownload(instanceID string) error {
 	inst.InstallState = "ready"
 	a.instanceManager.SaveInstance(inst)
 	a.emit("instance_update", inst)
-	
+
 	a.emit("downloadComplete", instanceID)
 	return nil
 }
@@ -283,15 +295,14 @@ func (a *App) DownloadVersion(versionID string) error {
 	}()
 
 	pool := downloader.NewWorkerPool(10, 100)
-	
-	// Progress initialized by pool creation, fetcher will add total dynamically
+
 	_ = versionID
 
 	pool.Start(ctx)
 	fetcher := downloader.NewArtifactFetcher(pool)
-	
+
 	a.emit("downloadStatus", fmt.Sprintf("Starting download for: %s", versionID))
-	
+
 	progressTicker := time.NewTicker(100 * time.Millisecond)
 	go func() {
 		for {
@@ -307,7 +318,7 @@ func (a *App) DownloadVersion(versionID string) error {
 	}()
 
 	if err := fetcher.DownloadVersion(ctx, versionID); err != nil {
-		pool.Wait() 
+		pool.Wait()
 		progressTicker.Stop()
 		if err == context.Canceled {
 			a.emit("downloadStatus", "Download cancelled")
@@ -349,7 +360,7 @@ func (a *App) LaunchInstance(instanceID string) error {
 	}
 
 	finalVersionID := inst.GetLaunchVersionID()
-	
+
 	if inst.ModloaderType == instances.ModloaderFabric {
 		a.emit("launchStatus", "Verifying Fabric...")
 		installedID, err := fabric.InstallFabric(inst.GameVersion, inst.ModloaderVersion)
@@ -378,7 +389,7 @@ func (a *App) LaunchInstance(instanceID string) error {
 	}
 
 	nativesDir := filepath.Join(constants.GetInstancesDir(), inst.ID, "natives")
-	
+
 	a.emit("launchStatus", "Preparing environment...")
 
 	version, err := a.getVersionDetails(finalVersionID)
@@ -402,12 +413,12 @@ func (a *App) LaunchInstance(instanceID string) error {
 		if err != nil {
 			return fmt.Errorf("java scan failed: %w", err)
 		}
-		
+
 		javaTargetVersion := finalVersionID
 		if version.InheritsFrom != "" {
 			javaTargetVersion = version.InheritsFrom
 		}
-		
+
 		selectedJava, err := javascanner.SelectJava(javaInstalls, javaTargetVersion)
 		if err != nil {
 			return fmt.Errorf("java selection failed: %w", err)
@@ -433,7 +444,7 @@ func (a *App) LaunchInstance(instanceID string) error {
 
 	ramMB := inst.Settings.RamMB
 	if ramMB == 0 {
-		ramMB = 4096 
+		ramMB = 4096
 	}
 
 	width := 854
@@ -449,7 +460,7 @@ func (a *App) LaunchInstance(instanceID string) error {
 		AccessToken:         account.AccessToken,
 		UserType:            string(account.Type),
 		VersionID:           finalVersionID,
-		GameDir:             instanceDir, 
+		GameDir:             instanceDir,
 		AssetsDir:           constants.GetAssetsDir(),
 		NativesDir:          nativesDir,
 		RamMB:               ramMB,
@@ -468,10 +479,10 @@ func (a *App) LaunchInstance(instanceID string) error {
 	}
 
 	a.emit("launchStatus", "Launching game process...")
-	
+
 	logCallback := func(text string) {
 		a.emit("gameLog", text)
-		fmt.Println(text) 
+		fmt.Println(text)
 	}
 
 	cmd, err := launch.Launch(javaPath, args, instanceDir)
@@ -490,12 +501,11 @@ func (a *App) LaunchInstance(instanceID string) error {
 			a.runningMu.Lock()
 			delete(a.runningInstances, instanceID)
 			a.runningMu.Unlock()
-			a.emit("game_exit", "success") // Or differentiate if error
+			a.emit("game_exit", "success")
 		}()
 
 		if err := launch.Monitor(cmd, logCallback); err != nil {
 			a.emit("launchError", err.Error())
-			// Ideally we would emit game_exit error here, but the defer handles cleanup
 		} else {
 			a.emit("launchStatus", "Game closed successfully")
 		}
@@ -521,8 +531,6 @@ func (a *App) StopInstance(instanceID string) error {
 	return nil
 }
 
-
-
 func (a *App) getVersionDetails(versionID string) (*models.VersionDetail, error) {
 	localPath := filepath.Join(constants.GetVersionsDir(), versionID, fmt.Sprintf("%s.json", versionID))
 	if _, err := os.Stat(localPath); err == nil {
@@ -534,7 +542,7 @@ func (a *App) getVersionDetails(versionID string) (*models.VersionDetail, error)
 		if err := json.Unmarshal(data, &child); err != nil {
 			return nil, err
 		}
-		
+
 		if child.InheritsFrom != "" {
 			parent, err := a.fetchVanillaVersion(child.InheritsFrom)
 			if err != nil {
@@ -554,7 +562,7 @@ func (a *App) fetchVanillaVersion(versionID string) (*models.VersionDetail, erro
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var manifest models.VersionManifest
 	if err := json.Unmarshal(data, &manifest); err != nil {
 		return nil, err

@@ -39,7 +39,7 @@ type AccountManager struct {
 
 func NewAccountManager() *AccountManager {
 	return &AccountManager{
-		filePath: filepath.Join(constants.GetAppDataDir(), "accounts.json"),
+		filePath: filepath.Join(constants.GetConfigDir(), "accounts.json"),
 		Data: AccountData{
 			Accounts: []Account{},
 		},
