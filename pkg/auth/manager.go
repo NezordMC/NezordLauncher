@@ -46,11 +46,9 @@ func NewAccountManager() *AccountManager {
 	}
 }
 
-
 func (m *AccountManager) Load() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-
 
 	if err := os.MkdirAll(filepath.Dir(m.filePath), 0755); err != nil {
 		return err
@@ -71,8 +69,19 @@ func (m *AccountManager) Load() error {
 	for i := range m.Data.Accounts {
 		acc := &m.Data.Accounts[i]
 		if acc.Type != AccountTypeOffline {
-			at, _ := GetSecureToken(acc.Username, "AccessToken")
-			ct, _ := GetSecureToken(acc.Username, "ClientToken")
+			key := tokenKey(*acc)
+			at, _ := GetSecureToken(key, "AccessToken")
+			ct, _ := GetSecureToken(key, "ClientToken")
+			if at == "" && acc.Username != "" && acc.Username != key {
+				at, _ = GetSecureToken(acc.Username, "AccessToken")
+				ct, _ = GetSecureToken(acc.Username, "ClientToken")
+				if at != "" || ct != "" {
+					_ = SetSecureToken(key, "AccessToken", at)
+					_ = SetSecureToken(key, "ClientToken", ct)
+					_ = DeleteSecureToken(acc.Username, "AccessToken")
+					_ = DeleteSecureToken(acc.Username, "ClientToken")
+				}
+			}
 			acc.AccessToken = at
 			acc.ClientToken = ct
 		}
@@ -80,7 +89,6 @@ func (m *AccountManager) Load() error {
 
 	return nil
 }
-
 
 func (m *AccountManager) saveInternal() error {
 	dir := filepath.Dir(m.filePath)
@@ -90,8 +98,9 @@ func (m *AccountManager) saveInternal() error {
 
 	for _, acc := range m.Data.Accounts {
 		if acc.Type != AccountTypeOffline && acc.AccessToken != "" {
-			_ = SetSecureToken(acc.Username, "AccessToken", acc.AccessToken)
-			_ = SetSecureToken(acc.Username, "ClientToken", acc.ClientToken)
+			key := tokenKey(acc)
+			_ = SetSecureToken(key, "AccessToken", acc.AccessToken)
+			_ = SetSecureToken(key, "ClientToken", acc.ClientToken)
 		}
 	}
 
@@ -102,13 +111,11 @@ func (m *AccountManager) saveInternal() error {
 	return os.WriteFile(m.filePath, data, 0644)
 }
 
-
 func (m *AccountManager) AddOfflineAccount(username string) (*Account, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	uuid := GenerateOfflineUUID(username)
-
 
 	for _, acc := range m.Data.Accounts {
 		if acc.UUID == uuid {
@@ -118,7 +125,6 @@ func (m *AccountManager) AddOfflineAccount(username string) (*Account, error) {
 			return &accCopy, nil
 		}
 	}
-
 
 	newAcc := Account{
 		UUID:        uuid,
@@ -138,13 +144,11 @@ func (m *AccountManager) AddOfflineAccount(username string) (*Account, error) {
 	return &newAcc, nil
 }
 
-
 func (m *AccountManager) GetActiveAccount() *Account {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	if m.Data.ActiveUUID == "" {
-
 		if len(m.Data.Accounts) > 0 {
 			acc := m.Data.Accounts[0]
 			return &acc
@@ -158,7 +162,6 @@ func (m *AccountManager) GetActiveAccount() *Account {
 			return &accCopy
 		}
 	}
-	
 
 	if len(m.Data.Accounts) > 0 {
 		acc := m.Data.Accounts[0]
@@ -167,7 +170,6 @@ func (m *AccountManager) GetActiveAccount() *Account {
 
 	return nil
 }
-
 
 func (m *AccountManager) SetActiveAccount(uuid string) error {
 	m.mu.Lock()
@@ -189,11 +191,10 @@ func (m *AccountManager) SetActiveAccount(uuid string) error {
 	return m.saveInternal()
 }
 
-
 func (m *AccountManager) GetAccounts() []Account {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	result := make([]Account, len(m.Data.Accounts))
 	copy(result, m.Data.Accounts)
 	return result
@@ -217,10 +218,10 @@ func (m *AccountManager) AddElyByAccount(username, password string) (*Account, e
 			m.Data.Accounts[i].AccessToken = resp.AccessToken
 			m.Data.Accounts[i].ClientToken = resp.ClientToken
 			m.Data.Accounts[i].Type = AccountTypeElyBy
-			
+
 			m.Data.ActiveUUID = uuid
 			m.saveInternal()
-			
+
 			accCopy := m.Data.Accounts[i]
 			return &accCopy, nil
 		}
@@ -260,10 +261,10 @@ func (m *AccountManager) RemoveAccount(uuid string) error {
 		return fmt.Errorf("account not found")
 	}
 
-	// Remove from slice
+	targetUsername := m.Data.Accounts[foundIndex].Username
+	targetKey := tokenKey(m.Data.Accounts[foundIndex])
 	m.Data.Accounts = append(m.Data.Accounts[:foundIndex], m.Data.Accounts[foundIndex+1:]...)
 
-	// If active account was removed, reset active UUID
 	if m.Data.ActiveUUID == uuid {
 		m.Data.ActiveUUID = ""
 		if len(m.Data.Accounts) > 0 {
@@ -271,13 +272,21 @@ func (m *AccountManager) RemoveAccount(uuid string) error {
 		}
 	}
 
-	// Clean up secure tokens
-	_ = DeleteSecureToken(uuid, "AccessToken") // Note: using uuid as user/service key might be safer, but current implementation uses username. 
-	// However, username might not be unique if changed. 
-	// The current saveInternal uses SetSecureToken(acc.Username...
-	// So we should delete by username if we can retrieve it before deletion?
-	// Actually, let's keep it simple. The delete doesn't fail hard.
-	// We'll rely on the fact that if they add it back, it overwrites.
-	
+	if targetKey != "" {
+		_ = DeleteSecureToken(targetKey, "AccessToken")
+		_ = DeleteSecureToken(targetKey, "ClientToken")
+	}
+	if targetUsername != "" && targetUsername != targetKey {
+		_ = DeleteSecureToken(targetUsername, "AccessToken")
+		_ = DeleteSecureToken(targetUsername, "ClientToken")
+	}
+
 	return m.saveInternal()
+}
+
+func tokenKey(acc Account) string {
+	if acc.UUID != "" {
+		return acc.UUID
+	}
+	return acc.Username
 }

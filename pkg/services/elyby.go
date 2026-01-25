@@ -1,11 +1,12 @@
 package services
 
 import (
-	"fmt"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/network"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -20,7 +21,7 @@ func GetAuthlibInjectorPath() string {
 
 func EnsureAuthlibInjector() (string, error) {
 	path := GetAuthlibInjectorPath()
-	
+
 	if _, err := os.Stat(path); err == nil {
 		return path, nil
 	}
@@ -28,11 +29,10 @@ func EnsureAuthlibInjector() (string, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return "", fmt.Errorf("failed to create runtimes directory: %w", err)
 	}
-	client := network.NewHttpClient()
-	
-	data, err := client.Get(AuthlibInjectorURL)
+	sourceURL := authlibInjectorURL()
+	data, err := fetchAuthlibData(sourceURL)
 	if err != nil {
-		return "", fmt.Errorf("failed to download authlib-injector from %s: %w", AuthlibInjectorURL, err)
+		return "", err
 	}
 
 	if err := os.WriteFile(path, data, 0644); err != nil {
@@ -40,4 +40,29 @@ func EnsureAuthlibInjector() (string, error) {
 	}
 
 	return path, nil
+}
+
+func authlibInjectorURL() string {
+	url := os.Getenv("NEZORD_AUTHLIB_INJECTOR_URL")
+	if url == "" {
+		url = AuthlibInjectorURL
+	}
+	return url
+}
+
+func fetchAuthlibData(url string) ([]byte, error) {
+	if strings.HasPrefix(url, "file://") {
+		path := strings.TrimPrefix(url, "file://")
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read authlib injector file: %w", err)
+		}
+		return data, nil
+	}
+	client := network.NewHttpClient()
+	data, err := client.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to download authlib-injector from %s: %w", url, err)
+	}
+	return data, nil
 }

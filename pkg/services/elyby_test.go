@@ -3,21 +3,30 @@ package services
 import (
 	"NezordLauncher/pkg/constants"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
 func TestEnsureAuthlibInjector(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	originalHome := os.Getenv("HOME")
 	originalAppData := os.Getenv("APPDATA")
-	
-	os.Setenv("HOME", tempDir)       // Linux/Mac
-	os.Setenv("APPDATA", tempDir)    // Windows
+	originalURL := os.Getenv("NEZORD_AUTHLIB_INJECTOR_URL")
+
+	os.Setenv("HOME", tempDir)
+	os.Setenv("APPDATA", tempDir)
 	defer func() {
 		os.Setenv("HOME", originalHome)
 		os.Setenv("APPDATA", originalAppData)
+		os.Setenv("NEZORD_AUTHLIB_INJECTOR_URL", originalURL)
 	}()
+
+	sourceFile := filepath.Join(tempDir, "authlib.jar")
+	if err := os.WriteFile(sourceFile, []byte("mock-authlib"), 0644); err != nil {
+		t.Fatalf("Failed to create mock authlib file: %v", err)
+	}
+	os.Setenv("NEZORD_AUTHLIB_INJECTOR_URL", "file://"+sourceFile)
 
 	path, err := EnsureAuthlibInjector()
 	if err != nil {

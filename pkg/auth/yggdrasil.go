@@ -4,6 +4,7 @@ import (
 	"NezordLauncher/pkg/network"
 	"encoding/json"
 	"fmt"
+	"os"
 )
 
 const ElyByAuthURL = "https://authserver.ely.by/auth/authenticate"
@@ -22,11 +23,11 @@ type Agent struct {
 }
 
 type AuthResponse struct {
-	AccessToken       string  `json:"accessToken"`
-	ClientToken       string  `json:"clientToken"`
-	SelectedProfile   Profile `json:"selectedProfile"`
+	AccessToken       string    `json:"accessToken"`
+	ClientToken       string    `json:"clientToken"`
+	SelectedProfile   Profile   `json:"selectedProfile"`
 	AvailableProfiles []Profile `json:"availableProfiles"`
-	User              User    `json:"user"`
+	User              User      `json:"user"`
 }
 
 type Profile struct {
@@ -38,8 +39,11 @@ type User struct {
 	ID string `json:"id"`
 }
 
-// AuthenticateElyBy sends credentials to Ely.by and returns the session data
 func AuthenticateElyBy(username, password string) (*AuthResponse, error) {
+	authURL := os.Getenv("NEZORD_ELYBY_AUTH_URL")
+	if authURL == "" {
+		authURL = ElyByAuthURL
+	}
 	payload := AuthPayload{
 		Agent: Agent{
 			Name:    "Minecraft",
@@ -56,7 +60,7 @@ func AuthenticateElyBy(username, password string) (*AuthResponse, error) {
 	}
 
 	client := network.NewHttpClient()
-	responseBytes, err := client.PostJSON(ElyByAuthURL, body)
+	responseBytes, err := client.PostJSON(authURL, body)
 	if err != nil {
 		return nil, fmt.Errorf("authentication failed: %w", err)
 	}
