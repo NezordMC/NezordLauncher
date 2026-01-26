@@ -48,7 +48,10 @@ export function SettingsPage() {
     if (storedH) setResH(parseInt(storedH));
 
     const storedMode = localStorage.getItem("nezord_window_mode");
-    if (storedMode) setWindowMode(storedMode);
+    const allowedModes = ["Windowed", "Fullscreen", "Borderless"];
+    if (storedMode && allowedModes.includes(storedMode)) {
+      setWindowMode(storedMode);
+    }
 
     const storedArgs = localStorage.getItem("nezord_global_jvm_args");
     if (storedArgs) setJvmArgs(storedArgs);

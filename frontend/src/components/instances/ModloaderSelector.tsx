@@ -64,13 +64,19 @@ export function ModloaderSelector({
 
       {selectedType !== "vanilla" && (
         <Select
-          value={loaderVersion}
+          value={availableLoaders.includes(loaderVersion) ? loaderVersion : undefined}
           onValueChange={onLoaderVersionChange}
-          disabled={isLoadingLoaders}
+          disabled={isLoadingLoaders || availableLoaders.length === 0}
         >
           <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-white text-sm h-9">
             <SelectValue
-              placeholder={isLoadingLoaders ? "Loading..." : "Select version"}
+              placeholder={
+                isLoadingLoaders
+                  ? "Loading..."
+                  : availableLoaders.length === 0
+                    ? "No versions available"
+                    : "Select version"
+              }
             />
           </SelectTrigger>
           <SelectContent className="max-h-48 bg-zinc-900 border-zinc-700">

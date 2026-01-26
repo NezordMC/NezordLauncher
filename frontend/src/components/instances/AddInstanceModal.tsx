@@ -111,7 +111,15 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
 
           <div className="space-y-1.5">
             <label className="text-xs text-zinc-500">Game Version</label>
-            <Select value={gameVersion} onValueChange={setGameVersion}>
+            <Select
+              value={
+                minecraftVersions.some((v) => v.id === gameVersion)
+                  ? gameVersion
+                  : undefined
+              }
+              onValueChange={setGameVersion}
+              disabled={minecraftVersions.length === 0}
+            >
               <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-white text-sm h-9">
                 <SelectValue placeholder="Select version" />
               </SelectTrigger>

@@ -40,6 +40,10 @@ export function GeneralCard({
     { label: "Medium (4GB)", min: 2048, max: 4096 },
     { label: "High (8GB)", min: 4096, max: 8192 },
   ];
+  const windowOptions = ["Windowed", "Fullscreen", "Borderless"];
+  const safeWindowMode = windowOptions.includes(windowMode)
+    ? windowMode
+    : "Windowed";
 
   const applyPreset = (min: number, max: number) => {
     setMinRam(min);
@@ -54,7 +58,6 @@ export function GeneralCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Resolution */}
         <div className="space-y-3">
           <label className="text-sm font-medium text-zinc-300">
             Default Resolution
@@ -85,7 +88,6 @@ export function GeneralCard({
           </div>
         </div>
 
-        {/* Memory Range */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-zinc-300">
@@ -138,7 +140,6 @@ export function GeneralCard({
             </div>
           </div>
 
-          {/* Quick Presets */}
           <div className="grid grid-cols-3 gap-2 mt-2">
             {presets.map((preset) => (
               <Button
@@ -154,19 +155,20 @@ export function GeneralCard({
           </div>
         </div>
 
-        {/* Game Window Mode */}
         <div className="space-y-3">
           <label className="text-sm font-medium text-zinc-300">
             Game Window Mode
           </label>
-          <Select value={windowMode} onValueChange={setWindowMode}>
+          <Select value={safeWindowMode} onValueChange={setWindowMode}>
             <SelectTrigger className="w-full bg-zinc-950/50 border-zinc-800">
               <SelectValue placeholder="Select mode" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Windowed">Windowed</SelectItem>
-              <SelectItem value="Fullscreen">Fullscreen</SelectItem>
-              <SelectItem value="Borderless">Borderless</SelectItem>
+              {windowOptions.map((mode) => (
+                <SelectItem key={mode} value={mode}>
+                  {mode}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
