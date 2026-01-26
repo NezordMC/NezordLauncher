@@ -44,3 +44,10 @@ export interface GlobalDefaults {
   height: number;
   jvmArgs: string;
 }
+
+export interface LauncherSettings {
+  language: string;
+  theme: string;
+  closeAction: string;
+  dataPath: string;
+}

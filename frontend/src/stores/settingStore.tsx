@@ -5,8 +5,12 @@ import {
   useState,
   useEffect,
 } from "react";
-import { ScanJavaInstallations } from "../../wailsjs/go/main/App";
-import { GlobalDefaults, JavaInfo } from "../types";
+import {
+  GetSettings,
+  ScanJavaInstallations,
+  UpdateGlobalSettings,
+} from "../../wailsjs/go/main/App";
+import { GlobalDefaults, JavaInfo, LauncherSettings } from "../types";
 
 function useSettingsLogic() {
   const [defaults, setDefaults] = useState<GlobalDefaults>({
@@ -15,6 +19,8 @@ function useSettingsLogic() {
     height: 480,
     jvmArgs: "",
   });
+  const [launcherSettings, setLauncherSettings] =
+    useState<LauncherSettings | null>(null);
 
   useEffect(() => {
     loadDefaults();
@@ -43,10 +49,41 @@ function useSettingsLogic() {
     }
   };
 
+  const loadLauncherSettings = async () => {
+    try {
+      const settings = await GetSettings();
+      const normalized = {
+        language: settings?.language || "en",
+        theme: settings?.theme || "dark",
+        closeAction: settings?.closeAction || "keep_open",
+        dataPath: settings?.dataPath || "",
+      };
+      setLauncherSettings(normalized);
+      return normalized;
+    } catch (e) {
+      console.error("Settings load failed", e);
+      return null;
+    }
+  };
+
+  const updateLauncherSettings = async (settings: LauncherSettings) => {
+    try {
+      await UpdateGlobalSettings(settings);
+      setLauncherSettings(settings);
+      return true;
+    } catch (e) {
+      console.error("Settings update failed", e);
+      return false;
+    }
+  };
+
   return {
     defaults,
     scanJava,
     loadDefaults,
+    launcherSettings,
+    loadLauncherSettings,
+    updateLauncherSettings,
   };
 }
 

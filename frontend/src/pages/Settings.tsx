@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useSettingStore } from "@/stores/settingStore";
 import { JavaInfo } from "@/types";
 import { ArrowLeft } from "lucide-react";
@@ -10,7 +12,8 @@ import { UpdaterAboutCard } from "@/components/settings/UpdaterAboutCard";
 
 export function SettingsPage() {
   const navigate = useNavigate();
-  const { scanJava } = useSettingStore();
+  const { scanJava, loadLauncherSettings, updateLauncherSettings } =
+    useSettingStore();
 
   const [javaList, setJavaList] = useState<JavaInfo[]>([]);
   const [isScanning, setIsScanning] = useState(false);
@@ -22,16 +25,16 @@ export function SettingsPage() {
   const [windowMode, setWindowMode] = useState("Windowed");
   const [jvmArgs, setJvmArgs] = useState("");
   const [selectedJavaPath, setSelectedJavaPath] = useState("");
+  const [dataPath, setDataPath] = useState("");
+  const [isSavingPath, setIsSavingPath] = useState(false);
 
   useEffect(() => {
-    // Migration from old single RAM value
     const storedRam = localStorage.getItem("nezord_default_ram");
     if (storedRam) {
       const ram = parseInt(storedRam);
       setMaxRam(ram);
-      setMinRam(Math.max(1024, ram / 2)); // Default min to half of max
+      setMinRam(Math.max(1024, ram / 2));
     } else {
-      // Check new keys
       const storedMin = localStorage.getItem("nezord_min_ram");
       const storedMax = localStorage.getItem("nezord_max_ram");
       if (storedMin) setMinRam(parseInt(storedMin));
@@ -54,13 +57,16 @@ export function SettingsPage() {
     if (storedJava) setSelectedJavaPath(storedJava);
 
     handleScanJava();
+    loadLauncherSettings().then((settings) => {
+      if (settings?.dataPath !== undefined) {
+        setDataPath(settings.dataPath || "");
+      }
+    });
   }, []);
 
   useEffect(() => {
     localStorage.setItem("nezord_min_ram", minRam.toString());
     localStorage.setItem("nezord_max_ram", maxRam.toString());
-    // Also update legacy key for compatibility if needed, or remove it.
-    // Let's keep legacy key updated with maxRam to be safe for other parts of the app
     localStorage.setItem("nezord_default_ram", maxRam.toString());
   }, [minRam, maxRam]);
 
@@ -86,14 +92,25 @@ export function SettingsPage() {
     const list = await scanJava();
     setJavaList(list);
 
-    // Auto-select valid Java if none selected
     if (!selectedJavaPath || !list.some((j) => j.path === selectedJavaPath)) {
-      // Prefer Java 17+ or just first
       const best = list.find((j) => j.major >= 17) || list[0];
       if (best) setSelectedJavaPath(best.path);
     }
 
     setIsScanning(false);
+  };
+
+  const handleSaveDataPath = async () => {
+    setIsSavingPath(true);
+    const current = await loadLauncherSettings();
+    const next = {
+      language: current?.language || "en",
+      theme: current?.theme || "dark",
+      closeAction: current?.closeAction || "keep_open",
+      dataPath: dataPath.trim(),
+    };
+    await updateLauncherSettings(next);
+    setIsSavingPath(false);
   };
 
   return (
@@ -132,6 +149,29 @@ export function SettingsPage() {
           selectedPath={selectedJavaPath}
           onSelect={setSelectedJavaPath}
         />
+        <Card className="border-zinc-800 bg-zinc-900">
+          <CardHeader>
+            <CardTitle className="text-xl">Data Path</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input
+              value={dataPath}
+              onChange={(e) => setDataPath(e.target.value)}
+              placeholder="/home/user/.local/share/NezordLauncher"
+              className="font-mono bg-zinc-950/50"
+            />
+            <div className="text-xs text-zinc-500">
+              Restart required to apply the new data path
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleSaveDataPath}
+              disabled={isSavingPath}
+            >
+              {isSavingPath ? "Saving..." : "Save Data Path"}
+            </Button>
+          </CardContent>
+        </Card>
         <div className="lg:col-span-2">
           <UpdaterAboutCard />
         </div>
