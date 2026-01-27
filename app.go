@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -467,6 +468,13 @@ func (a *App) LaunchInstance(instanceID string) error {
 		Width:               width,
 		Height:              height,
 		AuthlibInjectorPath: authlibPath,
+	}
+	settings := a.settingsManager.Get()
+	if strings.EqualFold(settings.WindowMode, "Fullscreen") {
+		opts.Fullscreen = true
+	}
+	if strings.EqualFold(settings.WindowMode, "Borderless") {
+		opts.Borderless = true
 	}
 
 	args, err := launch.BuildArguments(version, opts)

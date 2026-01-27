@@ -85,6 +85,58 @@ func TestBuildArguments_Authlib(t *testing.T) {
 	}
 }
 
+func TestBuildArguments_Borderless(t *testing.T) {
+	version := &models.VersionDetail{
+		ID:        "1.20.1",
+		MainClass: models.MainClassData{Client: "net.minecraft.client.main.Main"},
+	}
+
+	opts := LaunchOptions{
+		PlayerName: "NezordUser",
+		VersionID:  "1.20.1",
+		Borderless: true,
+	}
+
+	args, err := BuildArguments(version, opts)
+	if err != nil {
+		t.Fatalf("Failed to build args: %v", err)
+	}
+
+	argStr := strings.Join(args, " ")
+	if !strings.Contains(argStr, "-Dorg.lwjgl.glfw.window.undecorated=true") {
+		t.Error("Missing undecorated flag")
+	}
+	if !strings.Contains(argStr, "-Dorg.lwjgl.glfw.window.maximized=true") {
+		t.Error("Missing maximized flag")
+	}
+}
+
+func TestBuildArguments_Borderless_Legacy(t *testing.T) {
+	version := &models.VersionDetail{
+		ID:        "1.12.2",
+		MainClass: models.MainClassData{Client: "net.minecraft.client.main.Main"},
+	}
+
+	opts := LaunchOptions{
+		PlayerName: "NezordUser",
+		VersionID:  "1.12.2",
+		Borderless: true,
+	}
+
+	args, err := BuildArguments(version, opts)
+	if err != nil {
+		t.Fatalf("Failed to build args: %v", err)
+	}
+
+	argStr := strings.Join(args, " ")
+	if !strings.Contains(argStr, "-Dorg.lwjgl.opengl.Window.undecorated=true") {
+		t.Error("Missing legacy undecorated flag")
+	}
+	if strings.Contains(argStr, "-Dorg.lwjgl.glfw.window.undecorated=true") {
+		t.Error("Unexpected GLFW flag for legacy")
+	}
+}
+
 func TestBuildArguments_Legacy(t *testing.T) {
 	version := &models.VersionDetail{
 		ID:                 "1.7.10",

@@ -51,12 +51,13 @@ function useSettingsLogic() {
 
   const loadLauncherSettings = async () => {
     try {
-      const settings = await GetSettings();
+      const settings = (await GetSettings()) as LauncherSettings;
       const normalized = {
         language: settings?.language || "en",
         theme: settings?.theme || "dark",
         closeAction: settings?.closeAction || "keep_open",
         dataPath: settings?.dataPath || "",
+        windowMode: settings?.windowMode || "Windowed",
       };
       setLauncherSettings(normalized);
       return normalized;

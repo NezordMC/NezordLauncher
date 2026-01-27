@@ -6,6 +6,8 @@ import (
 	"NezordLauncher/pkg/system"
 	"fmt"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -23,6 +25,8 @@ type LaunchOptions struct {
 	Width               int
 	Height              int
 	AuthlibInjectorPath string
+	Fullscreen          bool
+	Borderless          bool
 }
 
 func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]string, error) {
@@ -88,6 +92,14 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 	if options.AuthlibInjectorPath != "" {
 		args = append(args, fmt.Sprintf("-javaagent:%s=ely.by", options.AuthlibInjectorPath))
 	}
+	if options.Borderless {
+		if isLegacyLWJGL2(version.ID) {
+			args = append(args, "-Dorg.lwjgl.opengl.Window.undecorated=true")
+		} else {
+			args = append(args, "-Dorg.lwjgl.glfw.window.undecorated=true")
+			args = append(args, "-Dorg.lwjgl.glfw.window.maximized=true")
+		}
+	}
 
 	if len(version.Arguments.JVM) > 0 {
 		for _, arg := range version.Arguments.JVM {
@@ -133,6 +145,17 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 	if !hasWidth && options.Width > 0 && options.Height > 0 {
 		args = append(args, "--width", fmt.Sprintf("%d", options.Width))
 		args = append(args, "--height", fmt.Sprintf("%d", options.Height))
+	}
+
+	hasFullscreen := false
+	for _, a := range args {
+		if a == "--fullscreen" {
+			hasFullscreen = true
+			break
+		}
+	}
+	if options.Fullscreen && !hasFullscreen {
+		args = append(args, "--fullscreen")
 	}
 
 	return args, nil
@@ -222,4 +245,38 @@ func normalizeOSName(name string) string {
 	default:
 		return name
 	}
+}
+
+func isLegacyLWJGL2(versionID string) bool {
+	major, minor, ok := parseMinecraftVersion(versionID)
+	if !ok {
+		return false
+	}
+	if major != 1 {
+		return false
+	}
+	return minor < 13
+}
+
+func parseMinecraftVersion(version string) (int, int, bool) {
+	trimmed := version
+	for _, sep := range []string{"-", "+"} {
+		if idx := strings.Index(trimmed, sep); idx >= 0 {
+			trimmed = trimmed[:idx]
+		}
+	}
+	re := regexp.MustCompile(`^(\d+)\.(\d+)`)
+	matches := re.FindStringSubmatch(trimmed)
+	if len(matches) < 3 {
+		return 0, 0, false
+	}
+	major, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return 0, 0, false
+	}
+	minor, err := strconv.Atoi(matches[2])
+	if err != nil {
+		return 0, 0, false
+	}
+	return major, minor, true
 }

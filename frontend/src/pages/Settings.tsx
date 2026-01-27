@@ -12,8 +12,12 @@ import { UpdaterAboutCard } from "@/components/settings/UpdaterAboutCard";
 
 export function SettingsPage() {
   const navigate = useNavigate();
-  const { scanJava, loadLauncherSettings, updateLauncherSettings } =
-    useSettingStore();
+  const {
+    scanJava,
+    loadLauncherSettings,
+    updateLauncherSettings,
+    launcherSettings,
+  } = useSettingStore();
 
   const [javaList, setJavaList] = useState<JavaInfo[]>([]);
   const [isScanning, setIsScanning] = useState(false);
@@ -65,6 +69,9 @@ export function SettingsPage() {
       if (settings?.dataPath !== undefined) {
         setDataPath(settings.dataPath || "");
       }
+      if (!storedMode && settings?.windowMode) {
+        setWindowMode(settings.windowMode);
+      }
     });
     setIsDefaultsLoaded(true);
   }, []);
@@ -86,6 +93,20 @@ export function SettingsPage() {
     if (!isDefaultsLoaded) return;
     localStorage.setItem("nezord_window_mode", windowMode);
   }, [windowMode, isDefaultsLoaded]);
+
+  useEffect(() => {
+    if (!isDefaultsLoaded) return;
+    if (!launcherSettings) return;
+    if (launcherSettings.windowMode === windowMode) return;
+    const next = {
+      language: launcherSettings.language || "en",
+      theme: launcherSettings.theme || "dark",
+      closeAction: launcherSettings.closeAction || "keep_open",
+      dataPath: launcherSettings.dataPath || "",
+      windowMode: windowMode,
+    };
+    updateLauncherSettings(next);
+  }, [isDefaultsLoaded, launcherSettings, updateLauncherSettings, windowMode]);
 
   useEffect(() => {
     if (!isDefaultsLoaded) return;
@@ -118,6 +139,7 @@ export function SettingsPage() {
       theme: current?.theme || "dark",
       closeAction: current?.closeAction || "keep_open",
       dataPath: dataPath.trim(),
+      windowMode: current?.windowMode || windowMode,
     };
     await updateLauncherSettings(next);
     setIsSavingPath(false);

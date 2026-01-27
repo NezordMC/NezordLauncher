@@ -13,6 +13,7 @@ type LauncherSettings struct {
 	Theme       string `json:"theme"`
 	CloseAction string `json:"closeAction"`
 	DataPath    string `json:"dataPath"`
+	WindowMode  string `json:"windowMode"`
 }
 
 type Manager struct {
@@ -28,6 +29,7 @@ func NewManager() *Manager {
 			Language:    "en",
 			Theme:       "dark",
 			CloseAction: "keep_open",
+			WindowMode:  "Windowed",
 		},
 	}
 }

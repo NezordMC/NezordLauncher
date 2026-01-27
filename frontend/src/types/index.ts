@@ -50,4 +50,5 @@ export interface LauncherSettings {
   theme: string;
   closeAction: string;
   dataPath: string;
+  windowMode: string;
 }
