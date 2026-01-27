@@ -27,6 +27,7 @@ export function SettingsPage() {
   const [selectedJavaPath, setSelectedJavaPath] = useState("");
   const [dataPath, setDataPath] = useState("");
   const [isSavingPath, setIsSavingPath] = useState(false);
+  const [isDefaultsLoaded, setIsDefaultsLoaded] = useState(false);
 
   useEffect(() => {
     const storedRam = localStorage.getItem("nezord_default_ram");
@@ -65,30 +66,36 @@ export function SettingsPage() {
         setDataPath(settings.dataPath || "");
       }
     });
+    setIsDefaultsLoaded(true);
   }, []);
 
   useEffect(() => {
+    if (!isDefaultsLoaded) return;
     localStorage.setItem("nezord_min_ram", minRam.toString());
     localStorage.setItem("nezord_max_ram", maxRam.toString());
     localStorage.setItem("nezord_default_ram", maxRam.toString());
-  }, [minRam, maxRam]);
+  }, [minRam, maxRam, isDefaultsLoaded]);
 
   useEffect(() => {
+    if (!isDefaultsLoaded) return;
     localStorage.setItem("nezord_default_width", resW.toString());
     localStorage.setItem("nezord_default_height", resH.toString());
-  }, [resW, resH]);
+  }, [resW, resH, isDefaultsLoaded]);
 
   useEffect(() => {
+    if (!isDefaultsLoaded) return;
     localStorage.setItem("nezord_window_mode", windowMode);
-  }, [windowMode]);
+  }, [windowMode, isDefaultsLoaded]);
 
   useEffect(() => {
+    if (!isDefaultsLoaded) return;
     localStorage.setItem("nezord_global_jvm_args", jvmArgs);
-  }, [jvmArgs]);
+  }, [jvmArgs, isDefaultsLoaded]);
 
   useEffect(() => {
+    if (!isDefaultsLoaded) return;
     localStorage.setItem("nezord_java_path", selectedJavaPath);
-  }, [selectedJavaPath]);
+  }, [selectedJavaPath, isDefaultsLoaded]);
 
   const handleScanJava = async () => {
     setIsScanning(true);

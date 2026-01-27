@@ -25,8 +25,10 @@ export function MemoryFinishStep({
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    setRamValue(4096);
-  }, []);
+    if (!ramValue || Number.isNaN(ramValue)) {
+      setRamValue(4096);
+    }
+  }, [ramValue, setRamValue]);
 
   const handlePreset = (value: number) => {
     setRamValue(value);

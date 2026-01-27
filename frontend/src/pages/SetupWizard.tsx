@@ -21,6 +21,15 @@ export function SetupWizardPage() {
 
   useEffect(() => {
     handleScanJava();
+    const storedMax = localStorage.getItem("nezord_max_ram");
+    const storedDefault = localStorage.getItem("nezord_default_ram");
+    const initial = storedMax || storedDefault;
+    if (initial) {
+      const parsed = parseInt(initial);
+      if (!Number.isNaN(parsed)) {
+        setRamValue(parsed);
+      }
+    }
   }, []);
 
   const handleScanJava = async () => {
@@ -37,7 +46,8 @@ export function SetupWizardPage() {
     localStorage.setItem("setup_completed", "true");
     localStorage.setItem("nezord_default_ram", ramValue.toString());
     localStorage.setItem("nezord_max_ram", ramValue.toString());
-    localStorage.setItem("nezord_min_ram", Math.floor(ramValue / 2).toString());
+    const minValue = Math.max(1024, Math.floor(ramValue / 2));
+    localStorage.setItem("nezord_min_ram", minValue.toString());
     if (selectedJava) {
       localStorage.setItem("nezord_java_path", selectedJava);
     }
