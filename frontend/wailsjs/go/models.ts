@@ -179,6 +179,7 @@ export namespace settings {
 	    theme: string;
 	    closeAction: string;
 	    dataPath: string;
+	    windowMode: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new LauncherSettings(source);
@@ -190,6 +191,7 @@ export namespace settings {
 	        this.theme = source["theme"];
 	        this.closeAction = source["closeAction"];
 	        this.dataPath = source["dataPath"];
+	        this.windowMode = source["windowMode"];
 	    }
 	}
 
