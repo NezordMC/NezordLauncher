@@ -398,13 +398,24 @@ func (a *App) LaunchInstance(instanceID string) error {
 		return fmt.Errorf("failed to get version details: %w", err)
 	}
 
+	settings := a.settingsManager.Get()
+
 	javaPath := ""
 	if inst.Settings.OverrideJava && inst.Settings.JavaPath != "" {
-		a.emit("launchStatus", "Using custom Java...")
+		a.emit("launchStatus", "Using custom Java from instance...")
 		if _, err := os.Stat(inst.Settings.JavaPath); err == nil {
 			javaPath = inst.Settings.JavaPath
 		} else {
-			a.emit("launchError", "Custom Java path invalid, falling back to auto-detect")
+			a.emit("launchError", "Instance Java path invalid, falling back to settings or auto-detect")
+		}
+	}
+
+	if javaPath == "" && settings.DefaultJavaPath != "" {
+		a.emit("launchStatus", "Using Java from settings...")
+		if _, err := os.Stat(settings.DefaultJavaPath); err == nil {
+			javaPath = settings.DefaultJavaPath
+		} else {
+			a.emit("launchError", "Settings Java path invalid, falling back to auto-detect")
 		}
 	}
 
@@ -445,11 +456,21 @@ func (a *App) LaunchInstance(instanceID string) error {
 
 	ramMB := inst.Settings.RamMB
 	if ramMB == 0 {
-		ramMB = 4096
+		if settings.DefaultRamMB > 0 {
+			ramMB = settings.DefaultRamMB
+		} else {
+			ramMB = 4096
+		}
 	}
 
-	width := 854
-	height := 480
+	width := settings.DefaultResolutionW
+	height := settings.DefaultResolutionH
+	if width <= 0 {
+		width = 854
+	}
+	if height <= 0 {
+		height = 480
+	}
 	if inst.Settings.ResolutionW > 0 && inst.Settings.ResolutionH > 0 {
 		width = inst.Settings.ResolutionW
 		height = inst.Settings.ResolutionH
@@ -469,7 +490,6 @@ func (a *App) LaunchInstance(instanceID string) error {
 		Height:              height,
 		AuthlibInjectorPath: authlibPath,
 	}
-	settings := a.settingsManager.Get()
 	if strings.EqualFold(settings.WindowMode, "Fullscreen") {
 		opts.Fullscreen = true
 	}
@@ -482,8 +502,15 @@ func (a *App) LaunchInstance(instanceID string) error {
 		return fmt.Errorf("argument build failed: %w", err)
 	}
 
+	prefixArgs := []string{}
+	if settings.DefaultJvmArgs != "" {
+		prefixArgs = append(prefixArgs, settings.DefaultJvmArgs)
+	}
 	if inst.Settings.JvmArgs != "" {
-		args = append([]string{inst.Settings.JvmArgs}, args...)
+		prefixArgs = append(prefixArgs, inst.Settings.JvmArgs)
+	}
+	if len(prefixArgs) > 0 {
+		args = append(prefixArgs, args...)
 	}
 
 	a.emit("launchStatus", "Launching game process...")

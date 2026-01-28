@@ -9,11 +9,16 @@ import (
 )
 
 type LauncherSettings struct {
-	Language    string `json:"language"`
-	Theme       string `json:"theme"`
-	CloseAction string `json:"closeAction"`
-	DataPath    string `json:"dataPath"`
-	WindowMode  string `json:"windowMode"`
+	Language           string `json:"language"`
+	Theme              string `json:"theme"`
+	CloseAction        string `json:"closeAction"`
+	DataPath           string `json:"dataPath"`
+	WindowMode         string `json:"windowMode"`
+	DefaultRamMB       int    `json:"defaultRamMB"`
+	DefaultResolutionW int    `json:"defaultResolutionW"`
+	DefaultResolutionH int    `json:"defaultResolutionH"`
+	DefaultJvmArgs     string `json:"defaultJvmArgs"`
+	DefaultJavaPath    string `json:"defaultJavaPath"`
 }
 
 type Manager struct {
@@ -26,10 +31,13 @@ func NewManager() *Manager {
 	return &Manager{
 		filePath: filepath.Join(constants.GetConfigDir(), "settings.json"),
 		Data: LauncherSettings{
-			Language:    "en",
-			Theme:       "dark",
-			CloseAction: "keep_open",
-			WindowMode:  "Windowed",
+			Language:           "en",
+			Theme:              "dark",
+			CloseAction:        "keep_open",
+			WindowMode:         "Windowed",
+			DefaultRamMB:       4096,
+			DefaultResolutionW: 854,
+			DefaultResolutionH: 480,
 		},
 	}
 }
