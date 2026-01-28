@@ -18,14 +18,6 @@ export function DeleteInstance(arg1) {
   return window['go']['main']['App']['DeleteInstance'](arg1);
 }
 
-export function DownloadVersion(arg1) {
-  return window['go']['main']['App']['DownloadVersion'](arg1);
-}
-
-export function EnableTestMode() {
-  return window['go']['main']['App']['EnableTestMode']();
-}
-
 export function GetAccounts() {
   return window['go']['main']['App']['GetAccounts']();
 }
@@ -48,10 +40,6 @@ export function GetQuiltLoaders(arg1) {
 
 export function GetSettings() {
   return window['go']['main']['App']['GetSettings']();
-}
-
-export function GetSystemPlatform() {
-  return window['go']['main']['App']['GetSystemPlatform']();
 }
 
 export function GetVanillaVersions() {

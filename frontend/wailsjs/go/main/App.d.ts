@@ -3,7 +3,6 @@
 import {auth} from '../models';
 import {instances} from '../models';
 import {settings} from '../models';
-import {system} from '../models';
 import {models} from '../models';
 import {javascanner} from '../models';
 
@@ -14,10 +13,6 @@ export function CancelDownload():Promise<void>;
 export function CreateInstance(arg1:string,arg2:string,arg3:string,arg4:string):Promise<instances.Instance>;
 
 export function DeleteInstance(arg1:string):Promise<void>;
-
-export function DownloadVersion(arg1:string):Promise<void>;
-
-export function EnableTestMode():Promise<void>;
 
 export function GetAccounts():Promise<Array<auth.Account>>;
 
@@ -30,8 +25,6 @@ export function GetInstances():Promise<Array<instances.Instance>>;
 export function GetQuiltLoaders(arg1:string):Promise<Array<string>>;
 
 export function GetSettings():Promise<settings.LauncherSettings>;
-
-export function GetSystemPlatform():Promise<system.SystemInfo>;
 
 export function GetVanillaVersions():Promise<Array<models.Version>>;
 
