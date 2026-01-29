@@ -18,26 +18,68 @@ function useSettingsLogic() {
     width: 854,
     height: 480,
     jvmArgs: "",
+    javaPath: "",
   });
   const [launcherSettings, setLauncherSettings] =
     useState<LauncherSettings | null>(null);
 
   useEffect(() => {
-    loadDefaults();
+    loadLauncherSettings();
   }, []);
 
-  const loadDefaults = () => {
-    const ram = localStorage.getItem("nezord_default_ram");
-    const w = localStorage.getItem("nezord_default_width");
-    const h = localStorage.getItem("nezord_default_height");
-    const args = localStorage.getItem("nezord_global_jvm_args");
+  const readNumber = (key: string) => {
+    const val = localStorage.getItem(key);
+    if (!val) return null;
+    const parsed = parseInt(val);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
 
-    setDefaults({
-      ram: ram ? parseInt(ram) : 4096,
-      width: w ? parseInt(w) : 854,
-      height: h ? parseInt(h) : 480,
-      jvmArgs: args || "",
-    });
+  const readString = (key: string) => {
+    const val = localStorage.getItem(key);
+    if (!val) return null;
+    return val;
+  };
+
+  const normalizeSettings = (settings: LauncherSettings | null) => {
+    const localRam = readNumber("nezord_default_ram");
+    const localW = readNumber("nezord_default_width");
+    const localH = readNumber("nezord_default_height");
+    const localArgs = readString("nezord_global_jvm_args");
+    const localJava = readString("nezord_java_path");
+
+    const defaultRamMB =
+      settings?.defaultRamMB && settings.defaultRamMB > 0
+        ? settings.defaultRamMB
+        : localRam || 4096;
+    const defaultResolutionW =
+      settings?.defaultResolutionW && settings.defaultResolutionW > 0
+        ? settings.defaultResolutionW
+        : localW || 854;
+    const defaultResolutionH =
+      settings?.defaultResolutionH && settings.defaultResolutionH > 0
+        ? settings.defaultResolutionH
+        : localH || 480;
+    const defaultJvmArgs =
+      settings?.defaultJvmArgs && settings.defaultJvmArgs.length > 0
+        ? settings.defaultJvmArgs
+        : localArgs || "";
+    const defaultJavaPath =
+      settings?.defaultJavaPath && settings.defaultJavaPath.length > 0
+        ? settings.defaultJavaPath
+        : localJava || "";
+
+    return {
+      language: settings?.language || "en",
+      theme: settings?.theme || "dark",
+      closeAction: settings?.closeAction || "keep_open",
+      dataPath: settings?.dataPath || "",
+      windowMode: settings?.windowMode || "Windowed",
+      defaultRamMB,
+      defaultResolutionW,
+      defaultResolutionH,
+      defaultJvmArgs,
+      defaultJavaPath,
+    };
   };
 
   const scanJava = async (): Promise<JavaInfo[]> => {
@@ -52,14 +94,18 @@ function useSettingsLogic() {
   const loadLauncherSettings = async () => {
     try {
       const settings = (await GetSettings()) as LauncherSettings;
-      const normalized = {
-        language: settings?.language || "en",
-        theme: settings?.theme || "dark",
-        closeAction: settings?.closeAction || "keep_open",
-        dataPath: settings?.dataPath || "",
-        windowMode: settings?.windowMode || "Windowed",
-      };
+      const normalized = normalizeSettings(settings);
       setLauncherSettings(normalized);
+      setDefaults({
+        ram: normalized.defaultRamMB,
+        width: normalized.defaultResolutionW,
+        height: normalized.defaultResolutionH,
+        jvmArgs: normalized.defaultJvmArgs,
+        javaPath: normalized.defaultJavaPath,
+      });
+      if (JSON.stringify(settings) !== JSON.stringify(normalized)) {
+        await UpdateGlobalSettings(normalized);
+      }
       return normalized;
     } catch (e) {
       console.error("Settings load failed", e);
@@ -69,8 +115,16 @@ function useSettingsLogic() {
 
   const updateLauncherSettings = async (settings: LauncherSettings) => {
     try {
-      await UpdateGlobalSettings(settings);
-      setLauncherSettings(settings);
+      const normalized = normalizeSettings(settings);
+      await UpdateGlobalSettings(normalized);
+      setLauncherSettings(normalized);
+      setDefaults({
+        ram: normalized.defaultRamMB,
+        width: normalized.defaultResolutionW,
+        height: normalized.defaultResolutionH,
+        jvmArgs: normalized.defaultJvmArgs,
+        javaPath: normalized.defaultJavaPath,
+      });
       return true;
     } catch (e) {
       console.error("Settings update failed", e);
@@ -81,7 +135,6 @@ function useSettingsLogic() {
   return {
     defaults,
     scanJava,
-    loadDefaults,
     launcherSettings,
     loadLauncherSettings,
     updateLauncherSettings,

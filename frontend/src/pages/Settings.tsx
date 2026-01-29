@@ -34,44 +34,28 @@ export function SettingsPage() {
   const [isDefaultsLoaded, setIsDefaultsLoaded] = useState(false);
 
   useEffect(() => {
-    const storedRam = localStorage.getItem("nezord_default_ram");
-    if (storedRam) {
-      const ram = parseInt(storedRam);
-      setMaxRam(ram);
-      setMinRam(Math.max(1024, ram / 2));
-    } else {
-      const storedMin = localStorage.getItem("nezord_min_ram");
-      const storedMax = localStorage.getItem("nezord_max_ram");
-      if (storedMin) setMinRam(parseInt(storedMin));
-      if (storedMax) setMaxRam(parseInt(storedMax));
-    }
-
-    const storedW = localStorage.getItem("nezord_default_width");
-    if (storedW) setResW(parseInt(storedW));
-
-    const storedH = localStorage.getItem("nezord_default_height");
-    if (storedH) setResH(parseInt(storedH));
-
-    const storedMode = localStorage.getItem("nezord_window_mode");
-    const allowedModes = ["Windowed", "Fullscreen", "Borderless"];
-    if (storedMode && allowedModes.includes(storedMode)) {
-      setWindowMode(storedMode);
-    }
-
-    const storedArgs = localStorage.getItem("nezord_global_jvm_args");
-    if (storedArgs) setJvmArgs(storedArgs);
-
-    const storedJava = localStorage.getItem("nezord_java_path");
-    if (storedJava) setSelectedJavaPath(storedJava);
-
     handleScanJava();
     loadLauncherSettings().then((settings) => {
       if (settings?.dataPath !== undefined) {
         setDataPath(settings.dataPath || "");
       }
-      if (!storedMode && settings?.windowMode) {
+      const allowedModes = ["Windowed", "Fullscreen", "Borderless"];
+      if (settings?.windowMode && allowedModes.includes(settings.windowMode)) {
         setWindowMode(settings.windowMode);
       }
+      const ramValue = settings?.defaultRamMB || 4096;
+      setMaxRam(ramValue);
+      const storedMin = localStorage.getItem("nezord_min_ram");
+      if (storedMin) {
+        const parsed = parseInt(storedMin);
+        setMinRam(Number.isNaN(parsed) ? Math.max(1024, ramValue / 2) : parsed);
+      } else {
+        setMinRam(Math.max(1024, Math.floor(ramValue / 2)));
+      }
+      setResW(settings?.defaultResolutionW || 854);
+      setResH(settings?.defaultResolutionH || 480);
+      setJvmArgs(settings?.defaultJvmArgs || "");
+      setSelectedJavaPath(settings?.defaultJavaPath || "");
     });
     setIsDefaultsLoaded(true);
   }, []);
@@ -79,44 +63,35 @@ export function SettingsPage() {
   useEffect(() => {
     if (!isDefaultsLoaded) return;
     localStorage.setItem("nezord_min_ram", minRam.toString());
-    localStorage.setItem("nezord_max_ram", maxRam.toString());
-    localStorage.setItem("nezord_default_ram", maxRam.toString());
   }, [minRam, maxRam, isDefaultsLoaded]);
 
   useEffect(() => {
     if (!isDefaultsLoaded) return;
-    localStorage.setItem("nezord_default_width", resW.toString());
-    localStorage.setItem("nezord_default_height", resH.toString());
-  }, [resW, resH, isDefaultsLoaded]);
-
-  useEffect(() => {
-    if (!isDefaultsLoaded) return;
-    localStorage.setItem("nezord_window_mode", windowMode);
-  }, [windowMode, isDefaultsLoaded]);
-
-  useEffect(() => {
-    if (!isDefaultsLoaded) return;
     if (!launcherSettings) return;
-    if (launcherSettings.windowMode === windowMode) return;
     const next = {
       language: launcherSettings.language || "en",
       theme: launcherSettings.theme || "dark",
       closeAction: launcherSettings.closeAction || "keep_open",
       dataPath: launcherSettings.dataPath || "",
       windowMode: windowMode,
+      defaultRamMB: maxRam,
+      defaultResolutionW: resW,
+      defaultResolutionH: resH,
+      defaultJvmArgs: jvmArgs,
+      defaultJavaPath: selectedJavaPath,
     };
     updateLauncherSettings(next);
-  }, [isDefaultsLoaded, launcherSettings, updateLauncherSettings, windowMode]);
-
-  useEffect(() => {
-    if (!isDefaultsLoaded) return;
-    localStorage.setItem("nezord_global_jvm_args", jvmArgs);
-  }, [jvmArgs, isDefaultsLoaded]);
-
-  useEffect(() => {
-    if (!isDefaultsLoaded) return;
-    localStorage.setItem("nezord_java_path", selectedJavaPath);
-  }, [selectedJavaPath, isDefaultsLoaded]);
+  }, [
+    isDefaultsLoaded,
+    launcherSettings,
+    updateLauncherSettings,
+    windowMode,
+    maxRam,
+    resW,
+    resH,
+    jvmArgs,
+    selectedJavaPath,
+  ]);
 
   const handleScanJava = async () => {
     setIsScanning(true);
@@ -140,6 +115,11 @@ export function SettingsPage() {
       closeAction: current?.closeAction || "keep_open",
       dataPath: dataPath.trim(),
       windowMode: current?.windowMode || windowMode,
+      defaultRamMB: current?.defaultRamMB || maxRam,
+      defaultResolutionW: current?.defaultResolutionW || resW,
+      defaultResolutionH: current?.defaultResolutionH || resH,
+      defaultJvmArgs: current?.defaultJvmArgs || jvmArgs,
+      defaultJavaPath: current?.defaultJavaPath || selectedJavaPath,
     };
     await updateLauncherSettings(next);
     setIsSavingPath(false);

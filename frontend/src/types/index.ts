@@ -43,6 +43,7 @@ export interface GlobalDefaults {
   width: number;
   height: number;
   jvmArgs: string;
+  javaPath: string;
 }
 
 export interface LauncherSettings {
@@ -51,4 +52,9 @@ export interface LauncherSettings {
   closeAction: string;
   dataPath: string;
   windowMode: string;
+  defaultRamMB: number;
+  defaultResolutionW: number;
+  defaultResolutionH: number;
+  defaultJvmArgs: string;
+  defaultJavaPath: string;
 }

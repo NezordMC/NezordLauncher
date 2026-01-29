@@ -10,7 +10,8 @@ import { MemoryFinishStep } from "@/components/setup/MemoryFinishStep";
 
 export function SetupWizardPage() {
   const navigate = useNavigate();
-  const { scanJava } = useSettingStore();
+  const { scanJava, loadLauncherSettings, updateLauncherSettings } =
+    useSettingStore();
   const { accounts, addOfflineAccount, loginElyBy } = useAccountStore();
 
   const [step, setStep] = useState(1);
@@ -42,15 +43,24 @@ export function SetupWizardPage() {
   const handleNext = () => setStep((p) => Math.min(p + 1, 3));
   const handleBack = () => setStep((p) => Math.max(p - 1, 1));
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     localStorage.setItem("setup_completed", "true");
-    localStorage.setItem("nezord_default_ram", ramValue.toString());
-    localStorage.setItem("nezord_max_ram", ramValue.toString());
     const minValue = Math.max(1024, Math.floor(ramValue / 2));
     localStorage.setItem("nezord_min_ram", minValue.toString());
-    if (selectedJava) {
-      localStorage.setItem("nezord_java_path", selectedJava);
-    }
+    const current = await loadLauncherSettings();
+    const next = {
+      language: current?.language || "en",
+      theme: current?.theme || "dark",
+      closeAction: current?.closeAction || "keep_open",
+      dataPath: current?.dataPath || "",
+      windowMode: current?.windowMode || "Windowed",
+      defaultRamMB: ramValue,
+      defaultResolutionW: current?.defaultResolutionW || 854,
+      defaultResolutionH: current?.defaultResolutionH || 480,
+      defaultJvmArgs: current?.defaultJvmArgs || "",
+      defaultJavaPath: selectedJava || current?.defaultJavaPath || "",
+    };
+    await updateLauncherSettings(next);
     navigate("/");
   };
 

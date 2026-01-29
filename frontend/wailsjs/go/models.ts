@@ -180,6 +180,11 @@ export namespace settings {
 	    closeAction: string;
 	    dataPath: string;
 	    windowMode: string;
+	    defaultRamMB: number;
+	    defaultResolutionW: number;
+	    defaultResolutionH: number;
+	    defaultJvmArgs: string;
+	    defaultJavaPath: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new LauncherSettings(source);
@@ -192,6 +197,11 @@ export namespace settings {
 	        this.closeAction = source["closeAction"];
 	        this.dataPath = source["dataPath"];
 	        this.windowMode = source["windowMode"];
+	        this.defaultRamMB = source["defaultRamMB"];
+	        this.defaultResolutionW = source["defaultResolutionW"];
+	        this.defaultResolutionH = source["defaultResolutionH"];
+	        this.defaultJvmArgs = source["defaultJvmArgs"];
+	        this.defaultJavaPath = source["defaultJavaPath"];
 	    }
 	}
 
@@ -215,4 +225,3 @@ export namespace system {
 	}
 
 }
-
