@@ -19,6 +19,7 @@ type LauncherSettings struct {
 	DefaultResolutionH int    `json:"defaultResolutionH"`
 	DefaultJvmArgs     string `json:"defaultJvmArgs"`
 	DefaultJavaPath    string `json:"defaultJavaPath"`
+	AutoUpdateEnabled  bool   `json:"autoUpdateEnabled"`
 }
 
 type Manager struct {
@@ -38,6 +39,7 @@ func NewManager() *Manager {
 			DefaultRamMB:       4096,
 			DefaultResolutionW: 854,
 			DefaultResolutionH: 480,
+			AutoUpdateEnabled:  true,
 		},
 	}
 }

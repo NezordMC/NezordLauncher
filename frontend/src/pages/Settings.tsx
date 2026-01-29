@@ -79,6 +79,7 @@ export function SettingsPage() {
       defaultResolutionH: resH,
       defaultJvmArgs: jvmArgs,
       defaultJavaPath: selectedJavaPath,
+      autoUpdateEnabled: launcherSettings.autoUpdateEnabled,
     };
     updateLauncherSettings(next);
   }, [
@@ -120,6 +121,7 @@ export function SettingsPage() {
       defaultResolutionH: current?.defaultResolutionH || resH,
       defaultJvmArgs: current?.defaultJvmArgs || jvmArgs,
       defaultJavaPath: current?.defaultJavaPath || selectedJavaPath,
+      autoUpdateEnabled: current?.autoUpdateEnabled ?? true,
     };
     await updateLauncherSettings(next);
     setIsSavingPath(false);

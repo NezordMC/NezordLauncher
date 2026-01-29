@@ -42,6 +42,14 @@ type App struct {
 	runningMu        sync.Mutex
 }
 
+type UpdateCheck struct {
+	CurrentVersion  string `json:"currentVersion"`
+	LatestVersion   string `json:"latestVersion"`
+	UpdateAvailable bool   `json:"updateAvailable"`
+	Status          string `json:"status"`
+	CheckedAt       string `json:"checkedAt"`
+}
+
 func NewApp() *App {
 	return &App{
 		accountManager:   auth.NewAccountManager(),
@@ -229,6 +237,18 @@ func (a *App) GetSettings() settings.LauncherSettings {
 
 func (a *App) UpdateGlobalSettings(s settings.LauncherSettings) error {
 	return a.settingsManager.Update(s)
+}
+
+func (a *App) CheckForUpdates() (UpdateCheck, error) {
+	current := "0.0.0"
+	latest := current
+	return UpdateCheck{
+		CurrentVersion:  current,
+		LatestVersion:   latest,
+		UpdateAvailable: current != latest,
+		Status:          "up to date",
+		CheckedAt:       time.Now().Format(time.RFC3339),
+	}, nil
 }
 
 func (a *App) ScanJavaInstallations() ([]javascanner.JavaInfo, error) {

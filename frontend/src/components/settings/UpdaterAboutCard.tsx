@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Github } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CheckForUpdates } from "../../../wailsjs/go/main/App";
+import { useSettingStore } from "@/stores/settingStore";
 
 function DiscordIcon({ className }: { className?: string }) {
   return (
@@ -13,13 +15,50 @@ function DiscordIcon({ className }: { className?: string }) {
   );
 }
 
+type UpdateCheck = {
+  currentVersion: string;
+  latestVersion: string;
+  updateAvailable: boolean;
+  status: string;
+  checkedAt: string;
+};
+
 export function UpdaterAboutCard() {
+  const { launcherSettings, updateLauncherSettings, loadLauncherSettings } =
+    useSettingStore();
   const [autoUpdate, setAutoUpdate] = useState(true);
   const [checking, setChecking] = useState(false);
+  const [lastCheck, setLastCheck] = useState<UpdateCheck | null>(null);
+  const [error, setError] = useState("");
 
-  const handleCheckUpdate = () => {
+  useEffect(() => {
+    if (launcherSettings) {
+      setAutoUpdate(launcherSettings.autoUpdateEnabled);
+    }
+  }, [launcherSettings]);
+
+  const handleCheckUpdate = async () => {
     setChecking(true);
-    setTimeout(() => setChecking(false), 2000);
+    setError("");
+    try {
+      const res = (await CheckForUpdates()) as UpdateCheck;
+      setLastCheck(res);
+    } catch (e: any) {
+      setError(typeof e === "string" ? e : "Update check failed");
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const handleToggleAutoUpdate = async () => {
+    const nextValue = !autoUpdate;
+    setAutoUpdate(nextValue);
+    const current = launcherSettings || (await loadLauncherSettings());
+    if (!current) return;
+    await updateLauncherSettings({
+      ...current,
+      autoUpdateEnabled: nextValue,
+    });
   };
 
   return (
@@ -37,14 +76,16 @@ export function UpdaterAboutCard() {
             </div>
             <div>
               <h3 className="font-bold text-lg">Updater</h3>
-              <p className="text-xs text-zinc-500 font-mono">v1.0.0-beta</p>
+              <p className="text-xs text-zinc-500 font-mono">
+                v{lastCheck?.currentVersion || "0.0.0"}
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 bg-zinc-950/50 p-2 pr-4 rounded-full border border-zinc-800/50">
               <button
-                onClick={() => setAutoUpdate(!autoUpdate)}
+                onClick={handleToggleAutoUpdate}
                 className={cn(
                   "w-10 h-5 rounded-full transition-colors relative flex-shrink-0",
                   autoUpdate ? "bg-primary" : "bg-zinc-700"
@@ -81,6 +122,15 @@ export function UpdaterAboutCard() {
               <Github size={18} />
             </a>
           </div>
+        </div>
+        <div className="mt-3 text-xs text-zinc-500">
+          {error
+            ? error
+            : lastCheck
+              ? lastCheck.updateAvailable
+                ? `Update available: ${lastCheck.latestVersion}`
+                : `Up to date as of ${lastCheck.checkedAt}`
+              : "No update checks yet"}
         </div>
       </CardContent>
     </Card>

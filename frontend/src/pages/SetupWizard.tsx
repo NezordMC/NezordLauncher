@@ -59,6 +59,7 @@ export function SetupWizardPage() {
       defaultResolutionH: current?.defaultResolutionH || 480,
       defaultJvmArgs: current?.defaultJvmArgs || "",
       defaultJavaPath: selectedJava || current?.defaultJavaPath || "",
+      autoUpdateEnabled: current?.autoUpdateEnabled ?? true,
     };
     await updateLauncherSettings(next);
     navigate("/");

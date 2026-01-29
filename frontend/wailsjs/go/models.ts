@@ -123,6 +123,31 @@ export namespace javascanner {
 
 }
 
+export namespace main {
+	
+	export class UpdateCheck {
+	    currentVersion: string;
+	    latestVersion: string;
+	    updateAvailable: boolean;
+	    status: string;
+	    checkedAt: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateCheck(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.currentVersion = source["currentVersion"];
+	        this.latestVersion = source["latestVersion"];
+	        this.updateAvailable = source["updateAvailable"];
+	        this.status = source["status"];
+	        this.checkedAt = source["checkedAt"];
+	    }
+	}
+
+}
+
 export namespace models {
 	
 	export class Version {
@@ -185,6 +210,7 @@ export namespace settings {
 	    defaultResolutionH: number;
 	    defaultJvmArgs: string;
 	    defaultJavaPath: string;
+	    autoUpdateEnabled: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new LauncherSettings(source);
@@ -202,6 +228,7 @@ export namespace settings {
 	        this.defaultResolutionH = source["defaultResolutionH"];
 	        this.defaultJvmArgs = source["defaultJvmArgs"];
 	        this.defaultJavaPath = source["defaultJavaPath"];
+	        this.autoUpdateEnabled = source["autoUpdateEnabled"];
 	    }
 	}
 
@@ -225,3 +252,4 @@ export namespace system {
 	}
 
 }
+

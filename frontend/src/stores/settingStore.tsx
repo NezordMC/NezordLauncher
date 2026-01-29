@@ -79,6 +79,8 @@ function useSettingsLogic() {
       defaultResolutionH,
       defaultJvmArgs,
       defaultJavaPath,
+      autoUpdateEnabled:
+        settings?.autoUpdateEnabled === false ? false : true,
     };
   };
 

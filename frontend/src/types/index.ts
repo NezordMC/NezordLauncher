@@ -57,4 +57,5 @@ export interface LauncherSettings {
   defaultResolutionH: number;
   defaultJvmArgs: string;
   defaultJavaPath: string;
+  autoUpdateEnabled: boolean;
 }
