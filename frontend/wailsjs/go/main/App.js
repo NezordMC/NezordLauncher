@@ -10,8 +10,8 @@ export function CancelDownload() {
   return window['go']['main']['App']['CancelDownload']();
 }
 
-export function CheckForUpdates() {
-  return window['go']['main']['App']['CheckForUpdates']();
+export function CheckForUpdates(arg1) {
+  return window['go']['main']['App']['CheckForUpdates'](arg1);
 }
 
 export function CreateInstance(arg1, arg2, arg3, arg4) {

@@ -123,31 +123,6 @@ export namespace javascanner {
 
 }
 
-export namespace main {
-	
-	export class UpdateCheck {
-	    currentVersion: string;
-	    latestVersion: string;
-	    updateAvailable: boolean;
-	    status: string;
-	    checkedAt: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new UpdateCheck(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.currentVersion = source["currentVersion"];
-	        this.latestVersion = source["latestVersion"];
-	        this.updateAvailable = source["updateAvailable"];
-	        this.status = source["status"];
-	        this.checkedAt = source["checkedAt"];
-	    }
-	}
-
-}
-
 export namespace models {
 	
 	export class Version {
@@ -248,6 +223,29 @@ export namespace system {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.OS = source["OS"];
 	        this.Arch = source["Arch"];
+	    }
+	}
+
+}
+
+export namespace updater {
+	
+	export class UpdateInfo {
+	    available: boolean;
+	    version: string;
+	    url: string;
+	    description: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.available = source["available"];
+	        this.version = source["version"];
+	        this.url = source["url"];
+	        this.description = source["description"];
 	    }
 	}
 

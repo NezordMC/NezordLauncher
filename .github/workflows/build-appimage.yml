@@ -99,5 +99,5 @@ jobs:
           files: |
             artifacts/linux/*
           draft: true
-          prerelease: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}
           generate_release_notes: true

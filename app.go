@@ -14,6 +14,7 @@ import (
 	"NezordLauncher/pkg/services"
 	"NezordLauncher/pkg/settings"
 	"NezordLauncher/pkg/system"
+	"NezordLauncher/pkg/updater"
 	"NezordLauncher/pkg/validation"
 	"context"
 	"encoding/json"
@@ -239,17 +240,11 @@ func (a *App) UpdateGlobalSettings(s settings.LauncherSettings) error {
 	return a.settingsManager.Update(s)
 }
 
-func (a *App) CheckForUpdates() (UpdateCheck, error) {
-	current := "0.0.0"
-	latest := current
-	return UpdateCheck{
-		CurrentVersion:  current,
-		LatestVersion:   latest,
-		UpdateAvailable: current != latest,
-		Status:          "up to date",
-		CheckedAt:       time.Now().Format(time.RFC3339),
-	}, nil
+// CheckForUpdates checks if a new version is available
+func (a *App) CheckForUpdates(currentVersion string) (*updater.UpdateInfo, error) {
+	return updater.CheckForUpdate(currentVersion)
 }
+
 
 func (a *App) ScanJavaInstallations() ([]javascanner.JavaInfo, error) {
 	return javascanner.ScanJavaInstallations()
