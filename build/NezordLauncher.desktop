@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=NezordLauncher
+Comment=A custom Minecraft launcher
+Exec=/usr/bin/nezordlauncher
+Icon=nezordlauncher
+Categories=Game;
+Terminal=false
