@@ -73,6 +73,7 @@ func getCandidatePaths() []string {
 			"/usr/java",
 			"/opt/java",
 			"/opt/jdk",
+			"/opt",
 			"/usr/local/java",
 			"/usr/local/jdk",
 		}
