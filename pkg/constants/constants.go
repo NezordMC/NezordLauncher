@@ -8,6 +8,7 @@ import (
 
 const (
 	AppName              = "NezordLauncher"
+	Version              = "0.1.0"
 	VersionManifestV2URL = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
 	ResourcesURL         = "https://resources.download.minecraft.net/"
 )

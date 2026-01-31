@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckForUpdates } from "../../wailsjs/go/main/App";
 import { toast } from "sonner";
+import pkg from "../../package.json";
 import { BrowserOpenURL } from "../../wailsjs/runtime/runtime";
 
 export function useUpdater() {
@@ -12,7 +13,7 @@ export function useUpdater() {
     const check = async () => {
       try {
         // @ts-ignore - binding might not be generated yet
-        const info = await CheckForUpdates("0.1.0"); // TODO: Pass real current version or let backend handle it
+        const info = await CheckForUpdates(pkg.version);
         if (info && info.available) {
           toast.info(`Update Available: ${info.version}`, {
             description: "A new version is available for download.",
