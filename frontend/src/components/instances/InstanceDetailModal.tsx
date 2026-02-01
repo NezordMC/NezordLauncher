@@ -9,6 +9,7 @@ import { MemorySection } from "./MemorySection";
 import { JavaSection } from "./JavaSection";
 import { ResolutionSection } from "./ResolutionSection";
 import { JvmArgsSection } from "./JvmArgsSection";
+import { GpuSection } from "./GpuSection";
 import { toast } from "sonner";
 
 import vanillaLogo from "@/assets/images/vanilla.png";
@@ -153,6 +154,7 @@ export function InstanceDetailModal({
             onChange={handleChange}
           />
           <ResolutionSection settings={settings} onChange={handleChange} />
+          <GpuSection settings={settings} onChange={handleChange} />
           <JvmArgsSection settings={settings} onChange={handleChange} />
         </div>
 
