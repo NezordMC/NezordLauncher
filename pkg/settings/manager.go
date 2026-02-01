@@ -20,6 +20,7 @@ type LauncherSettings struct {
 	DefaultJvmArgs     string `json:"defaultJvmArgs"`
 	DefaultJavaPath    string `json:"defaultJavaPath"`
 	AutoUpdateEnabled  bool   `json:"autoUpdateEnabled"`
+	GpuPreference      string `json:"gpuPreference"`
 }
 
 type Manager struct {
@@ -40,6 +41,7 @@ func NewManager() *Manager {
 			DefaultResolutionW: 854,
 			DefaultResolutionH: 480,
 			AutoUpdateEnabled:  true,
+			GpuPreference:      "auto",
 		},
 	}
 }

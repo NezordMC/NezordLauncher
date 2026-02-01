@@ -33,6 +33,7 @@ type InstanceSettings struct {
 	JvmArgs      string `json:"jvmArgs"`
 	OverrideJava bool   `json:"overrideJava"`
 	OverrideRam  bool   `json:"overrideRam"`
+	GpuPreference string `json:"gpuPreference"`
 }
 
 func (i *Instance) GetLaunchVersionID() string {

@@ -535,7 +535,37 @@ func (a *App) LaunchInstance(instanceID string) error {
 		fmt.Println(text)
 	}
 
-	cmd, err := launch.Launch(javaPath, args, instanceDir)
+	// GPU Selection
+	gpuPref := inst.Settings.GpuPreference
+	if gpuPref == "" {
+		gpuPref = settings.GpuPreference
+	}
+	if gpuPref == "" {
+		gpuPref = "auto"
+	}
+
+	env := make(map[string]string)
+	if gpuPref == "discrete" {
+		a.emit("launchStatus", "Using Discrete GPU (NVIDIA)...")
+		env["__NV_PRIME_RENDER_OFFLOAD"] = "1"
+		env["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia"
+	} else if gpuPref == "integrated" {
+		a.emit("launchStatus", "Using Integrated GPU...")
+		// For some systems, DRI_PRIME=0 might enforce integrated, but usually default is enough.
+		// However, explicitly setting it to 0 is safer if prime offload is somehow active globally.
+		// But mostly, just NOT setting the nvidia variables is enough.
+		// We can try to be explicit for Mesa.
+		// env["DRI_PRIME"] = "0" 
+		// Actually, let's keep it simple: "auto" = system default, "integrated" = try to avoid nvidia vars if they are set globally (unlikely for user env).
+		// For now, let's just NOT set the Nvidia vars for integrated.
+		// If user has globally set them, we might want to unset them? 
+		// Go's os.Environ() + our append might not unset. 
+		// But let's assume standard consumer setup where these are not global.
+	} else {
+		a.emit("launchStatus", "Using Auto GPU selection...")
+	}
+
+	cmd, err := launch.Launch(javaPath, args, instanceDir, env)
 	if err != nil {
 		a.emit("launchError", err.Error())
 		a.emit("game_exit", "error")

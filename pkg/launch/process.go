@@ -4,15 +4,22 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"sync"
 )
 
 type LogCallback func(text string)
 
-func Launch(command string, args []string, dir string) (*exec.Cmd, error) {
+func Launch(command string, args []string, dir string, env map[string]string) (*exec.Cmd, error) {
 	cmd := exec.Command(command, args...)
 	cmd.Dir = dir
+	if len(env) > 0 {
+		cmd.Env = os.Environ()
+		for k, v := range env {
+			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+		}
+	}
 	return cmd, nil
 }
 
@@ -63,7 +70,7 @@ func Monitor(cmd *exec.Cmd, onLog LogCallback) error {
 
 // Deprecated: Use Launch and Monitor instead
 func ExecuteGame(command string, args []string, dir string, onLog LogCallback) error {
-	cmd, _ := Launch(command, args, dir)
+	cmd, _ := Launch(command, args, dir, nil)
 	return Monitor(cmd, onLog)
 }
 
