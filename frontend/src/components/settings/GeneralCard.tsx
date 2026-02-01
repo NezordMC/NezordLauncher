@@ -186,9 +186,9 @@ export function GeneralCard({
               <SelectValue placeholder="Select GPU preference" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="auto">Auto (System Default)</SelectItem>
-              <SelectItem value="discrete">Discrete GPU (NVIDIA)</SelectItem>
-              <SelectItem value="integrated">Integrated GPU (Intel)</SelectItem>
+              <SelectItem value="auto">Auto (Default)</SelectItem>
+              <SelectItem value="discrete">Discrete GPU</SelectItem>
+              <SelectItem value="integrated">Integrated GPU</SelectItem>
             </SelectContent>
           </Select>
           <p className="text-xs text-zinc-500">

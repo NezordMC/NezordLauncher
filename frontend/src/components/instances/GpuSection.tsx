@@ -30,8 +30,8 @@ export function GpuSection({ settings, onChange }: GpuSectionProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="auto">Auto (Default)</SelectItem>
-            <SelectItem value="discrete">Discrete GPU (NVIDIA)</SelectItem>
-            <SelectItem value="integrated">Integrated GPU (Intel)</SelectItem>
+            <SelectItem value="discrete">Discrete GPU</SelectItem>
+            <SelectItem value="integrated">Integrated GPU</SelectItem>
           </SelectContent>
         </Select>
         <p className="text-[10px] text-zinc-500">

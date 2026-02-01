@@ -38,15 +38,31 @@ func TestIntegration_LaunchGame(t *testing.T) {
 		t.Fatalf("Download failed: %v", err)
 	}
 
-	t.Logf("Launching %s...", versionID)
+	// Setup Account
+	account, err := app.AddOfflineAccount("TesterBot")
+	if err != nil {
+		t.Fatalf("Failed to create offline account: %v", err)
+	}
+	if err := app.SetActiveAccount(account.UUID); err != nil {
+		t.Fatalf("Failed to set active account: %v", err)
+	}
+
+	// Create Instance
+	instance, err := app.CreateInstance("TestInstance", versionID, "vanilla", "")
+	if err != nil {
+		t.Fatalf("Failed to create instance: %v", err)
+	}
+
+	t.Logf("Launching instance %s (%s)...", instance.Name, instance.ID)
 	
-	err := app.LaunchGame(versionID, 512, "TesterBot")
+	// Launch
+	err = app.LaunchInstance(instance.ID)
 	
 	if err != nil {
 		t.Fatalf("Launch failed: %v", err)
 	}
 
-	nativesDir := filepath.Join(constants.GetInstancesDir(), versionID, "natives")
+	nativesDir := filepath.Join(constants.GetInstancesDir(), instance.ID, "natives")
 	if _, err := os.Stat(nativesDir); os.IsNotExist(err) {
 		t.Errorf("Natives directory missing at %s. Launch process might have aborted early.", nativesDir)
 	} else {
