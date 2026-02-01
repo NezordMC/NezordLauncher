@@ -60,6 +60,7 @@ export function SetupWizardPage() {
       defaultJvmArgs: current?.defaultJvmArgs || "",
       defaultJavaPath: selectedJava || current?.defaultJavaPath || "",
       autoUpdateEnabled: current?.autoUpdateEnabled ?? true,
+      gpuPreference: "auto",
     };
     await updateLauncherSettings(next);
     navigate("/");

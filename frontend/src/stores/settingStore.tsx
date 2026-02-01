@@ -79,8 +79,8 @@ function useSettingsLogic() {
       defaultResolutionH,
       defaultJvmArgs,
       defaultJavaPath,
-      autoUpdateEnabled:
-        settings?.autoUpdateEnabled === false ? false : true,
+      autoUpdateEnabled: settings?.autoUpdateEnabled === false ? false : true,
+      gpuPreference: settings?.gpuPreference || "auto",
     };
   };
 

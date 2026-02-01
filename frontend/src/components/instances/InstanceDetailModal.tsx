@@ -47,6 +47,7 @@ export function InstanceDetailModal({
         jvmArgs: instance.settings.jvmArgs || "",
         overrideJava: instance.settings.overrideJava || false,
         overrideRam: instance.settings.overrideRam || false,
+        gpuPreference: instance.settings.gpuPreference || "auto",
       });
       setIsDirty(false);
     }
