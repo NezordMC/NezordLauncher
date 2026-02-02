@@ -18,16 +18,17 @@ func GetAppDataDir() string {
 }
 
 func GetConfigDir() string {
-	var baseDir string
 	if runtime.GOOS == "windows" {
-		baseDir = os.Getenv("APPDATA")
-	} else {
-		configDir := os.Getenv("XDG_CONFIG_HOME")
-		if configDir == "" {
-			configDir, _ = os.UserConfigDir()
-		}
-		baseDir = configDir
+		// Portable mode: config is in the same dir as data
+		return GetDataDir()
 	}
+	
+	var baseDir string
+	configDir := os.Getenv("XDG_CONFIG_HOME")
+	if configDir == "" {
+		configDir, _ = os.UserConfigDir()
+	}
+	baseDir = configDir
 	return filepath.Join(baseDir, AppName)
 }
 
@@ -38,20 +39,27 @@ func GetDataDir() string {
 
 	var baseDir string
 	if runtime.GOOS == "windows" {
-		baseDir = os.Getenv("APPDATA")
-	} else {
-		dataDir := os.Getenv("XDG_DATA_HOME")
-		if dataDir == "" {
-			home, _ := os.UserHomeDir()
-			if home != "" {
-				dataDir = filepath.Join(home, ".local", "share")
-			}
+		exePath, err := os.Executable()
+		if err != nil {
+			// Fallback to APPDATA if exe path fails
+			baseDir = os.Getenv("APPDATA")
+			return filepath.Join(baseDir, AppName)
 		}
-		if dataDir == "" {
-			dataDir, _ = os.UserConfigDir()
-		}
-		baseDir = dataDir
+		// Data dir should be the same as exe dir for portable mode
+		return filepath.Dir(exePath)
 	}
+
+	dataDir := os.Getenv("XDG_DATA_HOME")
+	if dataDir == "" {
+		home, _ := os.UserHomeDir()
+		if home != "" {
+			dataDir = filepath.Join(home, ".local", "share")
+		}
+	}
+	if dataDir == "" {
+		dataDir, _ = os.UserConfigDir()
+	}
+	baseDir = dataDir
 	return filepath.Join(baseDir, AppName)
 }
 
