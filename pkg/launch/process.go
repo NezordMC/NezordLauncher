@@ -4,24 +4,13 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"sync"
 )
 
 type LogCallback func(text string)
 
-func Launch(command string, args []string, dir string, env map[string]string) (*exec.Cmd, error) {
-	cmd := exec.Command(command, args...)
-	cmd.Dir = dir
-	if len(env) > 0 {
-		cmd.Env = os.Environ()
-		for k, v := range env {
-			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
-		}
-	}
-	return cmd, nil
-}
+// Launch is implemented in platform specific files
 
 func Monitor(cmd *exec.Cmd, onLog LogCallback) error {
 	stdout, err := cmd.StdoutPipe()
