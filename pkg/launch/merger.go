@@ -19,13 +19,13 @@ func MergeVersions(child, parent *models.VersionDetail) *models.VersionDetail {
 	if result.Type == "" {
 		result.Type = parent.Type
 	}
-	
+
 	if result.Jar == "" {
 		result.Jar = parent.ID
 	}
 	result.Libraries = append(child.Libraries, parent.Libraries...)
 	result.Arguments = mergeArguments(child.Arguments, parent.Arguments)
-	
+
 	if result.MinecraftArguments == "" && parent.MinecraftArguments != "" {
 		result.MinecraftArguments = parent.MinecraftArguments
 	} else if result.MinecraftArguments != "" && parent.MinecraftArguments != "" {

@@ -88,7 +88,7 @@ func getCandidatePaths() []string {
 			os.Getenv("ProgramFiles"),
 			os.Getenv("ProgramFiles(x86)"),
 		}
-		
+
 		bases := []string{"Java", "Eclipse Foundation", "Microsoft"}
 		if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
 			progFiles = append(progFiles, filepath.Join(localAppData, "Programs"))

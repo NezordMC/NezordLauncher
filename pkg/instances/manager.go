@@ -117,7 +117,7 @@ func (m *Manager) CreateInstance(name, gameVersion string, loaderType ModloaderT
 	baseID := slugify(name)
 	id := baseID
 	counter := 1
-	
+
 	m.mu.RLock()
 	for {
 		if _, exists := m.instances[id]; !exists {
@@ -142,11 +142,11 @@ func (m *Manager) CreateInstance(name, gameVersion string, loaderType ModloaderT
 			RamMB: 4096,
 		},
 	}
-	
+
 	if err := m.SaveInstance(inst); err != nil {
 		return nil, err
 	}
-	
+
 	return inst, nil
 }
 
@@ -170,14 +170,14 @@ func (m *Manager) DeleteInstance(id string) error {
 func (m *Manager) UpdateSettings(id string, settings InstanceSettings) error {
 	m.mu.Lock()
 	inst, ok := m.instances[id]
-	m.mu.Unlock() 
+	m.mu.Unlock()
 
 	if !ok {
 		return fmt.Errorf("instance not found")
 	}
 
 	inst.Settings = settings
-	
+
 	return m.SaveInstance(inst)
 }
 
@@ -192,7 +192,7 @@ func (m *Manager) UpdatePlayTime(id string, durationSec int64) error {
 
 	inst.LastPlayed = time.Now()
 	inst.PlayTime += durationSec
-	
+
 	return m.SaveInstance(inst)
 }
 

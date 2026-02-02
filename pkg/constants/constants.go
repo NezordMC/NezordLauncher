@@ -22,7 +22,7 @@ func GetConfigDir() string {
 		// Portable mode: config is in the same dir as data
 		return GetDataDir()
 	}
-	
+
 	var baseDir string
 	configDir := os.Getenv("XDG_CONFIG_HOME")
 	if configDir == "" {

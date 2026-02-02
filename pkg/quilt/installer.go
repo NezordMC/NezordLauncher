@@ -62,7 +62,7 @@ func InstallQuilt(gameVersion string, loaderVersion string) (string, error) {
 		InheritsFrom: gameVersion,
 		Jar:          gameVersion,
 		Type:         "release",
-		MainClass:    target.LauncherMeta.MainClass, 
+		MainClass:    target.LauncherMeta.MainClass,
 		Libraries:    libraries,
 	}
 

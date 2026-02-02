@@ -7,10 +7,10 @@ import (
 )
 
 var (
-	usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_]{3,16}$`)
+	usernameRegex     = regexp.MustCompile(`^[a-zA-Z0-9_]{3,16}$`)
 	instanceNameRegex = regexp.MustCompile(`^[a-zA-Z0-9\-_ ]{1,50}$`)
-	versionRegex = regexp.MustCompile(`^[a-zA-Z0-9\._\-]+$`)
-	uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	versionRegex      = regexp.MustCompile(`^[a-zA-Z0-9\._\-]+$`)
+	uuidRegex         = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 )
 
 func ValidateUsername(username string) error {

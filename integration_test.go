@@ -17,10 +17,10 @@ func TestIntegration_LaunchGame(t *testing.T) {
 	tempDir := t.TempDir()
 	originalAppData := os.Getenv("APPDATA")
 	originalHome := os.Getenv("HOME")
-	
+
 	os.Setenv("APPDATA", tempDir)
-	os.Setenv("HOME", tempDir) 
-	
+	os.Setenv("HOME", tempDir)
+
 	defer func() {
 		os.Setenv("APPDATA", originalAppData)
 		os.Setenv("HOME", originalHome)
@@ -28,12 +28,12 @@ func TestIntegration_LaunchGame(t *testing.T) {
 
 	app := NewApp()
 	app.EnableTestMode()
-	
+
 	app.startup(context.Background())
 
-	versionID := "rd-132211" 
+	versionID := "rd-132211"
 	t.Logf("Downloading %s...", versionID)
-	
+
 	if err := app.DownloadVersion(versionID); err != nil {
 		t.Fatalf("Download failed: %v", err)
 	}
@@ -54,10 +54,10 @@ func TestIntegration_LaunchGame(t *testing.T) {
 	}
 
 	t.Logf("Launching instance %s (%s)...", instance.Name, instance.ID)
-	
+
 	// Launch
 	err = app.LaunchInstance(instance.ID)
-	
+
 	if err != nil {
 		t.Fatalf("Launch failed: %v", err)
 	}

@@ -1,10 +1,10 @@
 package network
 
 import (
+	"NezordLauncher/pkg/constants"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"NezordLauncher/pkg/constants"
 	"strings"
 	"testing"
 )

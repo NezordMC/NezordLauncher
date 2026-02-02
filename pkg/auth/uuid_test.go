@@ -11,7 +11,7 @@ func TestGenerateOfflineUUID(t *testing.T) {
 	}{
 		{
 			username: "Steve",
-			expected: "5627dd98-e6be-3c21-b8a8-e92344183641", 
+			expected: "5627dd98-e6be-3c21-b8a8-e92344183641",
 		},
 		{
 			username: "NezordPlayer",

@@ -12,7 +12,7 @@ import (
 func Launch(command string, args []string, dir string, env map[string]string) (*exec.Cmd, error) {
 	cmd := exec.Command(command, args...)
 	cmd.Dir = dir
-	
+
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		HideWindow:    true,
 		CreationFlags: 0x08000000, // CREATE_NO_WINDOW

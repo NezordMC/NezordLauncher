@@ -15,7 +15,7 @@ func ShouldDownload(rules []models.Rule) bool {
 
 	for _, rule := range rules {
 		allow := rule.Action == "allow"
-		
+
 		if rule.OS.Name == "" {
 			result = allow
 			continue

@@ -1,9 +1,9 @@
 package quilt
 
 import (
+	"NezordLauncher/pkg/network"
 	"encoding/json"
 	"fmt"
-	"NezordLauncher/pkg/network"
 )
 
 const MetaURL = "https://meta.quiltmc.org"
@@ -12,7 +12,7 @@ func GetLoaderVersions(gameVersion string) ([]LoaderVersion, error) {
 	client := network.NewHttpClient()
 	// Quilt uses v3 API structure
 	url := fmt.Sprintf("%s/v3/versions/loader/%s", MetaURL, gameVersion)
-	
+
 	data, err := client.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch quilt versions: %w", err)

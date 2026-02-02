@@ -6,7 +6,7 @@ import (
 
 func scanRegistryJava() ([]string, error) {
 	var paths []string
-	
+
 	// Open the key for Java Runtime Environment
 	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\JavaSoft\Java Runtime Environment`, registry.READ)
 	if err != nil {
@@ -29,10 +29,10 @@ func scanRegistryJava() ([]string, error) {
 		if err != nil {
 			continue
 		}
-		
+
 		javaHome, _, err := verKey.GetStringValue("JavaHome")
 		verKey.Close()
-		
+
 		if err == nil && javaHome != "" {
 			paths = append(paths, javaHome)
 		}

@@ -7,12 +7,12 @@ import (
 )
 
 type DownloadProgress struct {
-	TotalFiles     int
-	CompletedFiles int
-	TotalBytes     int64
+	TotalFiles      int
+	CompletedFiles  int
+	TotalBytes      int64
 	DownloadedBytes int64
-	StartTime      time.Time
-	mu             sync.Mutex
+	StartTime       time.Time
+	mu              sync.Mutex
 }
 
 func NewProgress(totalFiles int) *DownloadProgress {
@@ -44,12 +44,12 @@ func (p *DownloadProgress) GetStatus() string {
 		duration = 1
 	}
 
-	speed := float64(p.DownloadedBytes) / duration 
-	
+	speed := float64(p.DownloadedBytes) / duration
+
 	percentage := float64(p.CompletedFiles) / float64(p.TotalFiles) * 100
 
 	speedStr := formatBytes(speed) + "/s"
-	
+
 	return fmt.Sprintf("Downloading... %.1f%% (%d/%d) - %s", percentage, p.CompletedFiles, p.TotalFiles, speedStr)
 }
 

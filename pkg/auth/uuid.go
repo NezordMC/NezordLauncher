@@ -14,7 +14,7 @@ func GenerateOfflineUUID(username string) string {
 	hash[8] = (hash[8] & 0x3f) | 0x80
 
 	uuidStr := hex.EncodeToString(hash[:])
-	
+
 	return fmt.Sprintf("%s-%s-%s-%s-%s",
 		uuidStr[0:8],
 		uuidStr[8:12],

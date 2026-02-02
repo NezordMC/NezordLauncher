@@ -1,9 +1,9 @@
 package fabric
 
 import (
+	"NezordLauncher/pkg/network"
 	"encoding/json"
 	"fmt"
-	"NezordLauncher/pkg/network"
 )
 
 const MetaURL = "https://meta.fabricmc.net"
@@ -11,7 +11,7 @@ const MetaURL = "https://meta.fabricmc.net"
 func GetLoaderVersions(gameVersion string) ([]LoaderVersion, error) {
 	client := network.NewHttpClient()
 	url := fmt.Sprintf("%s/v2/versions/loader/%s", MetaURL, gameVersion)
-	
+
 	data, err := client.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch fabric versions: %w", err)
