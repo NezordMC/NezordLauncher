@@ -39,6 +39,14 @@ func GetDataDir() string {
 
 	var baseDir string
 	if runtime.GOOS == "windows" {
+		// Development mode check: if wails.json exists in the current directory, use ./data
+		cwd, err := os.Getwd()
+		if err == nil {
+			if _, err := os.Stat(filepath.Join(cwd, "wails.json")); err == nil {
+				return filepath.Join(cwd, "data")
+			}
+		}
+
 		exePath, err := os.Executable()
 		if err != nil {
 			// Fallback to APPDATA if exe path fails
