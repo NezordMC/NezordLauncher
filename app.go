@@ -259,7 +259,12 @@ func (a *App) OpenInstanceFolder(instanceID string) error {
 	if err := os.MkdirAll(instanceDir, 0755); err != nil {
 		return fmt.Errorf("failed to create instance dir: %w", err)
 	}
-	cmd := exec.Command("xdg-open", instanceDir)
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("explorer", instanceDir)
+	} else {
+		cmd = exec.Command("xdg-open", instanceDir)
+	}
 	return cmd.Start()
 }
 
