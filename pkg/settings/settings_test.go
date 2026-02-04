@@ -7,12 +7,12 @@ import (
 
 func TestSettingsManager(t *testing.T) {
 	tmpDir := t.TempDir()
-	
+
 	manager := &Manager{
 		filePath: filepath.Join(tmpDir, "settings.json"),
 		Data: LauncherSettings{
 			Language: "en",
-			Theme: "dark",
+			Theme:    "dark",
 		},
 	}
 
@@ -23,7 +23,7 @@ func TestSettingsManager(t *testing.T) {
 	newManager := &Manager{
 		filePath: filepath.Join(tmpDir, "settings.json"),
 	}
-	
+
 	if err := newManager.Load(); err != nil {
 		t.Fatalf("Failed to load settings: %v", err)
 	}
@@ -34,9 +34,9 @@ func TestSettingsManager(t *testing.T) {
 
 	update := LauncherSettings{
 		Language: "id",
-		Theme: "light",
+		Theme:    "light",
 	}
-	
+
 	if err := newManager.Update(update); err != nil {
 		t.Fatalf("Failed to update settings: %v", err)
 	}

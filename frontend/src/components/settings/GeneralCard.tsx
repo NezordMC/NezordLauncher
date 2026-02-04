@@ -21,6 +21,8 @@ interface GeneralCardProps {
   setResH: (val: number) => void;
   windowMode: string;
   setWindowMode: (val: string) => void;
+  gpuPreference: string;
+  setGpuPreference: (val: string) => void;
 }
 
 export function GeneralCard({
@@ -34,6 +36,8 @@ export function GeneralCard({
   setResH,
   windowMode,
   setWindowMode,
+  gpuPreference,
+  setGpuPreference,
 }: GeneralCardProps) {
   const presets = [
     { label: "Low (2GB)", min: 1024, max: 2048 },
@@ -171,6 +175,26 @@ export function GeneralCard({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-3">
+          <label className="text-sm font-medium text-zinc-300">
+            GPU Selection
+          </label>
+          <Select value={gpuPreference} onValueChange={setGpuPreference}>
+            <SelectTrigger className="w-full bg-zinc-950/50 border-zinc-800">
+              <SelectValue placeholder="Select GPU preference" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">Auto (Default)</SelectItem>
+              <SelectItem value="discrete">Discrete GPU</SelectItem>
+              <SelectItem value="integrated">Integrated GPU</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-zinc-500">
+            Select which GPU to use for Minecraft. "Auto" lets the system
+            decide.
+          </p>
         </div>
       </CardContent>
     </Card>

@@ -6,7 +6,7 @@ import (
 
 func TestGetLoaderVersions(t *testing.T) {
 	gameVersion := "1.20.1"
-	
+
 	versions, err := GetLoaderVersions(gameVersion)
 	if err != nil {
 		t.Fatalf("Failed to get quilt versions: %v", err)

@@ -91,8 +91,14 @@ function useInstanceLogic() {
   ): Promise<string[]> => {
     if (type === "vanilla") return [];
     try {
-      if (type === "fabric") return await GetFabricLoaders(mcVersion);
-      if (type === "quilt") return await GetQuiltLoaders(mcVersion);
+      if (type === "fabric") {
+        const res = await GetFabricLoaders(mcVersion);
+        return res || [];
+      }
+      if (type === "quilt") {
+        const res = await GetQuiltLoaders(mcVersion);
+        return res || [];
+      }
     } catch (e) {
       console.error(`Failed to fetch ${type} loaders`, e);
     }

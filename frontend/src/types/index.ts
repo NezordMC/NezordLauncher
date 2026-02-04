@@ -17,6 +17,7 @@ export interface InstanceSettings {
   jvmArgs: string;
   overrideJava: boolean;
   overrideRam: boolean;
+  gpuPreference: string;
 }
 
 export interface Instance {
@@ -58,4 +59,5 @@ export interface LauncherSettings {
   defaultJvmArgs: string;
   defaultJavaPath: string;
   autoUpdateEnabled: boolean;
+  gpuPreference: string;
 }

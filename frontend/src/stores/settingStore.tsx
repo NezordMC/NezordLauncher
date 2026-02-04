@@ -79,14 +79,15 @@ function useSettingsLogic() {
       defaultResolutionH,
       defaultJvmArgs,
       defaultJavaPath,
-      autoUpdateEnabled:
-        settings?.autoUpdateEnabled === false ? false : true,
+      autoUpdateEnabled: settings?.autoUpdateEnabled === false ? false : true,
+      gpuPreference: settings?.gpuPreference || "auto",
     };
   };
 
   const scanJava = async (): Promise<JavaInfo[]> => {
     try {
-      return await ScanJavaInstallations();
+      const res = await ScanJavaInstallations();
+      return res || [];
     } catch (e) {
       console.error("Java scan failed", e);
       return [];
@@ -96,7 +97,7 @@ function useSettingsLogic() {
   const loadLauncherSettings = async () => {
     try {
       const settings = (await GetSettings()) as LauncherSettings;
-      const normalized = normalizeSettings(settings);
+      const normalized = normalizeSettings(settings); // settings is safe to be null/undefined in normalizeSettings
       setLauncherSettings(normalized);
       setDefaults({
         ram: normalized.defaultRamMB,

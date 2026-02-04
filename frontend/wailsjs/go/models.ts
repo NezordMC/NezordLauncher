@@ -31,6 +31,7 @@ export namespace instances {
 	    jvmArgs: string;
 	    overrideJava: boolean;
 	    overrideRam: boolean;
+	    gpuPreference: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new InstanceSettings(source);
@@ -45,6 +46,7 @@ export namespace instances {
 	        this.jvmArgs = source["jvmArgs"];
 	        this.overrideJava = source["overrideJava"];
 	        this.overrideRam = source["overrideRam"];
+	        this.gpuPreference = source["gpuPreference"];
 	    }
 	}
 	export class Instance {
@@ -186,6 +188,7 @@ export namespace settings {
 	    defaultJvmArgs: string;
 	    defaultJavaPath: string;
 	    autoUpdateEnabled: boolean;
+	    gpuPreference: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new LauncherSettings(source);
@@ -204,6 +207,7 @@ export namespace settings {
 	        this.defaultJvmArgs = source["defaultJvmArgs"];
 	        this.defaultJavaPath = source["defaultJavaPath"];
 	        this.autoUpdateEnabled = source["autoUpdateEnabled"];
+	        this.gpuPreference = source["gpuPreference"];
 	    }
 	}
 

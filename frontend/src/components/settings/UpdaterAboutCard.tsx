@@ -69,6 +69,7 @@ export function UpdaterAboutCard() {
     await updateLauncherSettings({
       ...current,
       autoUpdateEnabled: nextValue,
+      gpuPreference: current.gpuPreference,
     });
   };
 

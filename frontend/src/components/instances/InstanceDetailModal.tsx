@@ -9,6 +9,7 @@ import { MemorySection } from "./MemorySection";
 import { JavaSection } from "./JavaSection";
 import { ResolutionSection } from "./ResolutionSection";
 import { JvmArgsSection } from "./JvmArgsSection";
+import { GpuSection } from "./GpuSection";
 import { toast } from "sonner";
 
 import vanillaLogo from "@/assets/images/vanilla.png";
@@ -47,6 +48,7 @@ export function InstanceDetailModal({
         jvmArgs: instance.settings.jvmArgs || "",
         overrideJava: instance.settings.overrideJava || false,
         overrideRam: instance.settings.overrideRam || false,
+        gpuPreference: instance.settings.gpuPreference || "auto",
       });
       setIsDirty(false);
     }
@@ -152,6 +154,7 @@ export function InstanceDetailModal({
             onChange={handleChange}
           />
           <ResolutionSection settings={settings} onChange={handleChange} />
+          <GpuSection settings={settings} onChange={handleChange} />
           <JvmArgsSection settings={settings} onChange={handleChange} />
         </div>
 

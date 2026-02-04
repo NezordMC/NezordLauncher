@@ -10,11 +10,7 @@ import (
 
 type LogCallback func(text string)
 
-func Launch(command string, args []string, dir string) (*exec.Cmd, error) {
-	cmd := exec.Command(command, args...)
-	cmd.Dir = dir
-	return cmd, nil
-}
+// Launch is implemented in platform specific files
 
 func Monitor(cmd *exec.Cmd, onLog LogCallback) error {
 	stdout, err := cmd.StdoutPipe()
@@ -63,7 +59,7 @@ func Monitor(cmd *exec.Cmd, onLog LogCallback) error {
 
 // Deprecated: Use Launch and Monitor instead
 func ExecuteGame(command string, args []string, dir string, onLog LogCallback) error {
-	cmd, _ := Launch(command, args, dir)
+	cmd, _ := Launch(command, args, dir, nil)
 	return Monitor(cmd, onLog)
 }
 

@@ -6,3 +6,6 @@ frontend/dist
 *.AppImage
 build/AppDir/
 build/linux/tools/
+
+# Data directory
+data/

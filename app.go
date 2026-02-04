@@ -22,11 +22,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	wailsRun "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type App struct {
@@ -73,7 +74,7 @@ func (a *App) emit(eventName string, data ...interface{}) {
 		}
 		return
 	}
-	runtime.EventsEmit(a.ctx, eventName, data...)
+	wailsRun.EventsEmit(a.ctx, eventName, data...)
 }
 
 func (a *App) startup(ctx context.Context) {
@@ -245,7 +246,6 @@ func (a *App) CheckForUpdates(currentVersion string) (*updater.UpdateInfo, error
 	return updater.CheckForUpdate(currentVersion)
 }
 
-
 func (a *App) ScanJavaInstallations() ([]javascanner.JavaInfo, error) {
 	return javascanner.ScanJavaInstallations()
 }
@@ -259,7 +259,12 @@ func (a *App) OpenInstanceFolder(instanceID string) error {
 	if err := os.MkdirAll(instanceDir, 0755); err != nil {
 		return fmt.Errorf("failed to create instance dir: %w", err)
 	}
-	cmd := exec.Command("xdg-open", instanceDir)
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("explorer", instanceDir)
+	} else {
+		cmd = exec.Command("xdg-open", instanceDir)
+	}
 	return cmd.Start()
 }
 
@@ -535,7 +540,46 @@ func (a *App) LaunchInstance(instanceID string) error {
 		fmt.Println(text)
 	}
 
-	cmd, err := launch.Launch(javaPath, args, instanceDir)
+	// GPU Selection
+	gpuPref := inst.Settings.GpuPreference
+	if gpuPref == "" {
+		gpuPref = settings.GpuPreference
+	}
+	if gpuPref == "" {
+		gpuPref = "auto"
+	}
+
+	env := make(map[string]string)
+	if gpuPref == "discrete" {
+		if runtime.GOOS == "linux" {
+			if a.hasNvidiaGPU() {
+				a.emit("launchStatus", "Using Discrete GPU (NVIDIA detected)...")
+				env["__NV_PRIME_RENDER_OFFLOAD"] = "1"
+				env["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia"
+			} else {
+				a.emit("launchStatus", "Using Discrete GPU (AMD/Mesa detected)...")
+				env["DRI_PRIME"] = "1"
+			}
+		} else if runtime.GOOS == "windows" {
+			a.emit("launchStatus", "Setting Windows Game Mode / High Performance...")
+		}
+	} else if gpuPref == "integrated" {
+		a.emit("launchStatus", "Using Integrated GPU...")
+		// For integrated, we simply do not set any offload variables.
+		// This relies on the system default being the integrated GPU (standard behavior).
+	} else {
+		a.emit("launchStatus", "Using Auto GPU selection...")
+	}
+
+	if runtime.GOOS == "windows" {
+		// On Windows, we set the registry key for the javaw.exe that will be used.
+		// This persists, so we should set it every time just in case it was changed.
+		if err := setWindowsGpuPreference(javaPath, gpuPref); err != nil {
+			fmt.Printf("Failed to set Windows GPU preference: %v\n", err)
+		}
+	}
+
+	cmd, err := launch.Launch(javaPath, args, instanceDir, env)
 	if err != nil {
 		a.emit("launchError", err.Error())
 		a.emit("game_exit", "error")
@@ -604,6 +648,21 @@ func (a *App) getVersionDetails(versionID string) (*models.VersionDetail, error)
 	}
 
 	return a.fetchVanillaVersion(versionID)
+}
+
+func (a *App) hasNvidiaGPU() bool {
+	// Check for nvidia-smi command which indicates NVIDIA drivers are installed/active
+	_, err := exec.LookPath("nvidia-smi")
+	if err == nil {
+		return true
+	}
+
+	// Fallback check: look for /proc/driver/nvidia existence
+	if _, err := os.Stat("/proc/driver/nvidia"); err == nil {
+		return true
+	}
+
+	return false
 }
 
 func (a *App) fetchVanillaVersion(versionID string) (*models.VersionDetail, error) {

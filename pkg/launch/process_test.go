@@ -7,7 +7,7 @@ import (
 
 func TestExecuteGame(t *testing.T) {
 	var capturedLogs []string
-	
+
 	logger := func(text string) {
 		capturedLogs = append(capturedLogs, text)
 	}
@@ -32,6 +32,6 @@ func TestExecuteGame(t *testing.T) {
 	if !found {
 		t.Errorf("Expected output not found in logs. Logs: %v", capturedLogs)
 	}
-	
+
 	t.Logf("Total logs captured: %d", len(capturedLogs))
 }

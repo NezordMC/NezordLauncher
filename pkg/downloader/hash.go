@@ -8,10 +8,9 @@ import (
 	"strings"
 )
 
-
 func VerifyFileSHA1(path string, expected string) (bool, error) {
 	if expected == "" {
-		return false, nil 
+		return false, nil
 	}
 
 	f, err := os.Open(path)

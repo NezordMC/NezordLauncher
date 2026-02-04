@@ -10,5 +10,11 @@
   "author": {
     "name": "Drenzzz",
     "email": "realdrenzzz@gmail.com"
+  },
+  "nsis": {
+    "installer": {
+      "icon": "build/windows/icon.ico",
+      "header": "build/windows/icon.ico"
+    }
   }
 }

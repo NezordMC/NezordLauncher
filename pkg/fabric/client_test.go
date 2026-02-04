@@ -6,7 +6,7 @@ import (
 
 func TestGetLoaderVersions(t *testing.T) {
 	gameVersion := "1.20.1"
-	
+
 	versions, err := GetLoaderVersions(gameVersion)
 	if err != nil {
 		t.Fatalf("Failed to get fabric versions: %v", err)
@@ -25,8 +25,8 @@ func TestGetLoaderVersions(t *testing.T) {
 }
 
 func TestGetLoaderVersions_Invalid(t *testing.T) {
-	gameVersion := "9.9.9" 
-	
+	gameVersion := "9.9.9"
+
 	_, err := GetLoaderVersions(gameVersion)
 	if err == nil {
 		t.Error("Expected error for non-existent game version, got nil")

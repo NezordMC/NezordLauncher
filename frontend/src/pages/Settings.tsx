@@ -27,6 +27,7 @@ export function SettingsPage() {
   const [resW, setResW] = useState(854);
   const [resH, setResH] = useState(480);
   const [windowMode, setWindowMode] = useState("Windowed");
+  const [gpuPreference, setGpuPreference] = useState("auto");
   const [jvmArgs, setJvmArgs] = useState("");
   const [selectedJavaPath, setSelectedJavaPath] = useState("");
   const [dataPath, setDataPath] = useState("");
@@ -42,6 +43,9 @@ export function SettingsPage() {
       const allowedModes = ["Windowed", "Fullscreen", "Borderless"];
       if (settings?.windowMode && allowedModes.includes(settings.windowMode)) {
         setWindowMode(settings.windowMode);
+      }
+      if (settings?.gpuPreference) {
+        setGpuPreference(settings.gpuPreference);
       }
       const ramValue = settings?.defaultRamMB || 4096;
       setMaxRam(ramValue);
@@ -80,6 +84,7 @@ export function SettingsPage() {
       defaultJvmArgs: jvmArgs,
       defaultJavaPath: selectedJavaPath,
       autoUpdateEnabled: launcherSettings.autoUpdateEnabled,
+      gpuPreference: gpuPreference,
     };
     updateLauncherSettings(next);
   }, [
@@ -92,6 +97,7 @@ export function SettingsPage() {
     resH,
     jvmArgs,
     selectedJavaPath,
+    gpuPreference,
   ]);
 
   const handleScanJava = async () => {
@@ -122,6 +128,7 @@ export function SettingsPage() {
       defaultJvmArgs: current?.defaultJvmArgs || jvmArgs,
       defaultJavaPath: current?.defaultJavaPath || selectedJavaPath,
       autoUpdateEnabled: current?.autoUpdateEnabled ?? true,
+      gpuPreference: current?.gpuPreference || gpuPreference,
     };
     await updateLauncherSettings(next);
     setIsSavingPath(false);
@@ -153,6 +160,8 @@ export function SettingsPage() {
           setResH={setResH}
           windowMode={windowMode}
           setWindowMode={setWindowMode}
+          gpuPreference={gpuPreference}
+          setGpuPreference={setGpuPreference}
         />
         <JavaCard
           javaList={javaList}

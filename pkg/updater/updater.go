@@ -30,10 +30,10 @@ type UpdateInfo struct {
 
 func CheckForUpdate(currentVersion string) (*UpdateInfo, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", RepoOwner, RepoName)
-	
+
 	// If current version is a dev build or beta, we might want to check for pre-releases too
 	// ignoring that for now, focusing on "latest" which is usually the latest stable/beta designated by GitHub
-	
+
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Get(url)
 	if err != nil {

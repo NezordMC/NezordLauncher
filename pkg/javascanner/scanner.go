@@ -83,23 +83,34 @@ func getCandidatePaths() []string {
 	}
 
 	if runtime.GOOS == "windows" {
-		progFiles := []string{os.Getenv("ProgramFiles"), os.Getenv("ProgramFiles(x86)")}
+		// Common installation directories
+		progFiles := []string{
+			os.Getenv("ProgramFiles"),
+			os.Getenv("ProgramFiles(x86)"),
+		}
+
+		bases := []string{"Java", "Eclipse Foundation", "Microsoft"}
+		if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
+			progFiles = append(progFiles, filepath.Join(localAppData, "Programs"))
+		}
+
 		for _, pf := range progFiles {
 			if pf == "" {
 				continue
 			}
-			javaDir := filepath.Join(pf, "Java")
-			entries, _ := os.ReadDir(javaDir)
-			for _, e := range entries {
-				bin := filepath.Join(javaDir, e.Name(), "bin", "java.exe")
-				addIfFile(&paths, seen, bin)
+			for _, base := range bases {
+				targetDir := filepath.Join(pf, base)
+				if _, err := os.Stat(targetDir); err == nil {
+					addJavaFromRoot(&paths, seen, targetDir)
+				}
 			}
+		}
 
-			eclipseDir := filepath.Join(pf, "Eclipse Foundation")
-			entries2, _ := os.ReadDir(eclipseDir)
-			for _, e := range entries2 {
-				bin := filepath.Join(eclipseDir, e.Name(), "bin", "java.exe")
-				addIfFile(&paths, seen, bin)
+		// Registry Scan
+		regPaths, err := scanRegistryJava()
+		if err == nil {
+			for _, p := range regPaths {
+				addIfFile(&paths, seen, filepath.Join(p, "bin", "java.exe"))
 			}
 		}
 	}
