@@ -47,7 +47,7 @@ export function UpdaterAboutCard() {
     setError("");
     try {
       // @ts-ignore
-      const res = await CheckForUpdates("0.1.0"); // TODO: Use real current version
+      const res = await CheckForUpdates("0.2.0"); // TODO: Use real current version
       setLastCheck({
         available: res.available,
         version: res.version,
@@ -88,7 +88,7 @@ export function UpdaterAboutCard() {
             </div>
             <div>
               <h3 className="font-bold text-lg">Updater</h3>
-              <p className="text-xs text-zinc-500 font-mono">v0.1.0</p>
+              <p className="text-xs text-zinc-500 font-mono">v0.2.0</p>
             </div>
           </div>
 
