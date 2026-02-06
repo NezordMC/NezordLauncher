@@ -610,19 +610,43 @@ func (a *App) LaunchInstance(instanceID string) error {
 
 func (a *App) StopInstance(instanceID string) error {
 	a.runningMu.Lock()
-	defer a.runningMu.Unlock()
-
 	cmd, ok := a.runningInstances[instanceID]
+	a.runningMu.Unlock()
+
 	if !ok {
 		return fmt.Errorf("instance not running: %s", instanceID)
 	}
 
-	if cmd.Process != nil {
-		if err := cmd.Process.Kill(); err != nil {
-			return fmt.Errorf("failed to kill process: %w", err)
+	a.emit("launchStatus", "Stopping instance...")
+
+	if err := launch.SendTerminate(cmd); err != nil {
+		if cmd.Process != nil {
+			return cmd.Process.Kill()
+		}
+		return err
+	}
+
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+	timeout := time.After(5 * time.Second)
+
+	for {
+		select {
+		case <-timeout:
+			if cmd.Process != nil {
+				a.emit("launchStatus", "Force stopping instance...")
+				return cmd.Process.Kill()
+			}
+			return nil
+		case <-ticker.C:
+			a.runningMu.Lock()
+			_, running := a.runningInstances[instanceID]
+			a.runningMu.Unlock()
+			if !running {
+				return nil
+			}
 		}
 	}
-	return nil
 }
 
 func (a *App) getVersionDetails(versionID string) (*models.VersionDetail, error) {

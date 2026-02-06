@@ -26,3 +26,10 @@ func Launch(command string, args []string, dir string, env map[string]string) (*
 	}
 	return cmd, nil
 }
+
+func SendTerminate(cmd *exec.Cmd) error {
+	if cmd.Process == nil {
+		return nil
+	}
+	return cmd.Process.Kill()
+}
