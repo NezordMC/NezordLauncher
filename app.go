@@ -8,6 +8,7 @@ import (
 	"NezordLauncher/pkg/instances"
 	"NezordLauncher/pkg/javascanner"
 	"NezordLauncher/pkg/launch"
+	"NezordLauncher/pkg/logging"
 	"NezordLauncher/pkg/models"
 	"NezordLauncher/pkg/network"
 	"NezordLauncher/pkg/quilt"
@@ -79,6 +80,11 @@ func (a *App) emit(eventName string, data ...interface{}) {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	if err := logging.Init(constants.GetLogsDir()); err != nil {
+		fmt.Printf("Failed to init logger: %v\n", err)
+	}
+	logging.Info("Application startup")
 
 	if err := a.settingsManager.Load(); err != nil {
 		fmt.Printf("Failed to load settings: %s\n", err)
