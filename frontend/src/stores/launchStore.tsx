@@ -98,6 +98,7 @@ function useGameLaunchLogic() {
         setLaunchingInstanceId(null);
         // Do not clear download progress here, it might be relevant
       }),
+      EventsOn("errorLog", (msg: string) => addLog(`[APP ERROR] ${msg}`)),
     ];
     return () => cleanups.forEach((c) => c());
   }, [currentDownloadId]);

@@ -52,7 +52,9 @@ export function FloatingConsole() {
                 <div
                   key={i}
                   className={`py-0.5 break-all ${
-                    log.includes("[ERROR]") || log.includes("[FATAL]")
+                    log.includes("[ERROR]") ||
+                    log.includes("[FATAL]") ||
+                    log.includes("[APP ERROR]")
                       ? "text-red-400"
                       : log.includes("[DOWNLOAD]")
                         ? "text-blue-400"

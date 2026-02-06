@@ -12,6 +12,7 @@ var (
 	logFile     *os.File
 	mu          sync.Mutex
 	initialized bool
+	logCallback func(Level, string)
 )
 
 type Level int
@@ -82,6 +83,16 @@ func backgroundLog(level Level, format string, args ...interface{}) {
 		logFile.WriteString(line)
 	}
 	fmt.Print(line)
+
+	if logCallback != nil {
+		logCallback(level, msg)
+	}
+}
+
+func SetCallback(fn func(Level, string)) {
+	mu.Lock()
+	defer mu.Unlock()
+	logCallback = fn
 }
 
 func Log(level Level, format string, args ...interface{}) {

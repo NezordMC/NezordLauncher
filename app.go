@@ -86,6 +86,12 @@ func (a *App) startup(ctx context.Context) {
 	}
 	logging.Info("Application startup")
 
+	logging.SetCallback(func(lvl logging.Level, msg string) {
+		if lvl == logging.ERROR {
+			a.emit("errorLog", msg)
+		}
+	})
+
 	if err := a.settingsManager.Load(); err != nil {
 		fmt.Printf("Failed to load settings: %s\n", err)
 	}
