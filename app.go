@@ -241,6 +241,21 @@ func (a *App) UpdateInstanceSettings(id string, settings instances.InstanceSetti
 	return a.instanceManager.UpdateSettings(id, settings)
 }
 
+func (a *App) VerifyInstance(instanceID string) ([]instances.VerificationResult, error) {
+	inst, ok := a.instanceManager.Get(instanceID)
+	if !ok {
+		return nil, fmt.Errorf("instance not found")
+	}
+
+	finalVersionID := inst.GetLaunchVersionID()
+	version, err := a.getVersionDetails(finalVersionID)
+	if err != nil {
+		return nil, err
+	}
+
+	return instances.VerifyInstance(version)
+}
+
 func (a *App) GetSystemPlatform() system.SystemInfo {
 	return system.GetSystemInfo()
 }

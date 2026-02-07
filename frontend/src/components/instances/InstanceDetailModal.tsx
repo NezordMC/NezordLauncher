@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Instance, InstanceSettings } from "@/types";
 import { useInstanceStore } from "@/stores/instanceStore";
 import { useSettingStore } from "@/stores/settingStore";
-import { OpenInstanceFolder } from "../../../wailsjs/go/main/App";
+import {
+  OpenInstanceFolder,
+  VerifyInstance,
+} from "../../../wailsjs/go/main/App";
 import { MemorySection } from "./MemorySection";
 import { JavaSection } from "./JavaSection";
 import { ResolutionSection } from "./ResolutionSection";
@@ -97,6 +100,22 @@ export function InstanceDetailModal({
     }
   };
 
+  const handleVerify = async () => {
+    try {
+      toast.info("Verifying instance integrity...");
+      const results = await VerifyInstance(instance.id);
+      if (results && results.length > 0) {
+        toast.error(
+          `Verification failed: ${results.length} files missing or corrupt.`,
+        );
+      } else {
+        toast.success("Verification passed: Instance is healthy.");
+      }
+    } catch (e: any) {
+      toast.error(`Verification error: ${e}`);
+    }
+  };
+
   const handleDelete = async () => {
     try {
       await deleteInstance(instance.id);
@@ -168,6 +187,16 @@ export function InstanceDetailModal({
             >
               <FolderOpen size={16} />
               Open Folder
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleVerify}
+              className="gap-2 text-zinc-400 hover:text-white"
+            >
+              <Loader2 size={16} />
+              Verify
             </Button>
 
             {showDeleteConfirm ? (
