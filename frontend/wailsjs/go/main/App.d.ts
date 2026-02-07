@@ -46,6 +46,8 @@ export function OpenInstanceFolder(arg1:string):Promise<void>;
 
 export function RemoveAccount(arg1:string):Promise<void>;
 
+export function RepairInstance(arg1:string):Promise<void>;
+
 export function ScanJavaInstallations():Promise<Array<javascanner.JavaInfo>>;
 
 export function SetActiveAccount(arg1:string):Promise<void>;
@@ -57,3 +59,5 @@ export function StopInstance(arg1:string):Promise<void>;
 export function UpdateGlobalSettings(arg1:settings.LauncherSettings):Promise<void>;
 
 export function UpdateInstanceSettings(arg1:string,arg2:instances.InstanceSettings):Promise<void>;
+
+export function VerifyInstance(arg1:string):Promise<Array<instances.VerificationResult>>;

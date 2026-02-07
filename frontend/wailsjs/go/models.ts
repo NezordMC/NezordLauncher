@@ -101,6 +101,21 @@ export namespace instances {
 		    return a;
 		}
 	}
+	
+	export class VerificationResult {
+	    file: string;
+	    status: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new VerificationResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.file = source["file"];
+	        this.status = source["status"];
+	    }
+	}
 
 }
 

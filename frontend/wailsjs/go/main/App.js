@@ -78,6 +78,10 @@ export function RemoveAccount(arg1) {
   return window['go']['main']['App']['RemoveAccount'](arg1);
 }
 
+export function RepairInstance(arg1) {
+  return window['go']['main']['App']['RepairInstance'](arg1);
+}
+
 export function ScanJavaInstallations() {
   return window['go']['main']['App']['ScanJavaInstallations']();
 }
@@ -100,4 +104,8 @@ export function UpdateGlobalSettings(arg1) {
 
 export function UpdateInstanceSettings(arg1, arg2) {
   return window['go']['main']['App']['UpdateInstanceSettings'](arg1, arg2);
+}
+
+export function VerifyInstance(arg1) {
+  return window['go']['main']['App']['VerifyInstance'](arg1);
 }
