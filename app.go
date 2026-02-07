@@ -256,6 +256,69 @@ func (a *App) VerifyInstance(instanceID string) ([]instances.VerificationResult,
 	return instances.VerifyInstance(version)
 }
 
+func (a *App) RepairInstance(instanceID string) error {
+	broken, err := a.VerifyInstance(instanceID)
+	if err != nil {
+		return err
+	}
+
+	if len(broken) == 0 {
+		return nil
+	}
+
+	inst, ok := a.instanceManager.Get(instanceID)
+	if !ok {
+		return fmt.Errorf("instance not found")
+	}
+
+	a.emit("launchStatus", fmt.Sprintf("Repairing %d files...", len(broken)))
+
+	brokenMap := make(map[string]bool)
+	for _, res := range broken {
+		brokenMap[res.File] = true
+	}
+
+	filter := func(path string) bool {
+		return brokenMap[path]
+	}
+
+	a.downloadMu.Lock()
+	if a.downloadCancel != nil {
+		a.downloadCancel()
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	a.downloadCancel = cancel
+	a.downloadMu.Unlock()
+
+	defer func() {
+		a.downloadMu.Lock()
+		if a.downloadCancel != nil {
+			a.downloadCancel()
+			a.downloadCancel = nil
+		}
+		a.downloadMu.Unlock()
+	}()
+
+	pool := downloader.NewWorkerPool(10, 100)
+	pool.Start(ctx)
+
+	fetcher := downloader.NewArtifactFetcher(pool)
+	fetcher.Filter = filter
+
+	if err := fetcher.DownloadVersion(ctx, inst.GameVersion); err != nil {
+		return err
+	}
+
+	pool.Wait()
+
+	if len(pool.Errors()) > 0 {
+		return fmt.Errorf("repair failed with %d errors", len(pool.Errors()))
+	}
+
+	a.emit("launchStatus", "Repair complete")
+	return nil
+}
+
 func (a *App) GetSystemPlatform() system.SystemInfo {
 	return system.GetSystemInfo()
 }

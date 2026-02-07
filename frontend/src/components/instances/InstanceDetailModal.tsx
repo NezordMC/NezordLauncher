@@ -7,6 +7,7 @@ import { useSettingStore } from "@/stores/settingStore";
 import {
   OpenInstanceFolder,
   VerifyInstance,
+  RepairInstance,
 } from "../../../wailsjs/go/main/App";
 import { MemorySection } from "./MemorySection";
 import { JavaSection } from "./JavaSection";
@@ -116,6 +117,16 @@ export function InstanceDetailModal({
     }
   };
 
+  const handleRepair = async () => {
+    try {
+      toast.info("Starting repair...");
+      await RepairInstance(instance.id);
+      toast.success("Instance repaired successfully");
+    } catch (e: any) {
+      toast.error(`Repair failed: ${e}`);
+    }
+  };
+
   const handleDelete = async () => {
     try {
       await deleteInstance(instance.id);
@@ -197,6 +208,16 @@ export function InstanceDetailModal({
             >
               <Loader2 size={16} />
               Verify
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRepair}
+              className="gap-2 text-zinc-400 hover:text-white"
+            >
+              <Loader2 size={16} />
+              Repair
             </Button>
 
             {showDeleteConfirm ? (
