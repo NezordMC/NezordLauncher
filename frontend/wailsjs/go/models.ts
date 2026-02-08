@@ -32,6 +32,7 @@ export namespace instances {
 	    overrideJava: boolean;
 	    overrideRam: boolean;
 	    gpuPreference: string;
+	    wrapperCommand: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new InstanceSettings(source);
@@ -47,6 +48,7 @@ export namespace instances {
 	        this.overrideJava = source["overrideJava"];
 	        this.overrideRam = source["overrideRam"];
 	        this.gpuPreference = source["gpuPreference"];
+	        this.wrapperCommand = source["wrapperCommand"];
 	    }
 	}
 	export class Instance {

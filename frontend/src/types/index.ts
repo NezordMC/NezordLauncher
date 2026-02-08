@@ -18,6 +18,7 @@ export interface InstanceSettings {
   overrideJava: boolean;
   overrideRam: boolean;
   gpuPreference: string;
+  wrapperCommand: string;
 }
 
 export interface Instance {

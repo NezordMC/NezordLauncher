@@ -34,6 +34,7 @@ type InstanceSettings struct {
 	OverrideJava  bool   `json:"overrideJava"`
 	OverrideRam   bool   `json:"overrideRam"`
 	GpuPreference string `json:"gpuPreference"`
+	WrapperCommand string `json:"wrapperCommand"`
 }
 
 func (i *Instance) GetLaunchVersionID() string {

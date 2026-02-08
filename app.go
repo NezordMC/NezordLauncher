@@ -673,7 +673,22 @@ func (a *App) LaunchInstance(instanceID string) error {
 		}
 	}
 
-	cmd, err := launch.Launch(javaPath, args, instanceDir, env)
+	finalCommand := javaPath
+	finalArgs := args
+
+	// Handle Wrapper Command
+	if inst.Settings.WrapperCommand != "" {
+		parts := strings.Fields(inst.Settings.WrapperCommand)
+		if len(parts) > 0 {
+			a.emit("launchStatus", fmt.Sprintf("Using wrapper: %s", inst.Settings.WrapperCommand))
+			finalCommand = parts[0]
+			// Wrapper args + Java Path + Java Args
+			wrapperArgs := append(parts[1:], javaPath)
+			finalArgs = append(wrapperArgs, args...)
+		}
+	}
+
+	cmd, err := launch.Launch(finalCommand, finalArgs, instanceDir, env)
 	if err != nil {
 		a.emit("launchError", err.Error())
 		a.emit("game_exit", "error")
