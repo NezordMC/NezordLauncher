@@ -20,6 +20,8 @@ interface JavaCardProps {
   setJvmArgs: (val: string) => void;
   selectedPath: string;
   onSelect: (path: string) => void;
+  wrapperCommand: string;
+  setWrapperCommand: (val: string) => void;
 }
 
 export function JavaCard({
@@ -30,6 +32,8 @@ export function JavaCard({
   setJvmArgs,
   selectedPath,
   onSelect,
+  wrapperCommand,
+  setWrapperCommand,
 }: JavaCardProps) {
   const [showArgs, setShowArgs] = useState(false);
 
@@ -125,6 +129,24 @@ export function JavaCard({
               })}
             </div>
           )}
+        </div>
+
+        {/* Wrapper Command */}
+        <div className="border-t border-zinc-800 pt-4 space-y-3">
+          <h3 className="flex items-center gap-2 text-sm font-medium text-zinc-300">
+            <Terminal size={16} className="text-zinc-500" />
+            Global Wrapper Command
+          </h3>
+          <input
+            value={wrapperCommand}
+            onChange={(e) => setWrapperCommand(e.target.value)}
+            className="w-full bg-black/20 border border-zinc-800 rounded-md p-3 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-primary text-zinc-300 placeholder:text-zinc-700"
+            placeholder="e.g. mangohud --dlsym"
+          />
+          <p className="text-[10px] text-zinc-500">
+            Prefix commands to run before Java. This is a global setting and
+            will apply to all instances unless overridden.
+          </p>
         </div>
 
         {/* Collapsible JVM Args */}

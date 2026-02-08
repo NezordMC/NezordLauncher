@@ -61,4 +61,5 @@ export interface LauncherSettings {
   defaultJavaPath: string;
   autoUpdateEnabled: boolean;
   gpuPreference: string;
+  wrapperCommand: string;
 }

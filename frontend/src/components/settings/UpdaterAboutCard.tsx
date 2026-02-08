@@ -70,6 +70,7 @@ export function UpdaterAboutCard() {
       ...current,
       autoUpdateEnabled: nextValue,
       gpuPreference: current.gpuPreference,
+      wrapperCommand: current.wrapperCommand,
     });
   };
 

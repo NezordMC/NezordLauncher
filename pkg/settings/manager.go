@@ -21,6 +21,7 @@ type LauncherSettings struct {
 	DefaultJavaPath    string `json:"defaultJavaPath"`
 	AutoUpdateEnabled  bool   `json:"autoUpdateEnabled"`
 	GpuPreference      string `json:"gpuPreference"`
+	WrapperCommand     string `json:"wrapperCommand"`
 }
 
 type Manager struct {

@@ -30,6 +30,7 @@ export function SettingsPage() {
   const [gpuPreference, setGpuPreference] = useState("auto");
   const [jvmArgs, setJvmArgs] = useState("");
   const [selectedJavaPath, setSelectedJavaPath] = useState("");
+  const [wrapperCommand, setWrapperCommand] = useState("");
   const [dataPath, setDataPath] = useState("");
   const [isSavingPath, setIsSavingPath] = useState(false);
   const [isDefaultsLoaded, setIsDefaultsLoaded] = useState(false);
@@ -59,6 +60,7 @@ export function SettingsPage() {
       setResW(settings?.defaultResolutionW || 854);
       setResH(settings?.defaultResolutionH || 480);
       setJvmArgs(settings?.defaultJvmArgs || "");
+      setWrapperCommand(settings?.wrapperCommand || "");
       setSelectedJavaPath(settings?.defaultJavaPath || "");
     });
     setIsDefaultsLoaded(true);
@@ -85,6 +87,7 @@ export function SettingsPage() {
       defaultJavaPath: selectedJavaPath,
       autoUpdateEnabled: launcherSettings.autoUpdateEnabled,
       gpuPreference: gpuPreference,
+      wrapperCommand: wrapperCommand,
     };
     updateLauncherSettings(next);
   }, [
@@ -98,6 +101,7 @@ export function SettingsPage() {
     jvmArgs,
     selectedJavaPath,
     gpuPreference,
+    wrapperCommand,
   ]);
 
   const handleScanJava = async () => {
@@ -129,6 +133,7 @@ export function SettingsPage() {
       defaultJavaPath: current?.defaultJavaPath || selectedJavaPath,
       autoUpdateEnabled: current?.autoUpdateEnabled ?? true,
       gpuPreference: current?.gpuPreference || gpuPreference,
+      wrapperCommand: current?.wrapperCommand || wrapperCommand,
     };
     await updateLauncherSettings(next);
     setIsSavingPath(false);
@@ -171,6 +176,8 @@ export function SettingsPage() {
           setJvmArgs={setJvmArgs}
           selectedPath={selectedJavaPath}
           onSelect={setSelectedJavaPath}
+          wrapperCommand={wrapperCommand}
+          setWrapperCommand={setWrapperCommand}
         />
         <Card className="border-zinc-800 bg-zinc-900">
           <CardHeader>

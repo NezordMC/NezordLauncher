@@ -206,6 +206,7 @@ export namespace settings {
 	    defaultJavaPath: string;
 	    autoUpdateEnabled: boolean;
 	    gpuPreference: string;
+	    wrapperCommand: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new LauncherSettings(source);
@@ -225,6 +226,7 @@ export namespace settings {
 	        this.defaultJavaPath = source["defaultJavaPath"];
 	        this.autoUpdateEnabled = source["autoUpdateEnabled"];
 	        this.gpuPreference = source["gpuPreference"];
+	        this.wrapperCommand = source["wrapperCommand"];
 	    }
 	}
 

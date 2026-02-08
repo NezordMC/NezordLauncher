@@ -677,10 +677,15 @@ func (a *App) LaunchInstance(instanceID string) error {
 	finalArgs := args
 
 	// Handle Wrapper Command
-	if inst.Settings.WrapperCommand != "" {
-		parts := strings.Fields(inst.Settings.WrapperCommand)
+	wrapperCmd := inst.Settings.WrapperCommand
+	if wrapperCmd == "" {
+		wrapperCmd = settings.WrapperCommand
+	}
+
+	if wrapperCmd != "" {
+		parts := strings.Fields(wrapperCmd)
 		if len(parts) > 0 {
-			a.emit("launchStatus", fmt.Sprintf("Using wrapper: %s", inst.Settings.WrapperCommand))
+			a.emit("launchStatus", fmt.Sprintf("Using wrapper: %s", wrapperCmd))
 			finalCommand = parts[0]
 			// Wrapper args + Java Path + Java Args
 			wrapperArgs := append(parts[1:], javaPath)
