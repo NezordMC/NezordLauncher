@@ -109,3 +109,7 @@ export function UpdateInstanceSettings(arg1, arg2) {
 export function VerifyInstance(arg1) {
   return window['go']['main']['App']['VerifyInstance'](arg1);
 }
+
+export function VerifyJavaPath(arg1) {
+  return window['go']['main']['App']['VerifyJavaPath'](arg1);
+}

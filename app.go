@@ -340,6 +340,10 @@ func (a *App) ScanJavaInstallations() ([]javascanner.JavaInfo, error) {
 	return javascanner.ScanJavaInstallations()
 }
 
+func (a *App) VerifyJavaPath(path string) (*javascanner.JavaInfo, error) {
+	return javascanner.CheckJava(path)
+}
+
 func (a *App) OpenInstanceFolder(instanceID string) error {
 	inst, ok := a.instanceManager.Get(instanceID)
 	if !ok {

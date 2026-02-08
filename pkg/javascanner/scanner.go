@@ -23,7 +23,7 @@ func ScanJavaInstallations() ([]JavaInfo, error) {
 	seen := map[string]struct{}{}
 
 	for _, p := range paths {
-		if info, err := checkJava(p); err == nil {
+		if info, err := CheckJava(p); err == nil {
 			if info == nil {
 				continue
 			}
@@ -118,7 +118,7 @@ func getCandidatePaths() []string {
 	return paths
 }
 
-func checkJava(path string) (*JavaInfo, error) {
+func CheckJava(path string) (*JavaInfo, error) {
 	if path == "" {
 		return nil, fmt.Errorf("empty path")
 	}

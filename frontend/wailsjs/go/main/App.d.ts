@@ -61,3 +61,5 @@ export function UpdateGlobalSettings(arg1:settings.LauncherSettings):Promise<voi
 export function UpdateInstanceSettings(arg1:string,arg2:instances.InstanceSettings):Promise<void>;
 
 export function VerifyInstance(arg1:string):Promise<Array<instances.VerificationResult>>;
+
+export function VerifyJavaPath(arg1:string):Promise<javascanner.JavaInfo>;
