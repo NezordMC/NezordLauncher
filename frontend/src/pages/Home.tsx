@@ -69,12 +69,32 @@ export function HomePage() {
 
       <div className="flex-1 overflow-y-auto">
         {filteredInstances.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-zinc-500 border border-dashed border-zinc-800 rounded-xl bg-zinc-900/30">
-            <Box className="mb-4 opacity-50" size={48} />
-            <span className="text-sm font-medium">No instances found</span>
-            <span className="text-xs text-zinc-600 mt-1">
-              Create one to start playing
-            </span>
+          <div className="flex flex-col items-center justify-center h-[60vh] text-zinc-500 text-center animate-in fade-in duration-500">
+            <div className="bg-zinc-900/50 p-6 rounded-full border border-zinc-800 mb-6 relative group overflow-hidden">
+              <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
+              <Box
+                className="w-16 h-16 text-zinc-400 group-hover:text-primary transition-colors"
+                strokeWidth={1.5}
+              />
+            </div>
+
+            <h3 className="text-xl font-bold text-white mb-2">
+              {searchQuery ? "No matching instances" : "Your library is empty"}
+            </h3>
+            <p className="text-zinc-500 max-w-sm mb-8 leading-relaxed">
+              {searchQuery
+                ? `We couldn't find any instances matching "${searchQuery}". Try a different search term.`
+                : "Create your first Minecraft instance to start your adventure. You can install Vanilla, Fabric, or Quilt."}
+            </p>
+
+            <Button
+              onClick={() => setIsModalOpen(true)}
+              size="lg"
+              className="bg-primary hover:bg-primary/90 text-white font-semibold px-8 h-12 rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-105 transition-all duration-300"
+            >
+              <Plus size={20} className="mr-2" />
+              {searchQuery ? "Create New Instance" : "Create First Instance"}
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
