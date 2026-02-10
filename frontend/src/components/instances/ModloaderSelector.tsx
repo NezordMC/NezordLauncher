@@ -25,6 +25,10 @@ export function ModloaderSelector({
   availableLoaders,
   isLoadingLoaders = false,
 }: ModloaderSelectorProps) {
+  const sanitizedLoaders = availableLoaders
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0);
+
   const getButtonClass = (type: ModloaderType) => {
     const base =
       "flex-1 h-9 text-xs font-medium uppercase tracking-wide border transition-all cursor-pointer rounded-md";
@@ -64,23 +68,25 @@ export function ModloaderSelector({
 
       {selectedType !== "vanilla" && (
         <Select
-          value={availableLoaders.includes(loaderVersion) ? loaderVersion : undefined}
+          value={
+            sanitizedLoaders.includes(loaderVersion) ? loaderVersion : undefined
+          }
           onValueChange={onLoaderVersionChange}
-          disabled={isLoadingLoaders || availableLoaders.length === 0}
+          disabled={isLoadingLoaders || sanitizedLoaders.length === 0}
         >
           <SelectTrigger className="w-full bg-zinc-800 border-zinc-700 text-white text-sm h-9">
             <SelectValue
               placeholder={
                 isLoadingLoaders
                   ? "Loading..."
-                  : availableLoaders.length === 0
+                  : sanitizedLoaders.length === 0
                     ? "No versions available"
                     : "Select version"
               }
             />
           </SelectTrigger>
           <SelectContent className="max-h-48 bg-zinc-900 border-zinc-700">
-            {availableLoaders.map((v) => (
+            {sanitizedLoaders.map((v) => (
               <SelectItem
                 key={v}
                 value={v}

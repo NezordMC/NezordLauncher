@@ -90,3 +90,7 @@ func GetRuntimesDir() string {
 func GetVersionsDir() string {
 	return filepath.Join(GetDataDir(), "versions")
 }
+
+func GetLogsDir() string {
+	return filepath.Join(GetDataDir(), "logs")
+}

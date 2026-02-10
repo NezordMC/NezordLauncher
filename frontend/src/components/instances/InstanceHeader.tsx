@@ -38,8 +38,6 @@ export function InstanceHeader({
         <h1 className="text-xl font-bold tracking-tight">{instance.name}</h1>
         <p className="text-xs text-zinc-500 font-mono flex gap-2">
           {instance.gameVersion} • {instance.modloaderType}
-          <span className="text-zinc-700">|</span>
-          Played: {Math.floor(instance.playTime / 60)}m
         </p>
       </div>
       <div className="ml-auto flex gap-2">

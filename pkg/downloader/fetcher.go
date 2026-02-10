@@ -15,7 +15,8 @@ import (
 )
 
 type ArtifactFetcher struct {
-	pool *WorkerPool
+	pool   *WorkerPool
+	Filter func(path string) bool
 }
 
 func NewArtifactFetcher(pool *WorkerPool) *ArtifactFetcher {
@@ -160,6 +161,10 @@ func (f *ArtifactFetcher) downloadClient(ctx context.Context, v *models.VersionD
 		default:
 			os.MkdirAll(filepath.Dir(path), 0755)
 
+			if f.Filter != nil && !f.Filter(path) {
+				return nil
+			}
+
 			f.pool.Progress.AddTotal(1)
 			f.pool.Submit(Task{
 				URL:  v.Downloads.Client.URL,
@@ -185,11 +190,13 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 		if lib.Downloads.Artifact.URL != "" {
 			path := lib.Downloads.Artifact.GetPath()
 			fullPath := filepath.Join(libDir, path)
-			tasks = append(tasks, Task{
-				URL:  lib.Downloads.Artifact.URL,
-				Path: fullPath,
-				SHA1: lib.Downloads.Artifact.SHA1,
-			})
+			if f.Filter == nil || f.Filter(path) {
+				tasks = append(tasks, Task{
+					URL:  lib.Downloads.Artifact.URL,
+					Path: fullPath,
+					SHA1: lib.Downloads.Artifact.SHA1,
+				})
+			}
 		} else if lib.Name != "" {
 			relPath := lib.GetMavenPath()
 			if relPath != "" {
@@ -205,10 +212,12 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 				fullUrl := baseURL + relPath
 				fullPath := filepath.Join(libDir, relPath)
 
-				tasks = append(tasks, Task{
-					URL:  fullUrl,
-					Path: fullPath,
-				})
+				if f.Filter == nil || f.Filter(relPath) {
+					tasks = append(tasks, Task{
+						URL:  fullUrl,
+						Path: fullPath,
+					})
+				}
 			}
 		}
 
@@ -217,11 +226,13 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 				if artifact, exists := lib.Downloads.Classifiers[nativeKey]; exists {
 					path := artifact.GetPath()
 					fullPath := filepath.Join(libDir, path)
-					tasks = append(tasks, Task{
-						URL:  artifact.URL,
-						Path: fullPath,
-						SHA1: artifact.SHA1,
-					})
+					if f.Filter == nil || f.Filter(path) {
+						tasks = append(tasks, Task{
+							URL:  artifact.URL,
+							Path: fullPath,
+							SHA1: artifact.SHA1,
+						})
+					}
 				}
 			}
 		}
@@ -289,11 +300,21 @@ func (f *ArtifactFetcher) downloadAssets(ctx context.Context, v *models.VersionD
 		path := filepath.Join(objectsDir, obj.Hash[:2], obj.Hash)
 		url := fmt.Sprintf("%s%s/%s", baseAssetURL, obj.Hash[:2], obj.Hash)
 
-		tasks = append(tasks, Task{
-			URL:  url,
-			Path: path,
-			SHA1: obj.Hash,
-		})
+		// Note: Filter for assets usually uses object hash or path. 
+		// Here path is absolute. Filter expects relative or consistent path?
+		// VerificationResult returns "path" which in verify.go for libraries was relative.
+		// For assets, verify.go (if implemented) likely returns relative or absolute.
+		// Let's assume Filter handles absolute path for assets if verifying assets.
+		// But Wait, Repair logic relies on verify.go returning specific format.
+		// For now let's just use absolute path filtering.
+		
+		if f.Filter == nil || f.Filter(path) {
+			tasks = append(tasks, Task{
+				URL:  url,
+				Path: path,
+				SHA1: obj.Hash,
+			})
+		}
 	}
 
 	if len(tasks) > 0 {

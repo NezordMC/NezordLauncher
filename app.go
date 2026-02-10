@@ -8,6 +8,7 @@ import (
 	"NezordLauncher/pkg/instances"
 	"NezordLauncher/pkg/javascanner"
 	"NezordLauncher/pkg/launch"
+	"NezordLauncher/pkg/logging"
 	"NezordLauncher/pkg/models"
 	"NezordLauncher/pkg/network"
 	"NezordLauncher/pkg/quilt"
@@ -52,6 +53,37 @@ type UpdateCheck struct {
 	CheckedAt       string `json:"checkedAt"`
 }
 
+type EventError struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Cause   string `json:"cause,omitempty"`
+}
+
+type EventPayload struct {
+	Timestamp  string      `json:"timestamp"`
+	Source     string      `json:"source"`
+	InstanceID string      `json:"instanceId,omitempty"`
+	Status     string      `json:"status,omitempty"`
+	Message    string      `json:"message,omitempty"`
+	Current    int         `json:"current,omitempty"`
+	Total      int         `json:"total,omitempty"`
+	Meta       interface{} `json:"meta,omitempty"`
+	Error      *EventError `json:"error,omitempty"`
+}
+
+const (
+	eventAppLogError      = "app.log.error"
+	eventInstanceUpdated  = "instance.updated"
+	eventDownloadStatus   = "download.status"
+	eventDownloadProgress = "download.progress"
+	eventDownloadComplete = "download.complete"
+	eventDownloadError    = "download.error"
+	eventLaunchStatus     = "launch.status"
+	eventLaunchError      = "launch.error"
+	eventLaunchGameLog    = "launch.game.log"
+	eventLaunchExit       = "launch.exit"
+)
+
 func NewApp() *App {
 	return &App{
 		accountManager:   auth.NewAccountManager(),
@@ -77,8 +109,98 @@ func (a *App) emit(eventName string, data ...interface{}) {
 	wailsRun.EventsEmit(a.ctx, eventName, data...)
 }
 
+func newEventPayload(source, instanceID, status, message string) EventPayload {
+	return EventPayload{
+		Timestamp:  time.Now().UTC().Format(time.RFC3339),
+		Source:     source,
+		InstanceID: instanceID,
+		Status:     status,
+		Message:    message,
+	}
+}
+
+func (a *App) emitInstanceUpdated(inst *instances.Instance) {
+	payload := newEventPayload("backend.instance", inst.ID, inst.InstallState, "Instance state updated")
+	payload.Meta = inst
+	a.emit(eventInstanceUpdated, payload)
+}
+
+func (a *App) emitDownloadStatus(instanceID, status, message string) {
+	a.emit(eventDownloadStatus, newEventPayload("backend.download", instanceID, status, message))
+}
+
+func (a *App) emitDownloadProgress(instanceID string, current, total int) {
+	payload := newEventPayload("backend.download", instanceID, "running", "Download progress")
+	payload.Current = current
+	payload.Total = total
+	a.emit(eventDownloadProgress, payload)
+}
+
+func (a *App) emitDownloadComplete(instanceID string) {
+	a.emit(eventDownloadComplete, newEventPayload("backend.download", instanceID, "completed", "Download complete"))
+}
+
+func (a *App) emitDownloadError(instanceID, code string, err error) {
+	payload := newEventPayload("backend.download", instanceID, "failed", "Download failed")
+	payload.Error = &EventError{
+		Code:    code,
+		Message: "Download failed",
+	}
+	if err != nil {
+		payload.Error.Cause = err.Error()
+	}
+	a.emit(eventDownloadError, payload)
+}
+
+func (a *App) emitLaunchStatus(instanceID, message string) {
+	a.emit(eventLaunchStatus, newEventPayload("backend.launch", instanceID, "running", message))
+}
+
+func (a *App) emitLaunchError(instanceID, code, message string, err error) {
+	payload := newEventPayload("backend.launch", instanceID, "failed", message)
+	payload.Error = &EventError{
+		Code:    code,
+		Message: message,
+	}
+	if err != nil {
+		payload.Error.Cause = err.Error()
+	}
+	a.emit(eventLaunchError, payload)
+}
+
+func (a *App) emitGameLog(instanceID, message string) {
+	a.emit(eventLaunchGameLog, newEventPayload("backend.launch", instanceID, "running", message))
+}
+
+func (a *App) emitLaunchExit(instanceID, status string) {
+	a.emit(eventLaunchExit, newEventPayload("backend.launch", instanceID, status, "Launch process exited"))
+}
+
+func (a *App) emitAppError(code, message string, err error) {
+	payload := newEventPayload("backend.app", "", "error", message)
+	payload.Error = &EventError{
+		Code:    code,
+		Message: message,
+	}
+	if err != nil {
+		payload.Error.Cause = err.Error()
+	}
+	a.emit(eventAppLogError, payload)
+}
+
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	if err := logging.Init(constants.GetLogsDir()); err != nil {
+		fmt.Printf("Failed to init logger: %v\n", err)
+	}
+	logging.Info("Application startup")
+
+	logging.SetCallback(func(lvl logging.Level, msg string) {
+		if lvl == logging.ERROR {
+			a.emitAppError("APP_LOG_ERROR", msg, nil)
+		}
+	})
 
 	if err := a.settingsManager.Load(); err != nil {
 		fmt.Printf("Failed to load settings: %s\n", err)
@@ -229,6 +351,87 @@ func (a *App) UpdateInstanceSettings(id string, settings instances.InstanceSetti
 	return a.instanceManager.UpdateSettings(id, settings)
 }
 
+func (a *App) VerifyInstance(instanceID string) ([]instances.VerificationResult, error) {
+	inst, ok := a.instanceManager.Get(instanceID)
+	if !ok {
+		return nil, fmt.Errorf("instance not found")
+	}
+
+	finalVersionID := inst.GetLaunchVersionID()
+	version, err := a.getVersionDetails(finalVersionID)
+	if err != nil {
+		return nil, err
+	}
+
+	return instances.VerifyInstance(version)
+}
+
+func (a *App) RepairInstance(instanceID string) error {
+	broken, err := a.VerifyInstance(instanceID)
+	if err != nil {
+		return err
+	}
+
+	if len(broken) == 0 {
+		return nil
+	}
+
+	inst, ok := a.instanceManager.Get(instanceID)
+	if !ok {
+		return fmt.Errorf("instance not found")
+	}
+
+	a.emitLaunchStatus(instanceID, fmt.Sprintf("Repairing %d files...", len(broken)))
+
+	brokenMap := make(map[string]bool)
+	for _, res := range broken {
+		brokenMap[res.File] = true
+	}
+
+	filter := func(path string) bool {
+		return brokenMap[path]
+	}
+
+	a.downloadMu.Lock()
+	if a.downloadCancel != nil {
+		a.downloadCancel()
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	a.downloadCancel = cancel
+	a.downloadMu.Unlock()
+
+	defer func() {
+		a.downloadMu.Lock()
+		if a.downloadCancel != nil {
+			a.downloadCancel()
+			a.downloadCancel = nil
+		}
+		a.downloadMu.Unlock()
+	}()
+
+	pool := downloader.NewWorkerPool(10, 100)
+	pool.Start(ctx)
+
+	fetcher := downloader.NewArtifactFetcher(pool)
+	fetcher.Filter = filter
+
+	if err := fetcher.DownloadVersion(ctx, inst.GameVersion); err != nil {
+		a.emitDownloadError(instanceID, "DOWNLOAD_REPAIR_FAILED", err)
+		return err
+	}
+
+	pool.Wait()
+
+	if len(pool.Errors()) > 0 {
+		err := fmt.Errorf("repair failed with %d errors", len(pool.Errors()))
+		a.emitDownloadError(instanceID, "DOWNLOAD_REPAIR_PARTIAL", err)
+		return err
+	}
+
+	a.emitLaunchStatus(instanceID, "Repair complete")
+	return nil
+}
+
 func (a *App) GetSystemPlatform() system.SystemInfo {
 	return system.GetSystemInfo()
 }
@@ -248,6 +451,10 @@ func (a *App) CheckForUpdates(currentVersion string) (*updater.UpdateInfo, error
 
 func (a *App) ScanJavaInstallations() ([]javascanner.JavaInfo, error) {
 	return javascanner.ScanJavaInstallations()
+}
+
+func (a *App) VerifyJavaPath(path string) (*javascanner.JavaInfo, error) {
+	return javascanner.CheckJava(path)
 }
 
 func (a *App) OpenInstanceFolder(instanceID string) error {
@@ -277,24 +484,28 @@ func (a *App) StartInstanceDownload(instanceID string) error {
 	inst.InstallState = "downloading"
 	a.instanceManager.SaveInstance(inst)
 
-	a.emit("instance_update", inst)
+	a.emitInstanceUpdated(inst)
 
-	if err := a.DownloadVersion(inst.GameVersion); err != nil {
+	if err := a.downloadVersion(instanceID, inst.GameVersion); err != nil {
 		inst.InstallState = "not_installed"
 		a.instanceManager.SaveInstance(inst)
-		a.emit("instance_update", inst)
+		a.emitInstanceUpdated(inst)
 		return err
 	}
 
 	inst.InstallState = "ready"
 	a.instanceManager.SaveInstance(inst)
-	a.emit("instance_update", inst)
+	a.emitInstanceUpdated(inst)
 
-	a.emit("downloadComplete", instanceID)
+	a.emitDownloadComplete(instanceID)
 	return nil
 }
 
 func (a *App) DownloadVersion(versionID string) error {
+	return a.downloadVersion("", versionID)
+}
+
+func (a *App) downloadVersion(instanceID, versionID string) error {
 	if err := validation.ValidateVersionID(versionID); err != nil {
 		return err
 	}
@@ -322,7 +533,7 @@ func (a *App) DownloadVersion(versionID string) error {
 	pool.Start(ctx)
 	fetcher := downloader.NewArtifactFetcher(pool)
 
-	a.emit("downloadStatus", fmt.Sprintf("Starting download for: %s", versionID))
+	a.emitDownloadStatus(instanceID, "starting", fmt.Sprintf("Starting download for: %s", versionID))
 
 	progressTicker := time.NewTicker(100 * time.Millisecond)
 	go func() {
@@ -330,7 +541,7 @@ func (a *App) DownloadVersion(versionID string) error {
 			select {
 			case <-progressTicker.C:
 				current, total := pool.Progress.GetCounts()
-				a.emit("downloadProgress", fmt.Sprintf("%d/%d", current, total))
+				a.emitDownloadProgress(instanceID, current, total)
 			case <-ctx.Done():
 				progressTicker.Stop()
 				return
@@ -342,15 +553,23 @@ func (a *App) DownloadVersion(versionID string) error {
 		pool.Wait()
 		progressTicker.Stop()
 		if err == context.Canceled {
-			a.emit("downloadStatus", "Download cancelled")
+			a.emitDownloadStatus(instanceID, "cancelled", "Download cancelled")
 			return fmt.Errorf("cancelled")
 		}
+		a.emitDownloadError(instanceID, "DOWNLOAD_VERSION_FAILED", err)
 		return fmt.Errorf("download failed: %w", err)
 	}
 
 	pool.Wait()
 	progressTicker.Stop()
-	a.emit("downloadStatus", "Artifacts verification complete")
+	if len(pool.Errors()) > 0 {
+		err := fmt.Errorf("download finished with %d task errors", len(pool.Errors()))
+		a.emitDownloadError(instanceID, "DOWNLOAD_TASK_ERRORS", err)
+		a.emitDownloadStatus(instanceID, "completed_with_errors", "Artifacts verification completed with errors")
+		return nil
+	}
+	a.emitDownloadStatus(instanceID, "completed", "Artifacts verification complete")
+	a.emitDownloadComplete(instanceID)
 	return nil
 }
 
@@ -359,7 +578,7 @@ func (a *App) CancelDownload() {
 	defer a.downloadMu.Unlock()
 	if a.downloadCancel != nil {
 		a.downloadCancel()
-		a.emit("downloadStatus", "Stopping...")
+		a.emitDownloadStatus("", "stopping", "Stopping...")
 	}
 }
 
@@ -374,23 +593,21 @@ func (a *App) LaunchInstance(instanceID string) error {
 		return fmt.Errorf("instance not found: %s", instanceID)
 	}
 
-	a.instanceManager.UpdatePlayTime(instanceID, 0)
-
-	if err := a.DownloadVersion(inst.GameVersion); err != nil {
+	if err := a.downloadVersion(instanceID, inst.GameVersion); err != nil {
 		return err
 	}
 
 	finalVersionID := inst.GetLaunchVersionID()
 
 	if inst.ModloaderType == instances.ModloaderFabric {
-		a.emit("launchStatus", "Verifying Fabric...")
+		a.emitLaunchStatus(instanceID, "Verifying Fabric...")
 		installedID, err := fabric.InstallFabric(inst.GameVersion, inst.ModloaderVersion)
 		if err != nil {
 			return fmt.Errorf("failed to install fabric: %w", err)
 		}
 		finalVersionID = installedID
 	} else if inst.ModloaderType == instances.ModloaderQuilt {
-		a.emit("launchStatus", "Verifying Quilt...")
+		a.emitLaunchStatus(instanceID, "Verifying Quilt...")
 		installedID, err := quilt.InstallQuilt(inst.GameVersion, inst.ModloaderVersion)
 		if err != nil {
 			return fmt.Errorf("failed to install quilt: %w", err)
@@ -399,7 +616,7 @@ func (a *App) LaunchInstance(instanceID string) error {
 	}
 
 	if finalVersionID != inst.GameVersion {
-		if err := a.DownloadVersion(finalVersionID); err != nil {
+		if err := a.downloadVersion(instanceID, finalVersionID); err != nil {
 			return err
 		}
 	}
@@ -411,7 +628,7 @@ func (a *App) LaunchInstance(instanceID string) error {
 
 	nativesDir := filepath.Join(constants.GetInstancesDir(), inst.ID, "natives")
 
-	a.emit("launchStatus", "Preparing environment...")
+	a.emitLaunchStatus(instanceID, "Preparing environment...")
 
 	version, err := a.getVersionDetails(finalVersionID)
 	if err != nil {
@@ -422,25 +639,25 @@ func (a *App) LaunchInstance(instanceID string) error {
 
 	javaPath := ""
 	if inst.Settings.OverrideJava && inst.Settings.JavaPath != "" {
-		a.emit("launchStatus", "Using custom Java from instance...")
+		a.emitLaunchStatus(instanceID, "Using custom Java from instance...")
 		if _, err := os.Stat(inst.Settings.JavaPath); err == nil {
 			javaPath = inst.Settings.JavaPath
 		} else {
-			a.emit("launchError", "Instance Java path invalid, falling back to settings or auto-detect")
+			a.emitLaunchError(instanceID, "JAVA_PATH_INSTANCE_INVALID", "Instance Java path invalid, falling back to settings or auto-detect", err)
 		}
 	}
 
 	if javaPath == "" && settings.DefaultJavaPath != "" {
-		a.emit("launchStatus", "Using Java from settings...")
+		a.emitLaunchStatus(instanceID, "Using Java from settings...")
 		if _, err := os.Stat(settings.DefaultJavaPath); err == nil {
 			javaPath = settings.DefaultJavaPath
 		} else {
-			a.emit("launchError", "Settings Java path invalid, falling back to auto-detect")
+			a.emitLaunchError(instanceID, "JAVA_PATH_SETTINGS_INVALID", "Settings Java path invalid, falling back to auto-detect", err)
 		}
 	}
 
 	if javaPath == "" {
-		a.emit("launchStatus", "Scanning Java runtime...")
+		a.emitLaunchStatus(instanceID, "Scanning Java runtime...")
 		javaInstalls, err := javascanner.ScanJavaInstallations()
 		if err != nil {
 			return fmt.Errorf("java scan failed: %w", err)
@@ -456,17 +673,17 @@ func (a *App) LaunchInstance(instanceID string) error {
 			return fmt.Errorf("java selection failed: %w", err)
 		}
 		javaPath = selectedJava.Path
-		a.emit("launchStatus", fmt.Sprintf("Using Java: %s (%s)", selectedJava.Version, selectedJava.Path))
+		a.emitLaunchStatus(instanceID, fmt.Sprintf("Using Java: %s (%s)", selectedJava.Version, selectedJava.Path))
 	}
 
-	a.emit("launchStatus", "Extracting native libraries...")
+	a.emitLaunchStatus(instanceID, "Extracting native libraries...")
 	if err := launch.ExtractNatives(version.Libraries, nativesDir); err != nil {
 		return fmt.Errorf("natives extraction failed: %w", err)
 	}
 
 	authlibPath := ""
 	if account.Type == auth.AccountTypeElyBy {
-		a.emit("launchStatus", "Verifying Authlib Injector...")
+		a.emitLaunchStatus(instanceID, "Verifying Authlib Injector...")
 		path, err := services.EnsureAuthlibInjector()
 		if err != nil {
 			return fmt.Errorf("failed to ensure authlib injector: %w", err)
@@ -533,10 +750,10 @@ func (a *App) LaunchInstance(instanceID string) error {
 		args = append(prefixArgs, args...)
 	}
 
-	a.emit("launchStatus", "Launching game process...")
+	a.emitLaunchStatus(instanceID, "Launching game process...")
 
 	logCallback := func(text string) {
-		a.emit("gameLog", text)
+		a.emitGameLog(instanceID, text)
 		fmt.Println(text)
 	}
 
@@ -553,22 +770,22 @@ func (a *App) LaunchInstance(instanceID string) error {
 	if gpuPref == "discrete" {
 		if runtime.GOOS == "linux" {
 			if a.hasNvidiaGPU() {
-				a.emit("launchStatus", "Using Discrete GPU (NVIDIA detected)...")
+				a.emitLaunchStatus(instanceID, "Using Discrete GPU (NVIDIA detected)...")
 				env["__NV_PRIME_RENDER_OFFLOAD"] = "1"
 				env["__GLX_VENDOR_LIBRARY_NAME"] = "nvidia"
 			} else {
-				a.emit("launchStatus", "Using Discrete GPU (AMD/Mesa detected)...")
+				a.emitLaunchStatus(instanceID, "Using Discrete GPU (AMD/Mesa detected)...")
 				env["DRI_PRIME"] = "1"
 			}
 		} else if runtime.GOOS == "windows" {
-			a.emit("launchStatus", "Setting Windows Game Mode / High Performance...")
+			a.emitLaunchStatus(instanceID, "Setting Windows Game Mode / High Performance...")
 		}
 	} else if gpuPref == "integrated" {
-		a.emit("launchStatus", "Using Integrated GPU...")
+		a.emitLaunchStatus(instanceID, "Using Integrated GPU...")
 		// For integrated, we simply do not set any offload variables.
 		// This relies on the system default being the integrated GPU (standard behavior).
 	} else {
-		a.emit("launchStatus", "Using Auto GPU selection...")
+		a.emitLaunchStatus(instanceID, "Using Auto GPU selection...")
 	}
 
 	if runtime.GOOS == "windows" {
@@ -579,10 +796,30 @@ func (a *App) LaunchInstance(instanceID string) error {
 		}
 	}
 
-	cmd, err := launch.Launch(javaPath, args, instanceDir, env)
+	finalCommand := javaPath
+	finalArgs := args
+
+	// Handle Wrapper Command
+	wrapperCmd := inst.Settings.WrapperCommand
+	if wrapperCmd == "" {
+		wrapperCmd = settings.WrapperCommand
+	}
+
+	if wrapperCmd != "" {
+		parts := strings.Fields(wrapperCmd)
+		if len(parts) > 0 {
+			a.emitLaunchStatus(instanceID, fmt.Sprintf("Using wrapper: %s", wrapperCmd))
+			finalCommand = parts[0]
+			// Wrapper args + Java Path + Java Args
+			wrapperArgs := append(parts[1:], javaPath)
+			finalArgs = append(wrapperArgs, args...)
+		}
+	}
+
+	cmd, err := launch.Launch(finalCommand, finalArgs, instanceDir, env)
 	if err != nil {
-		a.emit("launchError", err.Error())
-		a.emit("game_exit", "error")
+		a.emitLaunchError(instanceID, "LAUNCH_COMMAND_CREATE_FAILED", "Failed to prepare launch command", err)
+		a.emitLaunchExit(instanceID, "error")
 		return err
 	}
 
@@ -595,13 +832,13 @@ func (a *App) LaunchInstance(instanceID string) error {
 			a.runningMu.Lock()
 			delete(a.runningInstances, instanceID)
 			a.runningMu.Unlock()
-			a.emit("game_exit", "success")
+			a.emitLaunchExit(instanceID, "success")
 		}()
 
 		if err := launch.Monitor(cmd, logCallback); err != nil {
-			a.emit("launchError", err.Error())
+			a.emitLaunchError(instanceID, "LAUNCH_RUNTIME_ERROR", "Game process exited with error", err)
 		} else {
-			a.emit("launchStatus", "Game closed successfully")
+			a.emitLaunchStatus(instanceID, "Game closed successfully")
 		}
 	}()
 
@@ -610,19 +847,43 @@ func (a *App) LaunchInstance(instanceID string) error {
 
 func (a *App) StopInstance(instanceID string) error {
 	a.runningMu.Lock()
-	defer a.runningMu.Unlock()
-
 	cmd, ok := a.runningInstances[instanceID]
+	a.runningMu.Unlock()
+
 	if !ok {
 		return fmt.Errorf("instance not running: %s", instanceID)
 	}
 
-	if cmd.Process != nil {
-		if err := cmd.Process.Kill(); err != nil {
-			return fmt.Errorf("failed to kill process: %w", err)
+	a.emitLaunchStatus(instanceID, "Stopping instance...")
+
+	if err := launch.SendTerminate(cmd); err != nil {
+		if cmd.Process != nil {
+			return cmd.Process.Kill()
+		}
+		return err
+	}
+
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+	timeout := time.After(5 * time.Second)
+
+	for {
+		select {
+		case <-timeout:
+			if cmd.Process != nil {
+				a.emitLaunchStatus(instanceID, "Force stopping instance...")
+				return cmd.Process.Kill()
+			}
+			return nil
+		case <-ticker.C:
+			a.runningMu.Lock()
+			_, running := a.runningInstances[instanceID]
+			a.runningMu.Unlock()
+			if !running {
+				return nil
+			}
 		}
 	}
-	return nil
 }
 
 func (a *App) getVersionDetails(versionID string) (*models.VersionDetail, error) {

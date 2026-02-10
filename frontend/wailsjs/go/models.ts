@@ -32,6 +32,7 @@ export namespace instances {
 	    overrideJava: boolean;
 	    overrideRam: boolean;
 	    gpuPreference: string;
+	    wrapperCommand: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new InstanceSettings(source);
@@ -47,6 +48,7 @@ export namespace instances {
 	        this.overrideJava = source["overrideJava"];
 	        this.overrideRam = source["overrideRam"];
 	        this.gpuPreference = source["gpuPreference"];
+	        this.wrapperCommand = source["wrapperCommand"];
 	    }
 	}
 	export class Instance {
@@ -60,9 +62,6 @@ export namespace instances {
 	    settings: InstanceSettings;
 	    // Go type: time
 	    created: any;
-	    // Go type: time
-	    lastPlayed: any;
-	    playTime: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Instance(source);
@@ -79,8 +78,6 @@ export namespace instances {
 	        this.installState = source["installState"];
 	        this.settings = this.convertValues(source["settings"], InstanceSettings);
 	        this.created = this.convertValues(source["created"], null);
-	        this.lastPlayed = this.convertValues(source["lastPlayed"], null);
-	        this.playTime = source["playTime"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -100,6 +97,21 @@ export namespace instances {
 		    }
 		    return a;
 		}
+	}
+	
+	export class VerificationResult {
+	    file: string;
+	    status: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new VerificationResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.file = source["file"];
+	        this.status = source["status"];
+	    }
 	}
 
 }
@@ -189,6 +201,7 @@ export namespace settings {
 	    defaultJavaPath: string;
 	    autoUpdateEnabled: boolean;
 	    gpuPreference: string;
+	    wrapperCommand: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new LauncherSettings(source);
@@ -208,6 +221,7 @@ export namespace settings {
 	        this.defaultJavaPath = source["defaultJavaPath"];
 	        this.autoUpdateEnabled = source["autoUpdateEnabled"];
 	        this.gpuPreference = source["gpuPreference"];
+	        this.wrapperCommand = source["wrapperCommand"];
 	    }
 	}
 

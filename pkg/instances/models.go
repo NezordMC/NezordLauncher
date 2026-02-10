@@ -21,8 +21,6 @@ type Instance struct {
 	InstallState     string           `json:"installState"`
 	Settings         InstanceSettings `json:"settings"`
 	Created          time.Time        `json:"created"`
-	LastPlayed       time.Time        `json:"lastPlayed"`
-	PlayTime         int64            `json:"playTime"`
 }
 
 type InstanceSettings struct {
@@ -34,6 +32,7 @@ type InstanceSettings struct {
 	OverrideJava  bool   `json:"overrideJava"`
 	OverrideRam   bool   `json:"overrideRam"`
 	GpuPreference string `json:"gpuPreference"`
+	WrapperCommand string `json:"wrapperCommand"`
 }
 
 func (i *Instance) GetLaunchVersionID() string {

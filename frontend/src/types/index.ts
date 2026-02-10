@@ -18,6 +18,7 @@ export interface InstanceSettings {
   overrideJava: boolean;
   overrideRam: boolean;
   gpuPreference: string;
+  wrapperCommand: string;
 }
 
 export interface Instance {
@@ -27,8 +28,6 @@ export interface Instance {
   modloaderType: string;
   modloaderVersion: string;
   created: string;
-  lastPlayed: string;
-  playTime: number;
   installState: string;
   settings: InstanceSettings;
 }
@@ -60,4 +59,23 @@ export interface LauncherSettings {
   defaultJavaPath: string;
   autoUpdateEnabled: boolean;
   gpuPreference: string;
+  wrapperCommand: string;
+}
+
+export interface EventErrorPayload {
+  code: string;
+  message: string;
+  cause?: string;
+}
+
+export interface EventPayload {
+  timestamp: string;
+  source: string;
+  instanceId?: string;
+  status?: string;
+  message?: string;
+  current?: number;
+  total?: number;
+  meta?: unknown;
+  error?: EventErrorPayload;
 }

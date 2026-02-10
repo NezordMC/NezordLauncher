@@ -26,7 +26,7 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
   } = useInstanceStore();
 
   const [name, setName] = useState("");
-  const [gameVersion, setGameVersion] = useState("1.20.1");
+  const [gameVersion, setGameVersion] = useState("");
   const [modloader, setModloader] = useState<ModloaderType>("vanilla");
   const [loaderVersion, setLoaderVersion] = useState("");
 
@@ -37,24 +37,32 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
   useEffect(() => {
     if (isOpen) {
       setName("");
-      setGameVersion(minecraftVersions[0]?.id || "1.20.1");
+      setGameVersion(minecraftVersions[0]?.id || "");
       setModloader("vanilla");
       setLoaderVersion("");
     }
   }, [isOpen, minecraftVersions]);
 
   useEffect(() => {
-    if (modloader === "vanilla") {
+    if (modloader === "vanilla" || !gameVersion) {
       setAvailableLoaders([]);
       setLoaderVersion("");
+      setIsLoadingLoaders(false);
       return;
     }
 
     const load = async () => {
       setIsLoadingLoaders(true);
       const list = await fetchModloaders(gameVersion, modloader);
-      setAvailableLoaders(list);
-      if (list.length > 0) setLoaderVersion(list[0]);
+      const sanitized = list
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0);
+      setAvailableLoaders(sanitized);
+      if (sanitized.length > 0) {
+        setLoaderVersion(sanitized[0]);
+      } else {
+        setLoaderVersion("");
+      }
       setIsLoadingLoaders(false);
     };
     load();
@@ -62,7 +70,7 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return;
+    if (!name || !gameVersion) return;
 
     setIsCreating(true);
     try {
@@ -149,7 +157,10 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
           <Button
             type="submit"
             disabled={
-              !name || isCreating || (modloader !== "vanilla" && !loaderVersion)
+              !name ||
+              !gameVersion ||
+              isCreating ||
+              (modloader !== "vanilla" && !loaderVersion)
             }
             className="w-full bg-primary hover:bg-primary/90 text-white font-medium text-sm h-10"
           >

@@ -81,6 +81,7 @@ function useSettingsLogic() {
       defaultJavaPath,
       autoUpdateEnabled: settings?.autoUpdateEnabled === false ? false : true,
       gpuPreference: settings?.gpuPreference || "auto",
+      wrapperCommand: settings?.wrapperCommand || "",
     };
   };
 
