@@ -2,7 +2,14 @@ import { useState } from "react";
 import { useInstanceStore } from "@/stores/instanceStore";
 import { useLaunchStore } from "@/stores/launchStore";
 import { useAccountStore } from "@/stores/accountStore";
-import { Search, Plus, Box, SlidersHorizontal, FilterX } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Box,
+  Package,
+  SlidersHorizontal,
+  FilterX,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AddInstanceModal } from "@/components/instances/AddInstanceModal";
@@ -43,7 +50,6 @@ export function HomePage() {
     null,
   );
 
-  // Sort & Filter state
   const [sortBy, setSortBy] = useState<SortOption>("createdNewest");
   const [filterLoader, setFilterLoader] = useState<LoaderFilter>("all");
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
@@ -101,6 +107,46 @@ export function HomePage() {
 
   return (
     <div className="h-full w-full flex flex-col p-6">
+      <div className="mb-8 p-8 rounded-2xl bg-zinc-900 border border-zinc-800 relative overflow-hidden group flex items-center justify-between">
+
+        <div className="relative z-10">
+          <h2 className="text-3xl font-bold text-white mb-2">
+            Welcome back,{" "}
+            <span className="text-primary">
+              {activeAccount?.username || "Guest"}
+            </span>
+            !
+          </h2>
+          <p className="text-zinc-500 flex items-center gap-2">
+            <span
+              className={cn(
+                "inline-block w-2 h-2 rounded-full",
+                activeAccount ? "bg-green-500" : "bg-zinc-700",
+              )}
+            />
+            {activeAccount
+              ? "Ready to launch your adventure."
+              : "Please login to play online."}
+          </p>
+        </div>
+
+        <div className="relative z-10 flex items-center mr-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-zinc-950/50 border border-zinc-800 text-zinc-400">
+              <Package size={24} />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-white leading-none">
+                {instances.length}
+              </div>
+              <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mt-1.5">
+                Instances
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col gap-6 mb-6">
         <div className="flex items-center justify-between">
           <div>

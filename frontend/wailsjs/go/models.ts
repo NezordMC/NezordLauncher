@@ -62,9 +62,6 @@ export namespace instances {
 	    settings: InstanceSettings;
 	    // Go type: time
 	    created: any;
-	    // Go type: time
-	    lastPlayed: any;
-	    playTime: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Instance(source);
@@ -81,8 +78,6 @@ export namespace instances {
 	        this.installState = source["installState"];
 	        this.settings = this.convertValues(source["settings"], InstanceSettings);
 	        this.created = this.convertValues(source["created"], null);
-	        this.lastPlayed = this.convertValues(source["lastPlayed"], null);
-	        this.playTime = source["playTime"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

@@ -468,8 +468,6 @@ func (a *App) LaunchInstance(instanceID string) error {
 		return fmt.Errorf("instance not found: %s", instanceID)
 	}
 
-	a.instanceManager.UpdatePlayTime(instanceID, 0)
-
 	if err := a.DownloadVersion(inst.GameVersion); err != nil {
 		return err
 	}

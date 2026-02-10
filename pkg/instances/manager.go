@@ -77,7 +77,7 @@ func (m *Manager) GetAll() []Instance {
 	}
 
 	sort.Slice(list, func(i, j int) bool {
-		return list[i].LastPlayed.After(list[j].LastPlayed)
+		return list[i].Created.After(list[j].Created)
 	})
 
 	return list
@@ -177,21 +177,6 @@ func (m *Manager) UpdateSettings(id string, settings InstanceSettings) error {
 	}
 
 	inst.Settings = settings
-
-	return m.SaveInstance(inst)
-}
-
-func (m *Manager) UpdatePlayTime(id string, durationSec int64) error {
-	m.mu.Lock()
-	inst, ok := m.instances[id]
-	m.mu.Unlock()
-
-	if !ok {
-		return fmt.Errorf("instance not found")
-	}
-
-	inst.LastPlayed = time.Now()
-	inst.PlayTime += durationSec
 
 	return m.SaveInstance(inst)
 }

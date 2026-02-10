@@ -28,8 +28,6 @@ export interface Instance {
   modloaderType: string;
   modloaderVersion: string;
   created: string;
-  lastPlayed: string;
-  playTime: number;
   installState: string;
   settings: InstanceSettings;
 }

@@ -21,8 +21,6 @@ type Instance struct {
 	InstallState     string           `json:"installState"`
 	Settings         InstanceSettings `json:"settings"`
 	Created          time.Time        `json:"created"`
-	LastPlayed       time.Time        `json:"lastPlayed"`
-	PlayTime         int64            `json:"playTime"`
 }
 
 type InstanceSettings struct {
