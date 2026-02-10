@@ -61,3 +61,21 @@ export interface LauncherSettings {
   gpuPreference: string;
   wrapperCommand: string;
 }
+
+export interface EventErrorPayload {
+  code: string;
+  message: string;
+  cause?: string;
+}
+
+export interface EventPayload {
+  timestamp: string;
+  source: string;
+  instanceId?: string;
+  status?: string;
+  message?: string;
+  current?: number;
+  total?: number;
+  meta?: unknown;
+  error?: EventErrorPayload;
+}

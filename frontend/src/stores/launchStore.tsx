@@ -4,6 +4,7 @@ import {
   ReactNode,
   useState,
   useEffect,
+  useRef,
 } from "react";
 import {
   LaunchInstance,
@@ -12,7 +13,7 @@ import {
   StopInstance,
 } from "../../wailsjs/go/main/App";
 import { EventsOn } from "../../wailsjs/runtime/runtime";
-import { Account } from "../types";
+import { Account, EventPayload } from "../types";
 import { toast } from "sonner";
 
 interface DownloadProgress {
@@ -33,6 +34,7 @@ function useGameLaunchLogic() {
   const [currentDownloadId, setCurrentDownloadId] = useState<string | null>(
     null,
   );
+  const currentDownloadIdRef = useRef<string | null>(null);
 
   const addLog = (msg: string) => {
     setLogs((prev) => {
@@ -44,64 +46,91 @@ function useGameLaunchLogic() {
   };
 
   useEffect(() => {
+    currentDownloadIdRef.current = currentDownloadId;
+  }, [currentDownloadId]);
+
+  useEffect(() => {
+    const resolveInstanceId = (payload: EventPayload) =>
+      payload.instanceId || currentDownloadIdRef.current;
+
     const cleanups = [
-      EventsOn("downloadStatus", (msg: string) => addLog(`[DOWNLOAD] ${msg}`)),
-      EventsOn("downloadProgress", (msg: string) => {
-        addLog(`[DOWNLOAD] Progress: ${msg}`);
-        if (currentDownloadId) {
-          const parts = msg.split("/");
-          if (parts.length === 2) {
-            const current = parseInt(parts[0], 10);
-            const total = parseInt(parts[1], 10);
-            setDownloadProgress((prev) => ({
-              ...prev,
-              [currentDownloadId]: { current, total, status: "downloading" },
-            }));
-          }
-        }
+      EventsOn("download.status", (payload: EventPayload) => {
+        const status = payload.status || "unknown";
+        const message = payload.message || "No message";
+        addLog(`[DOWNLOAD][${status.toUpperCase()}] ${message}`);
       }),
-      EventsOn("downloadComplete", () => {
-        if (currentDownloadId) {
-          setDownloadProgress((prev) => ({
-            ...prev,
-            [currentDownloadId]: {
-              ...prev[currentDownloadId],
-              status: "completed",
-            },
-          }));
+      EventsOn("download.progress", (payload: EventPayload) => {
+        const instanceId = resolveInstanceId(payload);
+        if (!instanceId) return;
+
+        const current = payload.current || 0;
+        const total = payload.total || 0;
+        addLog(`[DOWNLOAD] Progress: ${current}/${total}`);
+        setDownloadProgress((prev) => ({
+          ...prev,
+          [instanceId]: { current, total, status: "downloading" },
+        }));
+      }),
+      EventsOn("download.complete", (payload: EventPayload) => {
+        const instanceId = resolveInstanceId(payload);
+        if (!instanceId) return;
+
+        setDownloadProgress((prev) => ({
+          ...prev,
+          [instanceId]: {
+            ...prev[instanceId],
+            status: "completed",
+          },
+        }));
+        if (currentDownloadIdRef.current === instanceId) {
           setCurrentDownloadId(null);
         }
       }),
-      EventsOn("downloadError", () => {
-        if (currentDownloadId) {
+      EventsOn("download.error", (payload: EventPayload) => {
+        const instanceId = resolveInstanceId(payload);
+        const errorMessage =
+          payload.error?.cause || payload.error?.message || payload.message || "Download failed";
+        addLog(`[ERROR] ${errorMessage}`);
+
+        if (instanceId) {
           setDownloadProgress((prev) => ({
             ...prev,
-            [currentDownloadId]: {
-              ...prev[currentDownloadId],
+            [instanceId]: {
+              ...prev[instanceId],
               status: "failed",
             },
           }));
-          setCurrentDownloadId(null);
+          if (currentDownloadIdRef.current === instanceId) {
+            setCurrentDownloadId(null);
+          }
         }
       }),
-      EventsOn("launchStatus", (msg: string) => {
-        addLog(`[SYSTEM] ${msg}`);
-        if (msg.includes("Game closed")) setLaunchingInstanceId(null);
+      EventsOn("launch.status", (payload: EventPayload) => {
+        const message = payload.message || "No message";
+        addLog(`[SYSTEM] ${message}`);
+        if (message.includes("Game closed")) setLaunchingInstanceId(null);
       }),
-      EventsOn("gameLog", (msg: string) => addLog(`[GAME] ${msg}`)),
-      EventsOn("launchError", (msg: string) => {
-        addLog(`[ERROR] ${msg}`);
+      EventsOn("launch.game.log", (payload: EventPayload) => {
+        addLog(`[GAME] ${payload.message || ""}`);
+      }),
+      EventsOn("launch.error", (payload: EventPayload) => {
+        const message =
+          payload.error?.cause || payload.error?.message || payload.message || "Unknown launch error";
+        addLog(`[ERROR] ${message}`);
         setLaunchingInstanceId(null);
         setConsoleOpen(true);
       }),
-      EventsOn("game_exit", () => {
+      EventsOn("launch.exit", () => {
         setLaunchingInstanceId(null);
-        // Do not clear download progress here, it might be relevant
       }),
-      EventsOn("errorLog", (msg: string) => addLog(`[APP ERROR] ${msg}`)),
+      EventsOn("app.log.error", (payload: EventPayload) => {
+        const message =
+          payload.error?.cause || payload.error?.message || payload.message || "Unknown app error";
+        addLog(`[APP ERROR] ${message}`);
+      }),
     ];
     return () => cleanups.forEach((c) => c());
-  }, [currentDownloadId]);
+  }, []);
 
   const startDownload = async (instanceId: string) => {
     setCurrentDownloadId(instanceId);
@@ -183,7 +212,6 @@ function useGameLaunchLogic() {
     try {
       addLog(`[COMMAND] Stopping Instance ${id}...`);
       await StopInstance(id);
-      // game_exit event will handle state cleanup
     } catch (e: any) {
       addLog(`[ERROR] Failed to stop instance: ${e}`);
       toast.error(`Failed to stop instance: ${e}`);
