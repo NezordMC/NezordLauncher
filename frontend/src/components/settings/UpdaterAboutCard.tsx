@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Github } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CheckForUpdates } from "../../../wailsjs/go/main/App";
+import { CheckForUpdates, GetAppVersion } from "../../../wailsjs/go/main/App";
 import { useSettingStore } from "@/stores/settingStore";
 
 function DiscordIcon({ className }: { className?: string }) {
@@ -35,6 +35,7 @@ export function UpdaterAboutCard() {
   const [checking, setChecking] = useState(false);
   const [lastCheck, setLastCheck] = useState<UpdateInfo | null>(null);
   const [error, setError] = useState("");
+  const [currentVersion, setCurrentVersion] = useState("0.0.0");
 
   useEffect(() => {
     if (launcherSettings) {
@@ -42,12 +43,25 @@ export function UpdaterAboutCard() {
     }
   }, [launcherSettings]);
 
+  useEffect(() => {
+    const loadVersion = async () => {
+      try {
+        const version = await GetAppVersion();
+        if (version) {
+          setCurrentVersion(version);
+        }
+      } catch {
+        // keep fallback value
+      }
+    };
+    loadVersion();
+  }, []);
+
   const handleCheckUpdate = async () => {
     setChecking(true);
     setError("");
     try {
-      // @ts-ignore
-      const res = await CheckForUpdates("0.2.0"); // TODO: Use real current version
+      const res = await CheckForUpdates(currentVersion);
       setLastCheck({
         available: res.available,
         version: res.version,
@@ -89,7 +103,7 @@ export function UpdaterAboutCard() {
             </div>
             <div>
               <h3 className="font-bold text-lg">Updater</h3>
-              <p className="text-xs text-zinc-500 font-mono">v0.2.0</p>
+              <p className="text-xs text-zinc-500 font-mono">v{currentVersion}</p>
             </div>
           </div>
 

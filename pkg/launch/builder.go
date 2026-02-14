@@ -75,7 +75,7 @@ func BuildArguments(version *models.VersionDetail, options LaunchOptions) ([]str
 		"${version_type}":      version.Type,
 		"${natives_directory}": options.NativesDir,
 		"${launcher_name}":     constants.AppName,
-		"${launcher_version}":  "1.0.0",
+		"${launcher_version}":  constants.Version,
 		"${classpath}":         classpath,
 	}
 

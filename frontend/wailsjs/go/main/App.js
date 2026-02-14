@@ -38,6 +38,10 @@ export function GetActiveAccount() {
   return window['go']['main']['App']['GetActiveAccount']();
 }
 
+export function GetAppVersion() {
+  return window['go']['main']['App']['GetAppVersion']();
+}
+
 export function GetFabricLoaders(arg1) {
   return window['go']['main']['App']['GetFabricLoaders'](arg1);
 }

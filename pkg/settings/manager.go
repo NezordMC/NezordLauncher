@@ -37,6 +37,7 @@ func NewManager() *Manager {
 			Language:           "en",
 			Theme:              "dark",
 			CloseAction:        "keep_open",
+			DataPath:           constants.GetDataDir(),
 			WindowMode:         "Windowed",
 			DefaultRamMB:       4096,
 			DefaultResolutionW: 854,

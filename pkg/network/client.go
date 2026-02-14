@@ -1,6 +1,7 @@
 package network
 
 import (
+	"NezordLauncher/pkg/constants"
 	"bytes"
 	"fmt"
 	"io"
@@ -30,7 +31,7 @@ func NewHttpClient() *HttpClient {
 }
 
 func (c *HttpClient) getUserAgent() string {
-	return fmt.Sprintf("NezordLauncher/1.0 (%s; %s)", runtime.GOOS, runtime.GOARCH)
+	return fmt.Sprintf("NezordLauncher/%s (%s; %s)", constants.Version, runtime.GOOS, runtime.GOARCH)
 }
 
 func (c *HttpClient) Get(url string) ([]byte, error) {

@@ -26,6 +26,8 @@ export function GetAccounts():Promise<Array<auth.Account>>;
 
 export function GetActiveAccount():Promise<auth.Account>;
 
+export function GetAppVersion():Promise<string>;
+
 export function GetFabricLoaders(arg1:string):Promise<Array<string>>;
 
 export function GetInstances():Promise<Array<instances.Instance>>;

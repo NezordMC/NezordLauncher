@@ -39,6 +39,12 @@ type UpdateCheck struct {
 	CheckedAt       string `json:"checkedAt"`
 }
 
+type AppRuntimeMeta struct {
+	Version   string `json:"version"`
+	DataDir   string `json:"dataDir"`
+	ConfigDir string `json:"configDir"`
+}
+
 type EventError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`

@@ -86,3 +86,15 @@ func (a *App) ScanJavaInstallations() ([]javascanner.JavaInfo, error) {
 func (a *App) VerifyJavaPath(path string) (*javascanner.JavaInfo, error) {
 	return javascanner.CheckJava(path)
 }
+
+func (a *App) GetAppVersion() string {
+	return constants.Version
+}
+
+func (a *App) GetRuntimeMeta() AppRuntimeMeta {
+	return AppRuntimeMeta{
+		Version:   constants.Version,
+		DataDir:   constants.GetDataDir(),
+		ConfigDir: constants.GetConfigDir(),
+	}
+}
