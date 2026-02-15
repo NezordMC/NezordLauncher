@@ -54,6 +54,10 @@ export function GetQuiltLoaders(arg1) {
   return window['go']['main']['App']['GetQuiltLoaders'](arg1);
 }
 
+export function GetRuntimeMeta() {
+  return window['go']['main']['App']['GetRuntimeMeta']();
+}
+
 export function GetSettings() {
   return window['go']['main']['App']['GetSettings']();
 }

@@ -3,6 +3,7 @@
 import {auth} from '../models';
 import {updater} from '../models';
 import {instances} from '../models';
+import {main} from '../models';
 import {settings} from '../models';
 import {system} from '../models';
 import {models} from '../models';
@@ -33,6 +34,8 @@ export function GetFabricLoaders(arg1:string):Promise<Array<string>>;
 export function GetInstances():Promise<Array<instances.Instance>>;
 
 export function GetQuiltLoaders(arg1:string):Promise<Array<string>>;
+
+export function GetRuntimeMeta():Promise<main.AppRuntimeMeta>;
 
 export function GetSettings():Promise<settings.LauncherSettings>;
 
