@@ -15,6 +15,7 @@ import {
 import { EventsOn } from "../../wailsjs/runtime/runtime";
 import { Account, EventPayload } from "../types";
 import { toast } from "sonner";
+import { IPC_EVENTS } from "@/lib/ipc";
 
 interface DownloadProgress {
   current: number;
@@ -54,12 +55,12 @@ function useGameLaunchLogic() {
       payload.instanceId || currentDownloadIdRef.current;
 
     const cleanups = [
-      EventsOn("download.status", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.DOWNLOAD_STATUS, (payload: EventPayload) => {
         const status = payload.status || "unknown";
         const message = payload.message || "No message";
         addLog(`[DOWNLOAD][${status.toUpperCase()}] ${message}`);
       }),
-      EventsOn("download.progress", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.DOWNLOAD_PROGRESS, (payload: EventPayload) => {
         const instanceId = resolveInstanceId(payload);
         if (!instanceId) return;
 
@@ -71,7 +72,7 @@ function useGameLaunchLogic() {
           [instanceId]: { current, total, status: "downloading" },
         }));
       }),
-      EventsOn("download.complete", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.DOWNLOAD_COMPLETE, (payload: EventPayload) => {
         const instanceId = resolveInstanceId(payload);
         if (!instanceId) return;
 
@@ -86,7 +87,7 @@ function useGameLaunchLogic() {
           setCurrentDownloadId(null);
         }
       }),
-      EventsOn("download.error", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.DOWNLOAD_ERROR, (payload: EventPayload) => {
         const instanceId = resolveInstanceId(payload);
         const errorMessage =
           payload.error?.cause || payload.error?.message || payload.message || "Download failed";
@@ -105,25 +106,25 @@ function useGameLaunchLogic() {
           }
         }
       }),
-      EventsOn("launch.status", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.LAUNCH_STATUS, (payload: EventPayload) => {
         const message = payload.message || "No message";
         addLog(`[SYSTEM] ${message}`);
         if (message.includes("Game closed")) setLaunchingInstanceId(null);
       }),
-      EventsOn("launch.game.log", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.LAUNCH_GAME_LOG, (payload: EventPayload) => {
         addLog(`[GAME] ${payload.message || ""}`);
       }),
-      EventsOn("launch.error", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.LAUNCH_ERROR, (payload: EventPayload) => {
         const message =
           payload.error?.cause || payload.error?.message || payload.message || "Unknown launch error";
         addLog(`[ERROR] ${message}`);
         setLaunchingInstanceId(null);
         setConsoleOpen(true);
       }),
-      EventsOn("launch.exit", () => {
+      EventsOn(IPC_EVENTS.LAUNCH_EXIT, () => {
         setLaunchingInstanceId(null);
       }),
-      EventsOn("app.log.error", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.APP_LOG_ERROR, (payload: EventPayload) => {
         const message =
           payload.error?.cause || payload.error?.message || payload.message || "Unknown app error";
         addLog(`[APP ERROR] ${message}`);

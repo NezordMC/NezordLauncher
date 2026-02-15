@@ -17,6 +17,7 @@ import {
 import { EventsOn } from "../../wailsjs/runtime/runtime";
 import { Instance, Version, InstanceSettings, EventPayload } from "../types";
 import { ModloaderType } from "../components/instances/ModloaderSelector";
+import { IPC_EVENTS } from "@/lib/ipc";
 
 function useInstanceLogic() {
   const [minecraftVersions, setMinecraftVersions] = useState<Version[]>([]);
@@ -26,7 +27,7 @@ function useInstanceLogic() {
     fetchVersions();
     refreshInstances();
 
-    const cleanup = EventsOn("instance.updated", (payload: EventPayload) => {
+    const cleanup = EventsOn(IPC_EVENTS.INSTANCE_UPDATED, (payload: EventPayload) => {
       const meta = payload?.meta as Instance | undefined;
       if (!meta) return;
       setInstances((prev) =>

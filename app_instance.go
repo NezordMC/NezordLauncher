@@ -3,6 +3,7 @@ package main
 import (
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/downloader"
+	"NezordLauncher/pkg/ipc"
 	"NezordLauncher/pkg/instances"
 	"NezordLauncher/pkg/validation"
 	"context"
@@ -137,5 +138,5 @@ func (a *App) OpenInstanceFolder(instanceID string) error {
 func (a *App) emitInstanceUpdated(inst *instances.Instance) {
 	payload := newEventPayload("backend.instance", inst.ID, inst.InstallState, "Instance state updated")
 	payload.Meta = inst
-	a.emit(eventInstanceUpdated, payload)
+	a.emit(ipc.EventInstanceUpdated, payload)
 }

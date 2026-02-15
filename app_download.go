@@ -2,6 +2,7 @@ package main
 
 import (
 	"NezordLauncher/pkg/downloader"
+	"NezordLauncher/pkg/ipc"
 	"NezordLauncher/pkg/validation"
 	"context"
 	"fmt"
@@ -116,18 +117,18 @@ func (a *App) CancelDownload() {
 }
 
 func (a *App) emitDownloadStatus(instanceID, status, message string) {
-	a.emit(eventDownloadStatus, newEventPayload("backend.download", instanceID, status, message))
+	a.emit(ipc.EventDownloadStatus, newEventPayload("backend.download", instanceID, status, message))
 }
 
 func (a *App) emitDownloadProgress(instanceID string, current, total int) {
 	payload := newEventPayload("backend.download", instanceID, "running", "Download progress")
 	payload.Current = current
 	payload.Total = total
-	a.emit(eventDownloadProgress, payload)
+	a.emit(ipc.EventDownloadProgress, payload)
 }
 
 func (a *App) emitDownloadComplete(instanceID string) {
-	a.emit(eventDownloadComplete, newEventPayload("backend.download", instanceID, "completed", "Download complete"))
+	a.emit(ipc.EventDownloadComplete, newEventPayload("backend.download", instanceID, "completed", "Download complete"))
 }
 
 func (a *App) emitDownloadError(instanceID, code string, err error) {
@@ -139,5 +140,5 @@ func (a *App) emitDownloadError(instanceID, code string, err error) {
 	if err != nil {
 		payload.Error.Cause = err.Error()
 	}
-	a.emit(eventDownloadError, payload)
+	a.emit(ipc.EventDownloadError, payload)
 }

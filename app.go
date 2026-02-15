@@ -3,6 +3,7 @@ package main
 import (
 	"NezordLauncher/pkg/auth"
 	"NezordLauncher/pkg/constants"
+	"NezordLauncher/pkg/ipc"
 	"NezordLauncher/pkg/instances"
 	"NezordLauncher/pkg/logging"
 	"NezordLauncher/pkg/settings"
@@ -63,19 +64,6 @@ type EventPayload struct {
 	Error      *EventError `json:"error,omitempty"`
 }
 
-const (
-	eventAppLogError      = "app.log.error"
-	eventInstanceUpdated  = "instance.updated"
-	eventDownloadStatus   = "download.status"
-	eventDownloadProgress = "download.progress"
-	eventDownloadComplete = "download.complete"
-	eventDownloadError    = "download.error"
-	eventLaunchStatus     = "launch.status"
-	eventLaunchError      = "launch.error"
-	eventLaunchGameLog    = "launch.game.log"
-	eventLaunchExit       = "launch.exit"
-)
-
 func NewApp() *App {
 	return &App{
 		accountManager:   auth.NewAccountManager(),
@@ -120,7 +108,7 @@ func (a *App) emitAppError(code, message string, err error) {
 	if err != nil {
 		payload.Error.Cause = err.Error()
 	}
-	a.emit(eventAppLogError, payload)
+	a.emit(ipc.EventAppLogError, payload)
 }
 
 func (a *App) startup(ctx context.Context) {

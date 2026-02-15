@@ -4,6 +4,7 @@ import (
 	"NezordLauncher/pkg/auth"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/fabric"
+	"NezordLauncher/pkg/ipc"
 	"NezordLauncher/pkg/instances"
 	"NezordLauncher/pkg/javascanner"
 	"NezordLauncher/pkg/launch"
@@ -402,7 +403,7 @@ func (a *App) fetchVanillaVersion(versionID string) (*models.VersionDetail, erro
 }
 
 func (a *App) emitLaunchStatus(instanceID, message string) {
-	a.emit(eventLaunchStatus, newEventPayload("backend.launch", instanceID, "running", message))
+	a.emit(ipc.EventLaunchStatus, newEventPayload("backend.launch", instanceID, "running", message))
 }
 
 func (a *App) emitLaunchError(instanceID, code, message string, err error) {
@@ -414,13 +415,13 @@ func (a *App) emitLaunchError(instanceID, code, message string, err error) {
 	if err != nil {
 		payload.Error.Cause = err.Error()
 	}
-	a.emit(eventLaunchError, payload)
+	a.emit(ipc.EventLaunchError, payload)
 }
 
 func (a *App) emitGameLog(instanceID, message string) {
-	a.emit(eventLaunchGameLog, newEventPayload("backend.launch", instanceID, "running", message))
+	a.emit(ipc.EventLaunchGameLog, newEventPayload("backend.launch", instanceID, "running", message))
 }
 
 func (a *App) emitLaunchExit(instanceID, status string) {
-	a.emit(eventLaunchExit, newEventPayload("backend.launch", instanceID, status, "Launch process exited"))
+	a.emit(ipc.EventLaunchExit, newEventPayload("backend.launch", instanceID, status, "Launch process exited"))
 }
