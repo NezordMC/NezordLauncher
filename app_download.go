@@ -90,7 +90,7 @@ func (a *App) downloadVersion(instanceID, versionID string) error {
 			a.emitDownloadStatus(instanceID, "cancelled", "Download cancelled")
 			return fmt.Errorf("cancelled")
 		}
-		a.emitDownloadError(instanceID, "DOWNLOAD_VERSION_FAILED", err)
+		a.emitDownloadError(instanceID, ErrCodeDownloadVersionFailed, err)
 		return fmt.Errorf("download failed: %w", err)
 	}
 
@@ -98,7 +98,7 @@ func (a *App) downloadVersion(instanceID, versionID string) error {
 	progressTicker.Stop()
 	if len(pool.Errors()) > 0 {
 		err := fmt.Errorf("download finished with %d task errors", len(pool.Errors()))
-		a.emitDownloadError(instanceID, "DOWNLOAD_TASK_ERRORS", err)
+		a.emitDownloadError(instanceID, ErrCodeDownloadTaskErrors, err)
 		a.emitDownloadStatus(instanceID, "completed_with_errors", "Artifacts verification completed with errors")
 		return nil
 	}

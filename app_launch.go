@@ -83,7 +83,7 @@ func (a *App) LaunchInstance(instanceID string) error {
 		if _, err := os.Stat(inst.Settings.JavaPath); err == nil {
 			javaPath = inst.Settings.JavaPath
 		} else {
-			a.emitLaunchError(instanceID, "JAVA_PATH_INSTANCE_INVALID", "Instance Java path invalid, falling back to settings or auto-detect", err)
+				a.emitLaunchError(instanceID, ErrCodeJavaPathInstanceInvalid, "Instance Java path invalid, falling back to settings or auto-detect", err)
 		}
 	}
 
@@ -92,7 +92,7 @@ func (a *App) LaunchInstance(instanceID string) error {
 		if _, err := os.Stat(settings.DefaultJavaPath); err == nil {
 			javaPath = settings.DefaultJavaPath
 		} else {
-			a.emitLaunchError(instanceID, "JAVA_PATH_SETTINGS_INVALID", "Settings Java path invalid, falling back to auto-detect", err)
+				a.emitLaunchError(instanceID, ErrCodeJavaPathSettingsInvalid, "Settings Java path invalid, falling back to auto-detect", err)
 		}
 	}
 
@@ -258,7 +258,7 @@ func (a *App) LaunchInstance(instanceID string) error {
 
 	cmd, err := launch.Launch(finalCommand, finalArgs, instanceDir, env)
 	if err != nil {
-		a.emitLaunchError(instanceID, "LAUNCH_COMMAND_CREATE_FAILED", "Failed to prepare launch command", err)
+		a.emitLaunchError(instanceID, ErrCodeLaunchCommandCreateFail, "Failed to prepare launch command", err)
 		a.emitLaunchExit(instanceID, "error")
 		return err
 	}
@@ -276,7 +276,7 @@ func (a *App) LaunchInstance(instanceID string) error {
 		}()
 
 		if err := launch.Monitor(cmd, logCallback); err != nil {
-			a.emitLaunchError(instanceID, "LAUNCH_RUNTIME_ERROR", "Game process exited with error", err)
+			a.emitLaunchError(instanceID, ErrCodeLaunchRuntimeError, "Game process exited with error", err)
 		} else {
 			a.emitLaunchStatus(instanceID, "Game closed successfully")
 		}

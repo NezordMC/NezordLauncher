@@ -101,7 +101,7 @@ func (a *App) RepairInstance(instanceID string) error {
 	fetcher.Filter = filter
 
 	if err := fetcher.DownloadVersion(ctx, inst.GameVersion); err != nil {
-		a.emitDownloadError(instanceID, "DOWNLOAD_REPAIR_FAILED", err)
+		a.emitDownloadError(instanceID, ErrCodeDownloadRepairFailed, err)
 		return err
 	}
 
@@ -109,7 +109,7 @@ func (a *App) RepairInstance(instanceID string) error {
 
 	if len(pool.Errors()) > 0 {
 		err := fmt.Errorf("repair failed with %d errors", len(pool.Errors()))
-		a.emitDownloadError(instanceID, "DOWNLOAD_REPAIR_PARTIAL", err)
+		a.emitDownloadError(instanceID, ErrCodeDownloadRepairPartial, err)
 		return err
 	}
 

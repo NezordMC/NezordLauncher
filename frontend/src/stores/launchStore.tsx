@@ -89,9 +89,10 @@ function useGameLaunchLogic() {
       }),
       EventsOn(IPC_EVENTS.DOWNLOAD_ERROR, (payload: EventPayload) => {
         const instanceId = resolveInstanceId(payload);
+        const code = payload.error?.code;
         const errorMessage =
           payload.error?.cause || payload.error?.message || payload.message || "Download failed";
-        addLog(`[ERROR] ${errorMessage}`);
+        addLog(`[ERROR${code ? `:${code}` : ""}] ${errorMessage}`);
 
         if (instanceId) {
           setDownloadProgress((prev) => ({
@@ -115,9 +116,10 @@ function useGameLaunchLogic() {
         addLog(`[GAME] ${payload.message || ""}`);
       }),
       EventsOn(IPC_EVENTS.LAUNCH_ERROR, (payload: EventPayload) => {
+        const code = payload.error?.code;
         const message =
           payload.error?.cause || payload.error?.message || payload.message || "Unknown launch error";
-        addLog(`[ERROR] ${message}`);
+        addLog(`[ERROR${code ? `:${code}` : ""}] ${message}`);
         setLaunchingInstanceId(null);
         setConsoleOpen(true);
       }),
@@ -125,9 +127,10 @@ function useGameLaunchLogic() {
         setLaunchingInstanceId(null);
       }),
       EventsOn(IPC_EVENTS.APP_LOG_ERROR, (payload: EventPayload) => {
+        const code = payload.error?.code;
         const message =
           payload.error?.cause || payload.error?.message || payload.message || "Unknown app error";
-        addLog(`[APP ERROR] ${message}`);
+        addLog(`[APP ERROR${code ? `:${code}` : ""}] ${message}`);
       }),
     ];
     return () => cleanups.forEach((c) => c());

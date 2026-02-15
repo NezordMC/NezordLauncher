@@ -121,7 +121,7 @@ func (a *App) startup(ctx context.Context) {
 
 	logging.SetCallback(func(lvl logging.Level, msg string) {
 		if lvl == logging.ERROR {
-			a.emitAppError("APP_LOG_ERROR", msg, nil)
+			a.emitAppError(ErrCodeAppLogError, msg, nil)
 		}
 	})
 
