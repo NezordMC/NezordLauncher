@@ -34,6 +34,28 @@ func (c *HttpClient) getUserAgent() string {
 	return fmt.Sprintf("NezordLauncher/%s (%s; %s)", constants.Version, runtime.GOOS, runtime.GOARCH)
 }
 
+func (c *HttpClient) doGet(url string) ([]byte, int, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	req.Header.Set("User-Agent", c.getUserAgent())
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, err
+	}
+
+	return body, resp.StatusCode, nil
+}
+
 func (c *HttpClient) Get(url string) ([]byte, error) {
 	var lastErr error
 	maxRetries := 3
@@ -43,30 +65,21 @@ func (c *HttpClient) Get(url string) ([]byte, error) {
 			time.Sleep(time.Duration(math.Pow(2, float64(i))) * time.Second)
 		}
 
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		req.Header.Set("User-Agent", c.getUserAgent())
-
-		resp, err := c.client.Do(req)
+		body, statusCode, err := c.doGet(url)
 		if err != nil {
 			lastErr = err
 			continue
 		}
 
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			lastErr = fmt.Errorf("request failed with status: %d", resp.StatusCode)
-			if resp.StatusCode >= 500 {
+		if statusCode != http.StatusOK {
+			lastErr = fmt.Errorf("request failed with status: %d", statusCode)
+			if statusCode >= 500 {
 				continue
 			}
 			return nil, lastErr
 		}
 
-		return io.ReadAll(resp.Body)
+		return body, nil
 	}
 
 	return nil, lastErr
