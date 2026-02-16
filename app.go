@@ -3,8 +3,8 @@ package main
 import (
 	"NezordLauncher/pkg/auth"
 	"NezordLauncher/pkg/constants"
-	"NezordLauncher/pkg/ipc"
 	"NezordLauncher/pkg/instances"
+	"NezordLauncher/pkg/ipc"
 	"NezordLauncher/pkg/logging"
 	"NezordLauncher/pkg/settings"
 	"context"
@@ -166,4 +166,29 @@ func (a *App) startup(ctx context.Context) {
 	if err := a.instanceManager.Load(); err != nil {
 		fmt.Printf("Failed to load instances: %s\n", err)
 	}
+}
+
+func (a *App) shutdown(ctx context.Context) {
+	logging.Info("Application shutdown initiated")
+
+	// Kill all running instances
+	a.runningMu.Lock()
+	for id, cmd := range a.runningInstances {
+		if cmd.Process != nil {
+			logging.Info("Killing running instance: %s (PID: %d)", id, cmd.Process.Pid)
+			if err := cmd.Process.Kill(); err != nil {
+				logging.Error("Failed to kill instance %s: %v", id, err)
+			}
+		}
+	}
+	a.runningMu.Unlock()
+
+	// Cancel any active downloads
+	if a.downloadCancel != nil {
+		logging.Info("Cancelling active downloads")
+		a.downloadCancel()
+	}
+
+	logging.Info("Application shutdown complete")
+	logging.Close()
 }
