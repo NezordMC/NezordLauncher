@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type ArtifactFetcher struct {
@@ -96,13 +97,35 @@ func (f *ArtifactFetcher) loadCachedVersion(versionID string) (*models.VersionDe
 	return &detail, nil
 }
 
-func (f *ArtifactFetcher) fetchManifest() (*models.VersionManifest, error) {
+func FetchVersionManifest() (*models.VersionManifest, error) {
+	cachePath := filepath.Join(constants.GetVersionsDir(), "version_manifest_v2.json")
+
+	// Check cache
+	if info, err := os.Stat(cachePath); err == nil {
+		if time.Since(info.ModTime()) < 30*time.Minute {
+			data, err := os.ReadFile(cachePath)
+			if err == nil {
+				var manifest models.VersionManifest
+				if err := json.Unmarshal(data, &manifest); err == nil {
+					return &manifest, nil
+				}
+			}
+		}
+	}
+
 	client := network.NewHttpClient()
 	manifestData, err := client.Get(constants.VersionManifestV2URL)
 	if err != nil {
+		// Try to read stale cache if fetch fails
+		if data, err := os.ReadFile(cachePath); err == nil {
+			var manifest models.VersionManifest
+			if err := json.Unmarshal(data, &manifest); err == nil {
+				return &manifest, nil
+			}
+		}
 		return nil, err
 	}
-	cachePath := filepath.Join(constants.GetVersionsDir(), "version_manifest_v2.json")
+	
 	_ = AtomicWriteFile(cachePath, manifestData)
 
 	var manifest models.VersionManifest
@@ -113,7 +136,7 @@ func (f *ArtifactFetcher) fetchManifest() (*models.VersionManifest, error) {
 }
 
 func (f *ArtifactFetcher) fetchAndCacheVersion(versionID string) (*models.VersionDetail, error) {
-	manifest, err := f.fetchManifest()
+	manifest, err := FetchVersionManifest()
 	if err != nil {
 		return nil, err
 	}

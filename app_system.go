@@ -2,28 +2,21 @@ package main
 
 import (
 	"NezordLauncher/pkg/constants"
+	"NezordLauncher/pkg/downloader"
 	"NezordLauncher/pkg/fabric"
 	"NezordLauncher/pkg/javascanner"
 	"NezordLauncher/pkg/models"
-	"NezordLauncher/pkg/network"
 	"NezordLauncher/pkg/quilt"
 	"NezordLauncher/pkg/settings"
 	"NezordLauncher/pkg/system"
 	"NezordLauncher/pkg/updater"
-	"encoding/json"
 	"fmt"
 )
 
 func (a *App) GetVanillaVersions() ([]models.Version, error) {
-	client := network.NewHttpClient()
-	data, err := client.Get(constants.VersionManifestV2URL)
+	manifest, err := downloader.FetchVersionManifest()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch manifest: %w", err)
-	}
-
-	var manifest models.VersionManifest
-	if err := json.Unmarshal(data, &manifest); err != nil {
-		return nil, fmt.Errorf("failed to parse manifest: %w", err)
 	}
 
 	var releases []models.Version
