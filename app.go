@@ -126,18 +126,18 @@ func (a *App) startup(ctx context.Context) {
 	})
 
 	if err := a.settingsManager.Load(); err != nil {
-		fmt.Printf("Failed to load settings: %s\n", err)
+		logging.Error("Failed to load settings: %v", err)
 	}
 
 	if a.settingsManager.Data.DataPath != "" {
 		absPath, err := filepath.Abs(a.settingsManager.Data.DataPath)
 		if err != nil {
-			fmt.Printf("Failed to resolve data path: %s\n", err)
+			logging.Error("Failed to resolve data path: %v", err)
 		} else {
 			if err := os.Setenv("NEZORD_DATA_DIR", absPath); err != nil {
-				fmt.Printf("Failed to set data path: %s\n", err)
+				logging.Error("Failed to set data path: %v", err)
 			} else {
-				fmt.Printf("Using data path: %s\n", absPath)
+				logging.Info("Using custom data path: %s", absPath)
 			}
 		}
 	}
@@ -154,17 +154,17 @@ func (a *App) startup(ctx context.Context) {
 	for _, dir := range dirs {
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
 			if err := os.MkdirAll(dir, 0755); err != nil {
-				fmt.Printf("Failed to create directory: %s\n", err)
+				logging.Error("Failed to create directory %s: %v", dir, err)
 			}
 		}
 	}
 
 	if err := a.accountManager.Load(); err != nil {
-		fmt.Printf("Failed to load accounts: %s\n", err)
+		logging.Error("Failed to load accounts: %v", err)
 	}
 
 	if err := a.instanceManager.Load(); err != nil {
-		fmt.Printf("Failed to load instances: %s\n", err)
+		logging.Error("Failed to load instances: %v", err)
 	}
 }
 
