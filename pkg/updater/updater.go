@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"time"
 )
@@ -50,17 +52,59 @@ func CheckForUpdate(currentVersion string) (*UpdateInfo, error) {
 		return nil, fmt.Errorf("failed to decode release info: %w", err)
 	}
 
-	// Simple version comparison: string difference
-	// In a real scenario, use semver library, but for now strict string inequality is enough
-	// assuming tags are consistent (e.g. "v0.1.0")
-	if release.TagName != currentVersion && release.TagName != "v"+currentVersion && currentVersion != "dev" {
+	if currentVersion != "dev" && compareVersions(release.TagName, currentVersion) > 0 {
 		return &UpdateInfo{
 			Available:   true,
 			Version:     release.TagName,
-			URL:         release.HTMLURL,
+			URL:         release.HTMLURL, // This field doesn't exist in UpdateInfo struct definition in previous view! Wait, checking file content again.
 			Description: release.Body,
 		}, nil
 	}
 
 	return &UpdateInfo{Available: false}, nil
+}
+
+func compareVersions(v1, v2 string) int {
+	p1 := parseVersion(v1)
+	p2 := parseVersion(v2)
+
+	maxLen := len(p1)
+	if len(p2) > maxLen {
+		maxLen = len(p2)
+	}
+
+	for i := 0; i < maxLen; i++ {
+		v1Val := 0
+		if i < len(p1) {
+			v1Val = p1[i]
+		}
+		v2Val := 0
+		if i < len(p2) {
+			v2Val = p2[i]
+		}
+
+		if v1Val < v2Val {
+			return -1
+		}
+		if v1Val > v2Val {
+			return 1
+		}
+	}
+	return 0
+}
+
+func parseVersion(v string) []int {
+	v = strings.TrimPrefix(v, "v")
+	parts := strings.Split(v, ".")
+	res := make([]int, 0, len(parts))
+	for _, p := range parts {
+		if idx := strings.IndexAny(p, "-+"); idx != -1 {
+			p = p[:idx]
+		}
+		val, err := strconv.Atoi(p)
+		if err == nil {
+			res = append(res, val)
+		}
+	}
+	return res
 }
