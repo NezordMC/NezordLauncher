@@ -20,6 +20,10 @@ import { IPC_EVENTS } from "@/lib/ipc";
 interface DownloadProgress {
   current: number;
   total: number;
+  currentBytes: number;
+  totalBytes: number;
+  speed: number;
+  eta: number;
   status: "downloading" | "completed" | "failed" | "idle";
 }
 
@@ -66,10 +70,33 @@ function useGameLaunchLogic() {
 
         const current = payload.current || 0;
         const total = payload.total || 0;
-        addLog(`[DOWNLOAD] Progress: ${current}/${total}`);
+        const currentBytes = payload.currentBytes || 0;
+        const totalBytes = payload.totalBytes || 0;
+        const speed = payload.speed || 0;
+        const eta = payload.eta || 0;
+
+        addLog(
+          `[DOWNLOAD] Progress: ${current}/${total} - ${(
+            currentBytes /
+            1024 /
+            1024
+          ).toFixed(2)}MB / ${(totalBytes / 1024 / 1024).toFixed(2)}MB @ ${(
+            speed /
+            1024 /
+            1024
+          ).toFixed(2)}MB/s ETA: ${eta.toFixed(1)}s`,
+        );
         setDownloadProgress((prev) => ({
           ...prev,
-          [instanceId]: { current, total, status: "downloading" },
+          [instanceId]: {
+            current,
+            total,
+            currentBytes,
+            totalBytes,
+            speed,
+            eta,
+            status: "downloading",
+          },
         }));
       }),
       EventsOn(IPC_EVENTS.DOWNLOAD_COMPLETE, (payload: EventPayload) => {
@@ -91,7 +118,10 @@ function useGameLaunchLogic() {
         const instanceId = resolveInstanceId(payload);
         const code = payload.error?.code;
         const errorMessage =
-          payload.error?.cause || payload.error?.message || payload.message || "Download failed";
+          payload.error?.cause ||
+          payload.error?.message ||
+          payload.message ||
+          "Download failed";
         addLog(`[ERROR${code ? `:${code}` : ""}] ${errorMessage}`);
 
         if (instanceId) {
@@ -118,7 +148,10 @@ function useGameLaunchLogic() {
       EventsOn(IPC_EVENTS.LAUNCH_ERROR, (payload: EventPayload) => {
         const code = payload.error?.code;
         const message =
-          payload.error?.cause || payload.error?.message || payload.message || "Unknown launch error";
+          payload.error?.cause ||
+          payload.error?.message ||
+          payload.message ||
+          "Unknown launch error";
         addLog(`[ERROR${code ? `:${code}` : ""}] ${message}`);
         setLaunchingInstanceId(null);
         setConsoleOpen(true);
@@ -129,7 +162,10 @@ function useGameLaunchLogic() {
       EventsOn(IPC_EVENTS.APP_LOG_ERROR, (payload: EventPayload) => {
         const code = payload.error?.code;
         const message =
-          payload.error?.cause || payload.error?.message || payload.message || "Unknown app error";
+          payload.error?.cause ||
+          payload.error?.message ||
+          payload.message ||
+          "Unknown app error";
         addLog(`[APP ERROR${code ? `:${code}` : ""}] ${message}`);
       }),
     ];
@@ -140,7 +176,15 @@ function useGameLaunchLogic() {
     setCurrentDownloadId(instanceId);
     setDownloadProgress((prev) => ({
       ...prev,
-      [instanceId]: { current: 0, total: 0, status: "downloading" },
+      [instanceId]: {
+        current: 0,
+        total: 0,
+        currentBytes: 0,
+        totalBytes: 0,
+        speed: 0,
+        eta: 0,
+        status: "downloading",
+      },
     }));
     setConsoleOpen(true);
 

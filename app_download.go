@@ -74,8 +74,8 @@ func (a *App) downloadVersion(instanceID, versionID string) error {
 		for {
 			select {
 			case <-progressTicker.C:
-				current, total := pool.Progress.GetCounts()
-				a.emitDownloadProgress(instanceID, current, total)
+				current, total, currentBytes, totalBytes, speed, eta := pool.Progress.GetMetrics()
+				a.emitDownloadProgress(instanceID, current, total, currentBytes, totalBytes, speed, eta)
 			case <-ctx.Done():
 				progressTicker.Stop()
 				return
@@ -120,10 +120,14 @@ func (a *App) emitDownloadStatus(instanceID, status, message string) {
 	a.emit(ipc.EventDownloadStatus, newEventPayload("backend.download", instanceID, status, message))
 }
 
-func (a *App) emitDownloadProgress(instanceID string, current, total int) {
+func (a *App) emitDownloadProgress(instanceID string, current, total int, currentBytes, totalBytes int64, speed, eta float64) {
 	payload := newEventPayload("backend.download", instanceID, "running", "Download progress")
 	payload.Current = current
 	payload.Total = total
+	payload.CurrentBytes = currentBytes
+	payload.TotalBytes = totalBytes
+	payload.Speed = speed
+	payload.Eta = eta
 	a.emit(ipc.EventDownloadProgress, payload)
 }
 

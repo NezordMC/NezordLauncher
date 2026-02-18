@@ -58,9 +58,13 @@ type EventPayload struct {
 	InstanceID string      `json:"instanceId,omitempty"`
 	Status     string      `json:"status,omitempty"`
 	Message    string      `json:"message,omitempty"`
-	Current    int         `json:"current,omitempty"`
-	Total      int         `json:"total,omitempty"`
-	Meta       interface{} `json:"meta,omitempty"`
+	Current      int         `json:"current,omitempty"`
+	Total        int         `json:"total,omitempty"`
+	CurrentBytes int64       `json:"currentBytes,omitempty"`
+	TotalBytes   int64       `json:"totalBytes,omitempty"`
+	Speed        float64     `json:"speed,omitempty"`
+	Eta          float64     `json:"eta,omitempty"`
+	Meta         interface{} `json:"meta,omitempty"`
 	Error      *EventError `json:"error,omitempty"`
 }
 

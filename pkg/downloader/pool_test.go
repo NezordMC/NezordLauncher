@@ -28,9 +28,9 @@ func TestWorkerPoolExecution(t *testing.T) {
 	dest := filepath.Join(tempDir, "file.jar")
 
 	pool := NewWorkerPool(2, 2)
-	pool.Progress.AddTotal(1)
+	pool.Progress.AddTotal(1, int64(len(content)))
 	pool.Start(context.Background())
-	pool.Submit(Task{URL: server.URL, Path: dest, SHA1: hash})
+	pool.Submit(Task{URL: server.URL, Path: dest, SHA1: hash, Size: int64(len(content))})
 	pool.Wait()
 
 	ok, err := VerifyFileSHA1(dest, hash)
@@ -38,7 +38,7 @@ func TestWorkerPoolExecution(t *testing.T) {
 		t.Fatalf("downloaded file hash mismatch: %v", err)
 	}
 
-	completed, _ := pool.Progress.GetCounts()
+	completed, _, _, _, _, _ := pool.Progress.GetMetrics()
 	if completed != 1 {
 		t.Fatalf("expected 1 completed file, got %d", completed)
 	}
@@ -64,9 +64,9 @@ func TestWorkerPoolResume(t *testing.T) {
 	}
 
 	pool := NewWorkerPool(2, 2)
-	pool.Progress.AddTotal(1)
+	pool.Progress.AddTotal(1, int64(len(content)))
 	pool.Start(context.Background())
-	pool.Submit(Task{URL: server.URL, Path: dest, SHA1: hash})
+	pool.Submit(Task{URL: server.URL, Path: dest, SHA1: hash, Size: int64(len(content))})
 	pool.Wait()
 
 	ok, err := VerifyFileSHA1(dest, hash)
@@ -89,7 +89,7 @@ func TestWorkerPoolErrorHandling(t *testing.T) {
 	dest := filepath.Join(tempDir, "file.jar")
 
 	pool := NewWorkerPool(1, 1)
-	pool.Progress.AddTotal(1)
+	pool.Progress.AddTotal(1, 100)
 	pool.Start(context.Background())
 	pool.Submit(Task{URL: server.URL, Path: dest})
 	pool.Wait()

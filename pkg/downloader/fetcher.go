@@ -188,11 +188,12 @@ func (f *ArtifactFetcher) downloadClient(ctx context.Context, v *models.VersionD
 				return nil
 			}
 
-			f.pool.Progress.AddTotal(1)
+			f.pool.Progress.AddTotal(1, int64(v.Downloads.Client.Size))
 			f.pool.Submit(Task{
 				URL:  v.Downloads.Client.URL,
 				Path: path,
 				SHA1: v.Downloads.Client.SHA1,
+				Size: int64(v.Downloads.Client.Size),
 			})
 		}
 	}
@@ -218,6 +219,7 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 					URL:  lib.Downloads.Artifact.URL,
 					Path: fullPath,
 					SHA1: lib.Downloads.Artifact.SHA1,
+					Size: int64(lib.Downloads.Artifact.Size),
 				})
 			}
 		} else if lib.Name != "" {
@@ -254,6 +256,7 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 							URL:  artifact.URL,
 							Path: fullPath,
 							SHA1: artifact.SHA1,
+							Size: int64(artifact.Size),
 						})
 					}
 				}
@@ -262,7 +265,11 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 	}
 
 	if len(tasks) > 0 {
-		f.pool.Progress.AddTotal(len(tasks))
+		var totalSize int64
+		for _, t := range tasks {
+			totalSize += t.Size
+		}
+		f.pool.Progress.AddTotal(len(tasks), totalSize)
 
 		for _, t := range tasks {
 			if ctx.Err() != nil {
@@ -336,12 +343,17 @@ func (f *ArtifactFetcher) downloadAssets(ctx context.Context, v *models.VersionD
 				URL:  url,
 				Path: path,
 				SHA1: obj.Hash,
+				Size: int64(obj.Size),
 			})
 		}
 	}
 
 	if len(tasks) > 0 {
-		f.pool.Progress.AddTotal(len(tasks))
+		var totalSize int64
+		for _, t := range tasks {
+			totalSize += t.Size
+		}
+		f.pool.Progress.AddTotal(len(tasks), totalSize)
 
 		for _, t := range tasks {
 			if ctx.Err() != nil {
