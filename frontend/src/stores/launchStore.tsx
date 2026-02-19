@@ -11,8 +11,8 @@ import {
   CancelDownload,
   StartInstanceDownload,
   StopInstance,
-} from "../../wailsjs/go/main/App";
-import { EventsOn } from "../../wailsjs/runtime/runtime";
+} from "../wailsjs/go/main/App";
+import { EventsOn } from "../wailsjs/runtime/runtime";
 import { Account, EventPayload } from "../types";
 import { toast } from "sonner";
 import { IPC_EVENTS } from "@/lib/ipc";

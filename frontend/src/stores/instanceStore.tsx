@@ -13,8 +13,8 @@ import {
   GetQuiltLoaders,
   UpdateInstanceSettings,
   DeleteInstance,
-} from "../../wailsjs/go/main/App";
-import { EventsOn } from "../../wailsjs/runtime/runtime";
+} from "../wailsjs/go/main/App";
+import { EventsOn } from "../wailsjs/runtime/runtime";
 import { Instance, Version, InstanceSettings, EventPayload } from "../types";
 import { ModloaderType } from "../components/instances/ModloaderSelector";
 import { IPC_EVENTS } from "@/lib/ipc";

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { CheckForUpdates, GetAppVersion } from "../../wailsjs/go/main/App";
+import { CheckForUpdates, GetAppVersion } from "../wailsjs/go/main/App";
 import { toast } from "sonner";
-import { BrowserOpenURL } from "../../wailsjs/runtime/runtime";
+import { BrowserOpenURL } from "../wailsjs/runtime/runtime";
 import { useSettingStore } from "@/stores/settingStore";
 
 export function useUpdater() {

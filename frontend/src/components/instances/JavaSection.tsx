@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { HardDrive, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { InstanceSettings } from "@/types";
-import { VerifyJavaPath } from "../../../wailsjs/go/main/App";
+import { VerifyJavaPath } from "../../wailsjs/go/main/App";
 import { useState, useEffect } from "react";
 
 interface JavaSectionProps {

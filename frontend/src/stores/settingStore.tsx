@@ -9,7 +9,7 @@ import {
   GetSettings,
   ScanJavaInstallations,
   UpdateGlobalSettings,
-} from "../../wailsjs/go/main/App";
+} from "../wailsjs/go/main/App";
 import { GlobalDefaults, JavaInfo, LauncherSettings } from "../types";
 
 function useSettingsLogic() {

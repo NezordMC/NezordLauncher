@@ -1,13 +1,18 @@
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { JSX } from "react";
 
 import { MainLayout } from "@/components/MainLayout";
 import { HomePage } from "@/pages/Home";
 import { SettingsPage } from "@/pages/Settings";
 import { SetupWizardPage } from "@/pages/SetupWizard";
-import { JSX } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import { useAccountStore } from "@/stores/accountStore";
+
+import { AccountProvider } from "@/stores/accountStore";
+import { InstanceProvider } from "@/stores/instanceStore";
+import { LaunchProvider } from "@/stores/launchStore";
+import { SettingsProvider } from "@/stores/settingStore";
 
 function RequireSetup({ children }: { children: JSX.Element }) {
   const { isInitialized, accounts } = useAccountStore();
@@ -27,11 +32,6 @@ function RequireSetup({ children }: { children: JSX.Element }) {
 
   return children;
 }
-
-import { AccountProvider } from "@/stores/accountStore";
-import { InstanceProvider } from "@/stores/instanceStore";
-import { LaunchProvider } from "@/stores/launchStore";
-import { SettingsProvider } from "@/stores/settingStore";
 
 function App() {
   return (

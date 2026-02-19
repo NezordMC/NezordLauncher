@@ -8,7 +8,7 @@ import {
   OpenInstanceFolder,
   VerifyInstance,
   RepairInstance,
-} from "../../../wailsjs/go/main/App";
+} from "../../wailsjs/go/main/App";
 import { MemorySection } from "./MemorySection";
 import { JavaSection } from "./JavaSection";
 import { ResolutionSection } from "./ResolutionSection";

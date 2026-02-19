@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Github } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CheckForUpdates, GetAppVersion } from "../../../wailsjs/go/main/App";
+import { CheckForUpdates, GetAppVersion } from "../../wailsjs/go/main/App";
 import { useSettingStore } from "@/stores/settingStore";
 
 function DiscordIcon({ className }: { className?: string }) {

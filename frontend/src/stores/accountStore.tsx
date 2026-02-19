@@ -12,7 +12,7 @@ import {
   SetActiveAccount,
   GetActiveAccount,
   RemoveAccount,
-} from "../../wailsjs/go/main/App";
+} from "../wailsjs/go/main/App";
 import { Account } from "../types";
 
 function useAuthLogic() {

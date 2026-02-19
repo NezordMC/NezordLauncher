@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import {
   VerifyJavaPath,
   ScanJavaInstallations,
-} from "../../../wailsjs/go/main/App";
+} from "../../wailsjs/go/main/App";
 
 // Even simpler: Just valid old school debounce function
 const debounce = (func: Function, wait: number) => {
