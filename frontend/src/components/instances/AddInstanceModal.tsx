@@ -54,9 +54,7 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
     const load = async () => {
       setIsLoadingLoaders(true);
       const list = await fetchModloaders(gameVersion, modloader);
-      const sanitized = list
-        .map((v) => v.trim())
-        .filter((v) => v.length > 0);
+      const sanitized = list.map((v) => v.trim()).filter((v) => v.length > 0);
       setAvailableLoaders(sanitized);
       if (sanitized.length > 0) {
         setLoaderVersion(sanitized[0]);
@@ -92,7 +90,7 @@ export function AddInstanceModal({ isOpen, onClose }: AddInstanceModalProps) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl"
+        className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-4 border-b border-zinc-800 flex justify-between items-center">

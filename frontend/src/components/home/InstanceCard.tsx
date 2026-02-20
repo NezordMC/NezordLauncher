@@ -63,12 +63,12 @@ export function InstanceCard({
   };
 
   return (
-    <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-all">
+    <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition-all">
       <div className="flex items-start gap-3 mb-4">
         <img
           src={logo}
           alt={instance.modloaderType}
-          className="w-12 h-12 rounded-lg object-cover"
+          className="w-12 h-12 rounded-xl object-cover"
         />
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-white truncate">{instance.name}</h3>

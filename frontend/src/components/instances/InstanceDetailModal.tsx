@@ -145,7 +145,7 @@ export function InstanceDetailModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        className="w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-4 border-b border-zinc-800 flex items-center justify-between">

@@ -26,11 +26,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-type SortOption =
-  | "nameAsc"
-  | "nameDesc"
-  | "createdNewest"
-  | "createdOldest";
+type SortOption = "nameAsc" | "nameDesc" | "createdNewest" | "createdOldest";
 type LoaderFilter = "all" | "vanilla" | "fabric" | "quilt";
 const loaderOptions: LoaderFilter[] = ["all", "vanilla", "fabric", "quilt"];
 
@@ -59,9 +55,7 @@ export function HomePage() {
   const hasActiveFilters = normalizedQuery.length > 0 || filterLoader !== "all";
 
   const filteredInstances = instances
-    .filter((inst) =>
-      inst.name.toLowerCase().includes(normalizedQuery),
-    )
+    .filter((inst) => inst.name.toLowerCase().includes(normalizedQuery))
     .filter((inst) => {
       if (filterLoader === "all") return true;
       return inst.modloaderType.toLowerCase() === filterLoader;
@@ -107,8 +101,7 @@ export function HomePage() {
 
   return (
     <div className="h-full w-full flex flex-col p-6">
-      <div className="mb-8 p-8 rounded-2xl bg-zinc-900 border border-zinc-800 relative overflow-hidden group flex items-center justify-between">
-
+      <div className="mb-8 p-8 rounded-3xl bg-zinc-900 border border-zinc-800 relative overflow-hidden group flex items-center justify-between">
         <div className="relative z-10">
           <h2 className="text-3xl font-bold text-white mb-2">
             Welcome back,{" "}
@@ -132,7 +125,7 @@ export function HomePage() {
 
         <div className="relative z-10 flex items-center mr-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-zinc-950/50 border border-zinc-800 text-zinc-400">
+            <div className="p-3 rounded-2xl bg-zinc-950/50 border border-zinc-800 text-zinc-400">
               <Package size={24} />
             </div>
             <div>
@@ -232,7 +225,8 @@ export function HomePage() {
 
             <div className="flex items-center justify-between text-xs text-zinc-500">
               <span>
-                Showing {filteredInstances.length} of {instances.length} instance
+                Showing {filteredInstances.length} of {instances.length}{" "}
+                instance
                 {instances.length === 1 ? "" : "s"}
               </span>
               {hasActiveFilters && (

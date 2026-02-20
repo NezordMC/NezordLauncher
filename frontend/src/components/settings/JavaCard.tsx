@@ -170,7 +170,7 @@ export function JavaCard({
                     key={idx}
                     onClick={() => handlePathChange(java.path)}
                     className={cn(
-                      "p-2 border rounded-md flex items-center justify-between group transition-all cursor-pointer relative overflow-hidden",
+                      "p-2 border rounded-xl flex items-center justify-between group transition-all cursor-pointer relative overflow-hidden",
                       isSelected
                         ? "border-primary bg-primary/5"
                         : "border-zinc-800 bg-zinc-950 hover:border-zinc-600 hover:bg-zinc-900",
