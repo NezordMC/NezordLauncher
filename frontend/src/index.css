@@ -135,17 +135,20 @@
 }
 
 @layer utilities {
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
-  .custom-scrollbar::-webkit-scrollbar-track {
+  ::-webkit-scrollbar-track {
     background: transparent;
   }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-zinc-800 rounded-full;
+  ::-webkit-scrollbar-thumb {
+    @apply bg-zinc-800/80 rounded-full border-2 border-transparent bg-clip-content;
   }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  ::-webkit-scrollbar-thumb:hover {
     @apply bg-zinc-700;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
   }
 }
