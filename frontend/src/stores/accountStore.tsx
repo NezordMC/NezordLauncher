@@ -71,6 +71,7 @@ function useAuthLogic() {
       await refreshAccounts();
     } catch (e) {
       console.error("Failed to switch account", e);
+      throw e;
     }
   };
 
