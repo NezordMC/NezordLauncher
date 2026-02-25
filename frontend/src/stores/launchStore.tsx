@@ -279,6 +279,7 @@ function useGameLaunchLogic() {
     stopInstance,
     startDownload,
     setConsoleOpen,
+    clearLogs: () => setLogs([]),
   };
 }
 
