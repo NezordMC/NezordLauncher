@@ -2,13 +2,15 @@ import { Outlet } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { FloatingConsole } from "@/components/layout/FloatingConsole";
 import { Toaster } from "@/components/ui/sonner";
+import { TitleBar } from "@/components/layout/TitleBar";
 
 import { useUpdater } from "@/hooks/useUpdater";
 
 export function MainLayout() {
   useUpdater();
   return (
-    <div className="flex flex-col h-screen w-screen bg-zinc-950 text-white overflow-hidden relative">
+    <div className="flex flex-col h-screen w-screen bg-zinc-950 text-white overflow-hidden relative border border-zinc-800 rounded-xl">
+      <TitleBar />
       <Navbar />
 
       <main className="flex-1 overflow-hidden relative">
