@@ -6,7 +6,7 @@ import {
 
 export function TitleBar() {
   return (
-    <div className="h-10 bg-zinc-950/50 backdrop-blur-md flex items-center px-4 select-none app-drag relative z-50 border-b border-zinc-800/50">
+    <div className="h-10 bg-zinc-950 flex items-center px-4 select-none app-drag relative z-50 border-b border-zinc-800/50">
       <div className="flex items-center gap-2 no-drag group absolute left-4">
         <button
           onClick={Quit}

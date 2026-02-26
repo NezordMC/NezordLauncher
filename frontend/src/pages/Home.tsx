@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useInstanceStore } from "@/stores/instanceStore";
 import { useLaunchStore } from "@/stores/launchStore";
 import { useAccountStore } from "@/stores/accountStore";
@@ -54,50 +54,74 @@ export function HomePage() {
   const hasAnyInstances = instances.length > 0;
   const hasActiveFilters = normalizedQuery.length > 0 || filterLoader !== "all";
 
-  const filteredInstances = instances
-    .filter((inst) => inst.name.toLowerCase().includes(normalizedQuery))
-    .filter((inst) => {
-      if (filterLoader === "all") return true;
-      return inst.modloaderType.toLowerCase() === filterLoader;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "nameAsc":
-          return a.name.localeCompare(b.name);
-        case "nameDesc":
-          return b.name.localeCompare(a.name);
-        case "createdNewest":
-          return (b.created || "").localeCompare(a.created || "");
-        case "createdOldest":
-          return (a.created || "").localeCompare(b.created || "");
-        default:
-          return 0;
-      }
-    });
+  const filteredInstances = useMemo(
+    () =>
+      instances
+        .filter((inst) => inst.name.toLowerCase().includes(normalizedQuery))
+        .filter((inst) => {
+          if (filterLoader === "all") return true;
+          return inst.modloaderType.toLowerCase() === filterLoader;
+        })
+        .sort((a, b) => {
+          switch (sortBy) {
+            case "nameAsc":
+              return a.name.localeCompare(b.name);
+            case "nameDesc":
+              return b.name.localeCompare(a.name);
+            case "createdNewest":
+              return (b.created || "").localeCompare(a.created || "");
+            case "createdOldest":
+              return (a.created || "").localeCompare(b.created || "");
+            default:
+              return 0;
+          }
+        }),
+    [instances, normalizedQuery, filterLoader, sortBy],
+  );
 
-  const loaderCounts = {
-    all: instances.length,
-    vanilla: instances.filter(
-      (inst) => inst.modloaderType.toLowerCase() === "vanilla",
-    ).length,
-    fabric: instances.filter(
-      (inst) => inst.modloaderType.toLowerCase() === "fabric",
-    ).length,
-    quilt: instances.filter(
-      (inst) => inst.modloaderType.toLowerCase() === "quilt",
-    ).length,
-  };
+  const loaderCounts = useMemo(
+    () => ({
+      all: instances.length,
+      vanilla: instances.filter(
+        (inst) => inst.modloaderType.toLowerCase() === "vanilla",
+      ).length,
+      fabric: instances.filter(
+        (inst) => inst.modloaderType.toLowerCase() === "fabric",
+      ).length,
+      quilt: instances.filter(
+        (inst) => inst.modloaderType.toLowerCase() === "quilt",
+      ).length,
+    }),
+    [instances],
+  );
 
   const clearFilters = () => {
     setSearchQuery("");
     setFilterLoader("all");
   };
 
-  const getInstanceProgress = (instanceId: string) => {
-    const progress = downloadProgress[instanceId];
-    if (!progress) return { current: 0, total: 0, status: "idle" as const };
-    return progress;
-  };
+  const getInstanceProgress = useCallback(
+    (instanceId: string) => {
+      const progress = downloadProgress[instanceId];
+      if (!progress) return { current: 0, total: 0, status: "idle" as const };
+      return progress;
+    },
+    [downloadProgress],
+  );
+
+  const handleLaunch = useCallback(
+    (id: string) => {
+      launchInstance(id, activeAccount);
+    },
+    [launchInstance, activeAccount],
+  );
+
+  const handleSettings = useCallback(
+    (id: string) => {
+      setSelectedInstance(instances.find((i) => i.id === id) || null);
+    },
+    [instances],
+  );
 
   return (
     <div className="h-full w-full flex flex-col p-6">
@@ -261,7 +285,7 @@ export function HomePage() {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto perf-scroll">
         {!hasAnyInstances ? (
           <div className="flex flex-col items-center justify-center h-[60vh] text-zinc-500 text-center animate-in fade-in duration-500">
             <div className="bg-zinc-900/50 p-6 rounded-full border border-zinc-800 mb-6 relative group overflow-hidden">
@@ -326,14 +350,10 @@ export function HomePage() {
                 launchingInstanceId={launchingInstanceId}
                 activeAccount={activeAccount}
                 downloadProgress={getInstanceProgress(inst.id)}
-                onLaunch={launchInstance}
+                onLaunch={handleLaunch}
                 onStop={() => stopInstance(inst.id)}
                 onDownload={startDownload}
-                onSettings={(id) =>
-                  setSelectedInstance(
-                    instances.find((i) => i.id === id) || null,
-                  )
-                }
+                onSettings={handleSettings}
               />
             ))}
           </div>

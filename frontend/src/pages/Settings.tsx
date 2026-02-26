@@ -205,7 +205,7 @@ export function SettingsPage() {
           </aside>
 
           {/* Content Area */}
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto perf-scroll">
             <div className="mx-auto max-w-3xl p-6 md:py-10">
               <TabsContent value="general" className="mt-0 outline-none">
                 <div className="mb-6">

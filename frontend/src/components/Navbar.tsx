@@ -12,7 +12,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="h-16 border-b border-zinc-800 bg-zinc-950/30 backdrop-blur-sm flex items-center justify-between px-6 select-none relative z-40">
+      <nav className="h-16 border-b border-zinc-800 bg-zinc-950 flex items-center justify-between px-6 select-none relative z-40">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"

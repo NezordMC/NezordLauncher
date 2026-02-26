@@ -126,6 +126,14 @@
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  .perf-scroll {
+    will-change: transform;
+    contain: layout style paint;
+    -webkit-overflow-scrolling: touch;
+  }
+}
 @utility app-drag {
   --wails-draggable: drag;
 }

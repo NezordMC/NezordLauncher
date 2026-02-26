@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Download, Square, Settings, Loader2 } from "lucide-react";
 import { Instance, Account } from "@/types";
@@ -21,13 +22,13 @@ interface InstanceCardProps {
     total: number;
     status: "downloading" | "completed" | "failed" | "idle";
   };
-  onLaunch: (id: string, activeAccount: Account | null) => void;
+  onLaunch: (id: string) => void;
   onStop: () => void;
   onDownload: (id: string) => void;
   onSettings: (id: string) => void;
 }
 
-export function InstanceCard({
+export const InstanceCard = memo(function InstanceCard({
   instance,
   launchingInstanceId,
   activeAccount,
@@ -143,7 +144,7 @@ export function InstanceCard({
           </Button>
         ) : (
           <Button
-            onClick={() => onLaunch(instance.id, activeAccount)}
+            onClick={() => onLaunch(instance.id)}
             className="flex-1 h-10 bg-primary hover:bg-primary/90 text-white font-medium text-sm gap-2"
           >
             <Play size={14} fill="currentColor" />
@@ -153,4 +154,4 @@ export function InstanceCard({
       </div>
     </div>
   );
-}
+});
