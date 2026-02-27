@@ -4,8 +4,8 @@ import (
 	"NezordLauncher/pkg/auth"
 	"NezordLauncher/pkg/constants"
 	"NezordLauncher/pkg/fabric"
-	"NezordLauncher/pkg/ipc"
 	"NezordLauncher/pkg/instances"
+	"NezordLauncher/pkg/ipc"
 	"NezordLauncher/pkg/javascanner"
 	"NezordLauncher/pkg/launch"
 	"NezordLauncher/pkg/models"
@@ -367,15 +367,50 @@ func (a *App) hasNvidiaGPU() bool {
 }
 
 func (a *App) fetchVanillaVersion(versionID string) (*models.VersionDetail, error) {
-	client := network.NewHttpClient()
-	data, err := client.Get(constants.VersionManifestV2URL)
-	if err != nil {
-		return nil, err
+	manifestCachePath := filepath.Join(constants.GetDataDir(), "version_manifest_v2.json")
+	var manifest models.VersionManifest
+	manifestLoaded := false
+
+	// Try to load from cache
+	if info, err := os.Stat(manifestCachePath); err == nil {
+		if time.Since(info.ModTime()) < 1*time.Hour {
+			if data, err := os.ReadFile(manifestCachePath); err == nil {
+				if err := json.Unmarshal(data, &manifest); err == nil {
+					manifestLoaded = true
+				}
+			}
+		}
 	}
 
-	var manifest models.VersionManifest
-	if err := json.Unmarshal(data, &manifest); err != nil {
-		return nil, err
+	client := network.NewHttpClient()
+
+	// If not loaded from cache, fetch from network
+	if !manifestLoaded {
+		data, err := client.Get(constants.VersionManifestV2URL)
+		if err != nil {
+			// If network fails but we have an expired cache, try to use it as fallback
+			if _, err := os.Stat(manifestCachePath); err == nil {
+				if cacheData, err := os.ReadFile(manifestCachePath); err == nil {
+					if err := json.Unmarshal(cacheData, &manifest); err == nil {
+						manifestLoaded = true
+						fmt.Println("Network failed, using expired cache for manifest")
+					}
+				}
+			}
+
+			if !manifestLoaded {
+				return nil, err
+			}
+		} else {
+			// Save to cache
+			if err := os.WriteFile(manifestCachePath, data, 0644); err != nil {
+				fmt.Printf("Failed to write manifest cache: %v\n", err)
+			}
+			if err := json.Unmarshal(data, &manifest); err != nil {
+				return nil, err
+			}
+			manifestLoaded = true
+		}
 	}
 
 	targetURL := ""
@@ -389,6 +424,12 @@ func (a *App) fetchVanillaVersion(versionID string) (*models.VersionDetail, erro
 	if targetURL == "" {
 		return nil, fmt.Errorf("version %s not found", versionID)
 	}
+
+	// For version details, we could also cache them individually in versions directory
+	// But sticking to the specific request of "Cache version manifest" first.
+	// Actually, getVersionDetails (caller) already checks local file:
+	// localPath := filepath.Join(constants.GetVersionsDir(), versionID, fmt.Sprintf("%s.json", versionID))
+	// So only manifest needs caching here.
 
 	detailData, err := client.Get(targetURL)
 	if err != nil {
