@@ -113,6 +113,15 @@ function useGameLaunchLogic() {
         if (currentDownloadIdRef.current === instanceId) {
           setCurrentDownloadId(null);
         }
+
+        // Cleanup after 5 seconds
+        setTimeout(() => {
+          setDownloadProgress((prev) => {
+            const newState = { ...prev };
+            delete newState[instanceId];
+            return newState;
+          });
+        }, 5000);
       }),
       EventsOn(IPC_EVENTS.DOWNLOAD_ERROR, (payload: EventPayload) => {
         const instanceId = resolveInstanceId(payload);
@@ -135,6 +144,15 @@ function useGameLaunchLogic() {
           if (currentDownloadIdRef.current === instanceId) {
             setCurrentDownloadId(null);
           }
+
+          // Cleanup after 5 seconds
+          setTimeout(() => {
+            setDownloadProgress((prev) => {
+              const newState = { ...prev };
+              delete newState[instanceId];
+              return newState;
+            });
+          }, 5000);
         }
       }),
       EventsOn(IPC_EVENTS.LAUNCH_STATUS, (payload: EventPayload) => {
