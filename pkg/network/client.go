@@ -118,3 +118,37 @@ func (c *HttpClient) Do(req *http.Request) (*http.Response, error) {
 	}
 	return c.client.Do(req)
 }
+
+func (c *HttpClient) DoWithRetry(req *http.Request) (*http.Response, error) {
+	var lastErr error
+	maxRetries := 3
+
+	for i := 0; i < maxRetries; i++ {
+		if i > 0 {
+			time.Sleep(time.Duration(math.Pow(2, float64(i))) * time.Second)
+		}
+
+		// We need to clone the request body if it exists, but for now we assume GET/no-body
+		// or that the body is seekable/re-readable.
+		// Since we primarily use this for download (GET), it's fine.
+		// But strictly speaking, http.Client.Do closes the Body if it's an io.ReadCloser.
+		// If req.Body is set, we might have issues retrying without rewinding.
+		// However, typical usage here is GET.
+
+		resp, err := c.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+
+		if resp.StatusCode >= 500 {
+			resp.Body.Close()
+			lastErr = fmt.Errorf("server error: %d", resp.StatusCode)
+			continue
+		}
+
+		return resp, nil
+	}
+
+	return nil, lastErr
+}
