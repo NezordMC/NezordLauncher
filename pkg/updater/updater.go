@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"runtime"
 	"time"
 )
 
@@ -15,26 +16,30 @@ const (
 	RepoName  = "NezordLauncher"
 )
 
+type Asset struct {
+	Name               string `json:"name"`
+	BrowserDownloadURL string `json:"browser_download_url"`
+}
+
 type Release struct {
-	TagName     string `json:"tag_name"`
-	HTMLURL     string `json:"html_url"`
-	Prerelease  bool   `json:"prerelease"`
-	PublishedAt string `json:"published_at"`
-	Body        string `json:"body"`
+	TagName     string  `json:"tag_name"`
+	HTMLURL     string  `json:"html_url"`
+	Prerelease  bool    `json:"prerelease"`
+	PublishedAt string  `json:"published_at"`
+	Body        string  `json:"body"`
+	Assets      []Asset `json:"assets"`
 }
 
 type UpdateInfo struct {
 	Available   bool   `json:"available"`
 	Version     string `json:"version"`
 	URL         string `json:"url"`
+	DownloadURL string `json:"download_url"`
 	Description string `json:"description"`
 }
 
 func CheckForUpdate(currentVersion string) (*UpdateInfo, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", RepoOwner, RepoName)
-
-	// If current version is a dev build or beta, we might want to check for pre-releases too
-	// ignoring that for now, focusing on "latest" which is usually the latest stable/beta designated by GitHub
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Get(url)
@@ -53,10 +58,23 @@ func CheckForUpdate(currentVersion string) (*UpdateInfo, error) {
 	}
 
 	if currentVersion != "dev" && compareVersions(release.TagName, currentVersion) > 0 {
+		downloadURL := ""
+		for _, asset := range release.Assets {
+			if runtime.GOOS == "linux" && strings.HasSuffix(asset.Name, ".AppImage") {
+				downloadURL = asset.BrowserDownloadURL
+				break
+			}
+			if runtime.GOOS == "windows" && strings.HasSuffix(asset.Name, ".exe") {
+				downloadURL = asset.BrowserDownloadURL
+				break
+			}
+		}
+
 		return &UpdateInfo{
 			Available:   true,
 			Version:     release.TagName,
-			URL:         release.HTMLURL, // This field doesn't exist in UpdateInfo struct definition in previous view! Wait, checking file content again.
+			URL:         release.HTMLURL,
+			DownloadURL: downloadURL,
 			Description: release.Body,
 		}, nil
 	}
