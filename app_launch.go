@@ -181,10 +181,10 @@ func (a *App) LaunchInstance(instanceID string) error {
 
 	prefixArgs := []string{}
 	if settings.DefaultJvmArgs != "" {
-		prefixArgs = append(prefixArgs, settings.DefaultJvmArgs)
+		prefixArgs = append(prefixArgs, sanitizeJvmArgs(settings.DefaultJvmArgs)...)
 	}
 	if inst.Settings.JvmArgs != "" {
-		prefixArgs = append(prefixArgs, inst.Settings.JvmArgs)
+		prefixArgs = append(prefixArgs, sanitizeJvmArgs(inst.Settings.JvmArgs)...)
 	}
 	if len(prefixArgs) > 0 {
 		args = append(prefixArgs, args...)
@@ -465,4 +465,32 @@ func (a *App) emitGameLog(instanceID, message string) {
 
 func (a *App) emitLaunchExit(instanceID, status string) {
 	a.emit(ipc.EventLaunchExit, newEventPayload("backend.launch", instanceID, status, "Launch process exited"))
+}
+
+
+func sanitizeJvmArgs(argsStr string) []string {
+	args := strings.Fields(argsStr)
+	var safeArgs []string
+	blacklist := []string{
+		"-agentlib",
+		"-Xrunjdwp",
+		"-Dcom.sun.management.jmxremote",
+		"-Xdebug",
+	}
+
+	for _, arg := range args {
+		isBad := false
+		for _, bad := range blacklist {
+			if strings.HasPrefix(arg, bad) {
+				isBad = true
+				break
+			}
+		}
+		if !isBad {
+			safeArgs = append(safeArgs, arg)
+		} else {
+			fmt.Printf("Blocked potentially unsafe JVM arg: %s\n", arg)
+		}
+	}
+	return safeArgs
 }
