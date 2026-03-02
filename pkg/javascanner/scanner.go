@@ -131,6 +131,7 @@ func CheckJava(path string) (*JavaInfo, error) {
 		path = realPath
 	}
 	cmd := exec.Command(path, "-version")
+	setCommandNoWindow(cmd)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, err
@@ -175,6 +176,7 @@ func parseMajorVersion(version string) int {
 
 func listUpdateAlternatives() []string {
 	cmd := exec.Command("update-alternatives", "--list", "java")
+	setCommandNoWindow(cmd)
 	out, err := cmd.Output()
 	if err != nil {
 		return nil
