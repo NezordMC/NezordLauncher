@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/wailsapp/wails/v2/pkg/options"
 	wailsRun "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -195,4 +196,8 @@ func (a *App) shutdown(ctx context.Context) {
 
 	logging.Info("Application shutdown complete")
 	logging.Close()
+}
+
+func (a *App) onSecondInstanceLaunch(secondInstanceData options.SecondInstanceData) {
+	wailsRun.WindowShow(a.ctx)
 }

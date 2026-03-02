@@ -7,6 +7,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/linux"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
 //go:embed all:frontend/dist
@@ -30,6 +31,23 @@ func main() {
 		OnShutdown:       app.shutdown,
 		Linux: &linux.Options{
 			WebviewGpuPolicy: linux.WebviewGpuPolicyAlways,
+		},
+		Windows: &windows.Options{
+			WebviewIsTransparent:              true,
+			WindowIsTranslucent:               true,
+			BackdropType:                      windows.Mica,
+			Theme:                             windows.SystemDefault,
+			DisableWindowIcon:                 false,
+			IsZoomControlEnabled:              false,
+			ZoomFactor:                        1.0,
+			OnSuspend:                         func() {},
+			OnResume:                          func() {},
+			WebviewUserDataPath:               "",
+			WebviewBrowserPath:                "",
+		},
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId:               "e421d2b6-7bfb-4154-9ac1-85a5620b2a9e",
+			OnSecondInstanceLaunch: app.onSecondInstanceLaunch,
 		},
 		Bind: []interface{}{
 			app,
