@@ -1,19 +1,24 @@
 import { useEffect, useState } from "react";
-import { CheckForUpdates } from "../../wailsjs/go/main/App";
+import { CheckForUpdates, GetAppVersion } from "../wailsjs/go/main/App";
 import { toast } from "sonner";
-import pkg from "../../package.json";
-import { BrowserOpenURL } from "../../wailsjs/runtime/runtime";
+import { BrowserOpenURL } from "../wailsjs/runtime/runtime";
+import { useSettingStore } from "@/stores/settingStore";
 
 export function useUpdater() {
   const [checked, setChecked] = useState(false);
+  const { launcherSettings } = useSettingStore();
 
   useEffect(() => {
     if (checked) return;
+    if (launcherSettings && launcherSettings.autoUpdateEnabled === false) {
+      setChecked(true);
+      return;
+    }
 
     const check = async () => {
       try {
-        // @ts-ignore - binding might not be generated yet
-        const info = await CheckForUpdates(pkg.version);
+        const currentVersion = await GetAppVersion();
+        const info = await CheckForUpdates(currentVersion);
         if (info && info.available) {
           toast.info(`Update Available: ${info.version}`, {
             description: "A new version is available for download.",
@@ -34,5 +39,5 @@ export function useUpdater() {
     };
 
     check();
-  }, [checked]);
+  }, [checked, launcherSettings]);
 }

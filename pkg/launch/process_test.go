@@ -16,9 +16,14 @@ func TestExecuteGame(t *testing.T) {
 	args := []string{"Nezord Launcher Launch Test"}
 	dir := "/tmp"
 
-	err := ExecuteGame(cmd, args, dir, logger)
+	cmdObj, err := Launch(cmd, args, dir, nil)
 	if err != nil {
-		t.Fatalf("Process execution failed: %v", err)
+		t.Fatalf("Launch failed: %v", err)
+	}
+
+	err = Monitor(cmdObj, logger)
+	if err != nil {
+		t.Fatalf("Monitor failed: %v", err)
 	}
 
 	found := false

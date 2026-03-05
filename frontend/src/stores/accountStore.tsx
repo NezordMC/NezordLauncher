@@ -12,7 +12,7 @@ import {
   SetActiveAccount,
   GetActiveAccount,
   RemoveAccount,
-} from "../../wailsjs/go/main/App";
+} from "../wailsjs/go/main/App";
 import { Account } from "../types";
 
 function useAuthLogic() {
@@ -71,6 +71,7 @@ function useAuthLogic() {
       await refreshAccounts();
     } catch (e) {
       console.error("Failed to switch account", e);
+      throw e;
     }
   };
 

@@ -57,11 +57,7 @@ func Monitor(cmd *exec.Cmd, onLog LogCallback) error {
 	return nil
 }
 
-// Deprecated: Use Launch and Monitor instead
-func ExecuteGame(command string, args []string, dir string, onLog LogCallback) error {
-	cmd, _ := Launch(command, args, dir, nil)
-	return Monitor(cmd, onLog)
-}
+
 
 func streamLog(pipe io.ReadCloser, callback LogCallback, prefix string) {
 	scanner := bufio.NewScanner(pipe)

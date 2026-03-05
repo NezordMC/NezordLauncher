@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useInstanceStore } from "@/stores/instanceStore";
 import { useLaunchStore } from "@/stores/launchStore";
 import { useAccountStore } from "@/stores/accountStore";
@@ -26,11 +26,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-type SortOption =
-  | "nameAsc"
-  | "nameDesc"
-  | "createdNewest"
-  | "createdOldest";
+type SortOption = "nameAsc" | "nameDesc" | "createdNewest" | "createdOldest";
 type LoaderFilter = "all" | "vanilla" | "fabric" | "quilt";
 const loaderOptions: LoaderFilter[] = ["all", "vanilla", "fabric", "quilt"];
 
@@ -58,57 +54,78 @@ export function HomePage() {
   const hasAnyInstances = instances.length > 0;
   const hasActiveFilters = normalizedQuery.length > 0 || filterLoader !== "all";
 
-  const filteredInstances = instances
-    .filter((inst) =>
-      inst.name.toLowerCase().includes(normalizedQuery),
-    )
-    .filter((inst) => {
-      if (filterLoader === "all") return true;
-      return inst.modloaderType.toLowerCase() === filterLoader;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "nameAsc":
-          return a.name.localeCompare(b.name);
-        case "nameDesc":
-          return b.name.localeCompare(a.name);
-        case "createdNewest":
-          return (b.created || "").localeCompare(a.created || "");
-        case "createdOldest":
-          return (a.created || "").localeCompare(b.created || "");
-        default:
-          return 0;
-      }
-    });
+  const filteredInstances = useMemo(
+    () =>
+      instances
+        .filter((inst) => inst.name.toLowerCase().includes(normalizedQuery))
+        .filter((inst) => {
+          if (filterLoader === "all") return true;
+          return inst.modloaderType.toLowerCase() === filterLoader;
+        })
+        .sort((a, b) => {
+          switch (sortBy) {
+            case "nameAsc":
+              return a.name.localeCompare(b.name);
+            case "nameDesc":
+              return b.name.localeCompare(a.name);
+            case "createdNewest":
+              return (b.created || "").localeCompare(a.created || "");
+            case "createdOldest":
+              return (a.created || "").localeCompare(b.created || "");
+            default:
+              return 0;
+          }
+        }),
+    [instances, normalizedQuery, filterLoader, sortBy],
+  );
 
-  const loaderCounts = {
-    all: instances.length,
-    vanilla: instances.filter(
-      (inst) => inst.modloaderType.toLowerCase() === "vanilla",
-    ).length,
-    fabric: instances.filter(
-      (inst) => inst.modloaderType.toLowerCase() === "fabric",
-    ).length,
-    quilt: instances.filter(
-      (inst) => inst.modloaderType.toLowerCase() === "quilt",
-    ).length,
-  };
+  const loaderCounts = useMemo(
+    () => ({
+      all: instances.length,
+      vanilla: instances.filter(
+        (inst) => inst.modloaderType.toLowerCase() === "vanilla",
+      ).length,
+      fabric: instances.filter(
+        (inst) => inst.modloaderType.toLowerCase() === "fabric",
+      ).length,
+      quilt: instances.filter(
+        (inst) => inst.modloaderType.toLowerCase() === "quilt",
+      ).length,
+    }),
+    [instances],
+  );
 
   const clearFilters = () => {
     setSearchQuery("");
     setFilterLoader("all");
   };
 
-  const getInstanceProgress = (instanceId: string) => {
-    const progress = downloadProgress[instanceId];
-    if (!progress) return { current: 0, total: 0, status: "idle" as const };
-    return progress;
-  };
+  const getInstanceProgress = useCallback(
+    (instanceId: string) => {
+      const progress = downloadProgress[instanceId];
+      if (!progress) return { current: 0, total: 0, status: "idle" as const };
+      return progress;
+    },
+    [downloadProgress],
+  );
+
+  const handleLaunch = useCallback(
+    (id: string) => {
+      launchInstance(id, activeAccount);
+    },
+    [launchInstance, activeAccount],
+  );
+
+  const handleSettings = useCallback(
+    (id: string) => {
+      setSelectedInstance(instances.find((i) => i.id === id) || null);
+    },
+    [instances],
+  );
 
   return (
     <div className="h-full w-full flex flex-col p-6">
-      <div className="mb-8 p-8 rounded-2xl bg-zinc-900 border border-zinc-800 relative overflow-hidden group flex items-center justify-between">
-
+      <div className="mb-8 p-8 rounded-3xl bg-zinc-900 border border-zinc-800 relative overflow-hidden group flex items-center justify-between">
         <div className="relative z-10">
           <h2 className="text-3xl font-bold text-white mb-2">
             Welcome back,{" "}
@@ -132,7 +149,7 @@ export function HomePage() {
 
         <div className="relative z-10 flex items-center mr-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-zinc-950/50 border border-zinc-800 text-zinc-400">
+            <div className="p-3 rounded-2xl bg-zinc-950/50 border border-zinc-800 text-zinc-400">
               <Package size={24} />
             </div>
             <div>
@@ -232,7 +249,8 @@ export function HomePage() {
 
             <div className="flex items-center justify-between text-xs text-zinc-500">
               <span>
-                Showing {filteredInstances.length} of {instances.length} instance
+                Showing {filteredInstances.length} of {instances.length}{" "}
+                instance
                 {instances.length === 1 ? "" : "s"}
               </span>
               {hasActiveFilters && (
@@ -267,7 +285,7 @@ export function HomePage() {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto perf-scroll">
         {!hasAnyInstances ? (
           <div className="flex flex-col items-center justify-center h-[60vh] text-zinc-500 text-center animate-in fade-in duration-500">
             <div className="bg-zinc-900/50 p-6 rounded-full border border-zinc-800 mb-6 relative group overflow-hidden">
@@ -332,14 +350,10 @@ export function HomePage() {
                 launchingInstanceId={launchingInstanceId}
                 activeAccount={activeAccount}
                 downloadProgress={getInstanceProgress(inst.id)}
-                onLaunch={launchInstance}
+                onLaunch={handleLaunch}
                 onStop={() => stopInstance(inst.id)}
                 onDownload={startDownload}
-                onSettings={(id) =>
-                  setSelectedInstance(
-                    instances.find((i) => i.id === id) || null,
-                  )
-                }
+                onSettings={handleSettings}
               />
             ))}
           </div>

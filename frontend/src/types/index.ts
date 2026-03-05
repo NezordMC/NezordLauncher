@@ -76,6 +76,10 @@ export interface EventPayload {
   message?: string;
   current?: number;
   total?: number;
+  currentBytes?: number;
+  totalBytes?: number;
+  speed?: number;
+  eta?: number;
   meta?: unknown;
   error?: EventErrorPayload;
 }

@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type ArtifactFetcher struct {
@@ -96,13 +97,35 @@ func (f *ArtifactFetcher) loadCachedVersion(versionID string) (*models.VersionDe
 	return &detail, nil
 }
 
-func (f *ArtifactFetcher) fetchManifest() (*models.VersionManifest, error) {
+func FetchVersionManifest() (*models.VersionManifest, error) {
+	cachePath := filepath.Join(constants.GetVersionsDir(), "version_manifest_v2.json")
+
+	// Check cache
+	if info, err := os.Stat(cachePath); err == nil {
+		if time.Since(info.ModTime()) < 30*time.Minute {
+			data, err := os.ReadFile(cachePath)
+			if err == nil {
+				var manifest models.VersionManifest
+				if err := json.Unmarshal(data, &manifest); err == nil {
+					return &manifest, nil
+				}
+			}
+		}
+	}
+
 	client := network.NewHttpClient()
 	manifestData, err := client.Get(constants.VersionManifestV2URL)
 	if err != nil {
+		// Try to read stale cache if fetch fails
+		if data, err := os.ReadFile(cachePath); err == nil {
+			var manifest models.VersionManifest
+			if err := json.Unmarshal(data, &manifest); err == nil {
+				return &manifest, nil
+			}
+		}
 		return nil, err
 	}
-	cachePath := filepath.Join(constants.GetVersionsDir(), "version_manifest_v2.json")
+	
 	_ = AtomicWriteFile(cachePath, manifestData)
 
 	var manifest models.VersionManifest
@@ -113,7 +136,7 @@ func (f *ArtifactFetcher) fetchManifest() (*models.VersionManifest, error) {
 }
 
 func (f *ArtifactFetcher) fetchAndCacheVersion(versionID string) (*models.VersionDetail, error) {
-	manifest, err := f.fetchManifest()
+	manifest, err := FetchVersionManifest()
 	if err != nil {
 		return nil, err
 	}
@@ -165,11 +188,12 @@ func (f *ArtifactFetcher) downloadClient(ctx context.Context, v *models.VersionD
 				return nil
 			}
 
-			f.pool.Progress.AddTotal(1)
+			f.pool.Progress.AddTotal(1, int64(v.Downloads.Client.Size))
 			f.pool.Submit(Task{
 				URL:  v.Downloads.Client.URL,
 				Path: path,
 				SHA1: v.Downloads.Client.SHA1,
+				Size: int64(v.Downloads.Client.Size),
 			})
 		}
 	}
@@ -195,6 +219,7 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 					URL:  lib.Downloads.Artifact.URL,
 					Path: fullPath,
 					SHA1: lib.Downloads.Artifact.SHA1,
+					Size: int64(lib.Downloads.Artifact.Size),
 				})
 			}
 		} else if lib.Name != "" {
@@ -231,6 +256,7 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 							URL:  artifact.URL,
 							Path: fullPath,
 							SHA1: artifact.SHA1,
+							Size: int64(artifact.Size),
 						})
 					}
 				}
@@ -239,7 +265,11 @@ func (f *ArtifactFetcher) downloadLibraries(ctx context.Context, v *models.Versi
 	}
 
 	if len(tasks) > 0 {
-		f.pool.Progress.AddTotal(len(tasks))
+		var totalSize int64
+		for _, t := range tasks {
+			totalSize += t.Size
+		}
+		f.pool.Progress.AddTotal(len(tasks), totalSize)
 
 		for _, t := range tasks {
 			if ctx.Err() != nil {
@@ -313,12 +343,17 @@ func (f *ArtifactFetcher) downloadAssets(ctx context.Context, v *models.VersionD
 				URL:  url,
 				Path: path,
 				SHA1: obj.Hash,
+				Size: int64(obj.Size),
 			})
 		}
 	}
 
 	if len(tasks) > 0 {
-		f.pool.Progress.AddTotal(len(tasks))
+		var totalSize int64
+		for _, t := range tasks {
+			totalSize += t.Size
+		}
+		f.pool.Progress.AddTotal(len(tasks), totalSize)
 
 		for _, t := range tasks {
 			if ctx.Err() != nil {

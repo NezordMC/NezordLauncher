@@ -104,7 +104,7 @@ func (p *WorkerPool) process(ctx context.Context, t Task, client *network.HttpCl
 
 	if t.SHA1 != "" {
 		if valid, _ := VerifyFileSHA1(t.Path, t.SHA1); valid {
-			p.Progress.Increment(0)
+			p.Progress.Increment(t.Size, 0)
 			return nil
 		}
 		if _, err := os.Stat(t.Path); err == nil {
@@ -112,7 +112,7 @@ func (p *WorkerPool) process(ctx context.Context, t Task, client *network.HttpCl
 		}
 	} else {
 		if _, err := os.Stat(t.Path); err == nil {
-			p.Progress.Increment(0)
+			p.Progress.Increment(t.Size, 0)
 			return nil
 		}
 	}
@@ -132,6 +132,6 @@ func (p *WorkerPool) process(ctx context.Context, t Task, client *network.HttpCl
 		return err
 	}
 
-	p.Progress.Increment(n)
+	p.Progress.Increment(t.Size, n)
 	return nil
 }

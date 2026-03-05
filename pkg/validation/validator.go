@@ -11,6 +11,7 @@ var (
 	instanceNameRegex = regexp.MustCompile(`^[a-zA-Z0-9\-_ ]{1,50}$`)
 	versionRegex      = regexp.MustCompile(`^[a-zA-Z0-9\._\-]+$`)
 	uuidRegex         = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	compactUUIDRegex  = regexp.MustCompile(`^[0-9a-fA-F]{32}$`)
 )
 
 func ValidateUsername(username string) error {
@@ -38,7 +39,7 @@ func ValidateVersionID(version string) error {
 }
 
 func ValidateUUID(uuid string) error {
-	if !uuidRegex.MatchString(uuid) {
+	if !uuidRegex.MatchString(uuid) && !compactUUIDRegex.MatchString(uuid) {
 		return fmt.Errorf("invalid UUID format")
 	}
 	return nil

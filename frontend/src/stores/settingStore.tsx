@@ -9,7 +9,7 @@ import {
   GetSettings,
   ScanJavaInstallations,
   UpdateGlobalSettings,
-} from "../../wailsjs/go/main/App";
+} from "../wailsjs/go/main/App";
 import { GlobalDefaults, JavaInfo, LauncherSettings } from "../types";
 
 function useSettingsLogic() {
@@ -27,46 +27,21 @@ function useSettingsLogic() {
     loadLauncherSettings();
   }, []);
 
-  const readNumber = (key: string) => {
-    const val = localStorage.getItem(key);
-    if (!val) return null;
-    const parsed = parseInt(val);
-    return Number.isNaN(parsed) ? null : parsed;
-  };
-
-  const readString = (key: string) => {
-    const val = localStorage.getItem(key);
-    if (!val) return null;
-    return val;
-  };
-
   const normalizeSettings = (settings: LauncherSettings | null) => {
-    const localRam = readNumber("nezord_default_ram");
-    const localW = readNumber("nezord_default_width");
-    const localH = readNumber("nezord_default_height");
-    const localArgs = readString("nezord_global_jvm_args");
-    const localJava = readString("nezord_java_path");
-
     const defaultRamMB =
       settings?.defaultRamMB && settings.defaultRamMB > 0
         ? settings.defaultRamMB
-        : localRam || 4096;
+        : 4096;
     const defaultResolutionW =
       settings?.defaultResolutionW && settings.defaultResolutionW > 0
         ? settings.defaultResolutionW
-        : localW || 854;
+        : 854;
     const defaultResolutionH =
       settings?.defaultResolutionH && settings.defaultResolutionH > 0
         ? settings.defaultResolutionH
-        : localH || 480;
-    const defaultJvmArgs =
-      settings?.defaultJvmArgs && settings.defaultJvmArgs.length > 0
-        ? settings.defaultJvmArgs
-        : localArgs || "";
-    const defaultJavaPath =
-      settings?.defaultJavaPath && settings.defaultJavaPath.length > 0
-        ? settings.defaultJavaPath
-        : localJava || "";
+        : 480;
+    const defaultJvmArgs = settings?.defaultJvmArgs || "";
+    const defaultJavaPath = settings?.defaultJavaPath || "";
 
     return {
       language: settings?.language || "en",

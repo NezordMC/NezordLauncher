@@ -11,14 +11,19 @@ import {
   CancelDownload,
   StartInstanceDownload,
   StopInstance,
-} from "../../wailsjs/go/main/App";
-import { EventsOn } from "../../wailsjs/runtime/runtime";
+} from "../wailsjs/go/main/App";
+import { EventsOn } from "../wailsjs/runtime/runtime";
 import { Account, EventPayload } from "../types";
 import { toast } from "sonner";
+import { IPC_EVENTS } from "@/lib/ipc";
 
 interface DownloadProgress {
   current: number;
   total: number;
+  currentBytes: number;
+  totalBytes: number;
+  speed: number;
+  eta: number;
   status: "downloading" | "completed" | "failed" | "idle";
 }
 
@@ -54,24 +59,47 @@ function useGameLaunchLogic() {
       payload.instanceId || currentDownloadIdRef.current;
 
     const cleanups = [
-      EventsOn("download.status", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.DOWNLOAD_STATUS, (payload: EventPayload) => {
         const status = payload.status || "unknown";
         const message = payload.message || "No message";
         addLog(`[DOWNLOAD][${status.toUpperCase()}] ${message}`);
       }),
-      EventsOn("download.progress", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.DOWNLOAD_PROGRESS, (payload: EventPayload) => {
         const instanceId = resolveInstanceId(payload);
         if (!instanceId) return;
 
         const current = payload.current || 0;
         const total = payload.total || 0;
-        addLog(`[DOWNLOAD] Progress: ${current}/${total}`);
+        const currentBytes = payload.currentBytes || 0;
+        const totalBytes = payload.totalBytes || 0;
+        const speed = payload.speed || 0;
+        const eta = payload.eta || 0;
+
+        addLog(
+          `[DOWNLOAD] Progress: ${current}/${total} - ${(
+            currentBytes /
+            1024 /
+            1024
+          ).toFixed(2)}MB / ${(totalBytes / 1024 / 1024).toFixed(2)}MB @ ${(
+            speed /
+            1024 /
+            1024
+          ).toFixed(2)}MB/s ETA: ${eta.toFixed(1)}s`,
+        );
         setDownloadProgress((prev) => ({
           ...prev,
-          [instanceId]: { current, total, status: "downloading" },
+          [instanceId]: {
+            current,
+            total,
+            currentBytes,
+            totalBytes,
+            speed,
+            eta,
+            status: "downloading",
+          },
         }));
       }),
-      EventsOn("download.complete", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.DOWNLOAD_COMPLETE, (payload: EventPayload) => {
         const instanceId = resolveInstanceId(payload);
         if (!instanceId) return;
 
@@ -85,12 +113,25 @@ function useGameLaunchLogic() {
         if (currentDownloadIdRef.current === instanceId) {
           setCurrentDownloadId(null);
         }
+
+        // Cleanup after 5 seconds
+        setTimeout(() => {
+          setDownloadProgress((prev) => {
+            const newState = { ...prev };
+            delete newState[instanceId];
+            return newState;
+          });
+        }, 5000);
       }),
-      EventsOn("download.error", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.DOWNLOAD_ERROR, (payload: EventPayload) => {
         const instanceId = resolveInstanceId(payload);
+        const code = payload.error?.code;
         const errorMessage =
-          payload.error?.cause || payload.error?.message || payload.message || "Download failed";
-        addLog(`[ERROR] ${errorMessage}`);
+          payload.error?.cause ||
+          payload.error?.message ||
+          payload.message ||
+          "Download failed";
+        addLog(`[ERROR${code ? `:${code}` : ""}] ${errorMessage}`);
 
         if (instanceId) {
           setDownloadProgress((prev) => ({
@@ -103,30 +144,47 @@ function useGameLaunchLogic() {
           if (currentDownloadIdRef.current === instanceId) {
             setCurrentDownloadId(null);
           }
+
+          // Cleanup after 5 seconds
+          setTimeout(() => {
+            setDownloadProgress((prev) => {
+              const newState = { ...prev };
+              delete newState[instanceId];
+              return newState;
+            });
+          }, 5000);
         }
       }),
-      EventsOn("launch.status", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.LAUNCH_STATUS, (payload: EventPayload) => {
         const message = payload.message || "No message";
         addLog(`[SYSTEM] ${message}`);
         if (message.includes("Game closed")) setLaunchingInstanceId(null);
       }),
-      EventsOn("launch.game.log", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.LAUNCH_GAME_LOG, (payload: EventPayload) => {
         addLog(`[GAME] ${payload.message || ""}`);
       }),
-      EventsOn("launch.error", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.LAUNCH_ERROR, (payload: EventPayload) => {
+        const code = payload.error?.code;
         const message =
-          payload.error?.cause || payload.error?.message || payload.message || "Unknown launch error";
-        addLog(`[ERROR] ${message}`);
+          payload.error?.cause ||
+          payload.error?.message ||
+          payload.message ||
+          "Unknown launch error";
+        addLog(`[ERROR${code ? `:${code}` : ""}] ${message}`);
         setLaunchingInstanceId(null);
         setConsoleOpen(true);
       }),
-      EventsOn("launch.exit", () => {
+      EventsOn(IPC_EVENTS.LAUNCH_EXIT, () => {
         setLaunchingInstanceId(null);
       }),
-      EventsOn("app.log.error", (payload: EventPayload) => {
+      EventsOn(IPC_EVENTS.APP_LOG_ERROR, (payload: EventPayload) => {
+        const code = payload.error?.code;
         const message =
-          payload.error?.cause || payload.error?.message || payload.message || "Unknown app error";
-        addLog(`[APP ERROR] ${message}`);
+          payload.error?.cause ||
+          payload.error?.message ||
+          payload.message ||
+          "Unknown app error";
+        addLog(`[APP ERROR${code ? `:${code}` : ""}] ${message}`);
       }),
     ];
     return () => cleanups.forEach((c) => c());
@@ -136,7 +194,15 @@ function useGameLaunchLogic() {
     setCurrentDownloadId(instanceId);
     setDownloadProgress((prev) => ({
       ...prev,
-      [instanceId]: { current: 0, total: 0, status: "downloading" },
+      [instanceId]: {
+        current: 0,
+        total: 0,
+        currentBytes: 0,
+        totalBytes: 0,
+        speed: 0,
+        eta: 0,
+        status: "downloading",
+      },
     }));
     setConsoleOpen(true);
 
@@ -231,6 +297,7 @@ function useGameLaunchLogic() {
     stopInstance,
     startDownload,
     setConsoleOpen,
+    clearLogs: () => setLogs([]),
   };
 }
 

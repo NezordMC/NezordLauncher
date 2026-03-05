@@ -24,7 +24,7 @@ func downloadWithResume(ctx context.Context, client *network.HttpClient, url, pa
 			req.Header.Set("Range", fmt.Sprintf("bytes=%d-", offset))
 		}
 
-		resp, err := client.Do(req)
+		resp, err := client.DoWithRetry(req)
 		if err != nil {
 			return 0, err
 		}

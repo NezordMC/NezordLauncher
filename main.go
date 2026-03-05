@@ -6,6 +6,8 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/linux"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
 //go:embed all:frontend/dist
@@ -17,14 +19,36 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  "NezordLauncher",
-		Width:  1600,
-		Height: 900,
+		Title:     "NezordLauncher",
+		Width:     1600,
+		Height:    900,
+		Frameless: true,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
+		BackgroundColour: &options.RGBA{R: 0, G: 0, B: 0, A: 0},
 		OnStartup:        app.startup,
+		OnShutdown:       app.shutdown,
+		Linux: &linux.Options{
+			WebviewGpuPolicy: linux.WebviewGpuPolicyAlways,
+		},
+		Windows: &windows.Options{
+			WebviewIsTransparent:              true,
+			WindowIsTranslucent:               true,
+			BackdropType:                      windows.Mica,
+			Theme:                             windows.SystemDefault,
+			DisableWindowIcon:                 false,
+			IsZoomControlEnabled:              false,
+			ZoomFactor:                        1.0,
+			OnSuspend:                         func() {},
+			OnResume:                          func() {},
+			WebviewUserDataPath:               "",
+			WebviewBrowserPath:                "",
+		},
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId:               "e421d2b6-7bfb-4154-9ac1-85a5620b2a9e",
+			OnSecondInstanceLaunch: app.onSecondInstanceLaunch,
+		},
 		Bind: []interface{}{
 			app,
 		},
