@@ -77,6 +77,7 @@ func getCandidatePaths() []string {
 			"/usr/local/java",
 			"/usr/local/jdk",
 		}
+
 		for _, root := range roots {
 			addJavaFromRoot(&paths, seen, root)
 		}
@@ -112,6 +113,46 @@ func getCandidatePaths() []string {
 			for _, p := range regPaths {
 				addIfFile(&paths, seen, filepath.Join(p, "bin", "java.exe"))
 			}
+		}
+	}
+
+	if runtime.GOOS == "darwin" {
+		addIfFile(&paths, seen, "/usr/bin/java")
+		macRoots := []string{
+			"/Library/Java/JavaVirtualMachines",
+			"/System/Library/Java/JavaVirtualMachines",
+		}
+		for _, root := range macRoots {
+			if entries, err := os.ReadDir(root); err == nil {
+				for _, e := range entries {
+					if e.IsDir() {
+						addIfFile(&paths, seen, filepath.Join(root, e.Name(), "Contents", "Home", "bin", "java"))
+					}
+				}
+			}
+		}
+		addJavaFromRoot(&paths, seen, "/opt/homebrew/opt") // Homebrew ARM
+		addJavaFromRoot(&paths, seen, "/usr/local/opt")    // Homebrew Intel
+	}
+
+	// Cross-platform user home-based installations
+	if homeDir, err := os.UserHomeDir(); err == nil {
+		homeRoots := []string{
+			filepath.Join(homeDir, ".jdks"),
+			filepath.Join(homeDir, ".local", "jdks"),
+			filepath.Join(homeDir, ".jenv", "versions"),
+			filepath.Join(homeDir, ".sdkman", "candidates", "java"),
+			filepath.Join(homeDir, ".asdf", "installs", "java"),
+			filepath.Join(homeDir, ".corretto"),
+			filepath.Join(homeDir, ".gradle", "jdks"),
+		}
+		
+		if runtime.GOOS == "windows" {
+			homeRoots = append(homeRoots, filepath.Join(homeDir, "scoop", "apps", "java"))
+		}
+		
+		for _, root := range homeRoots {
+			addJavaFromRoot(&paths, seen, root)
 		}
 	}
 
@@ -225,12 +266,17 @@ func addJavaFromRoot(paths *[]string, seen map[string]struct{}, root string) {
 	if err != nil {
 		return
 	}
+	javaName := "java"
+	if runtime.GOOS == "windows" {
+		javaName = "java.exe"
+	}
+
 	for _, e := range entries {
 		if !e.IsDir() {
 			continue
 		}
 		base := filepath.Join(root, e.Name())
-		addIfFile(paths, seen, filepath.Join(base, "bin", "java"))
-		addIfFile(paths, seen, filepath.Join(base, "jre", "bin", "java"))
+		addIfFile(paths, seen, filepath.Join(base, "bin", javaName))
+		addIfFile(paths, seen, filepath.Join(base, "jre", "bin", javaName))
 	}
 }
