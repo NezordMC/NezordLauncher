@@ -22,6 +22,10 @@ export function DeleteInstance(arg1) {
   return window['go']['main']['App']['DeleteInstance'](arg1);
 }
 
+export function DownloadUpdate(arg1) {
+  return window['go']['main']['App']['DownloadUpdate'](arg1);
+}
+
 export function DownloadVersion(arg1) {
   return window['go']['main']['App']['DownloadVersion'](arg1);
 }

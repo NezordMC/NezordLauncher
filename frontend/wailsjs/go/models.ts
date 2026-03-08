@@ -273,6 +273,7 @@ export namespace updater {
 	    available: boolean;
 	    version: string;
 	    url: string;
+	    download_url: string;
 	    description: string;
 	
 	    static createFrom(source: any = {}) {
@@ -284,6 +285,7 @@ export namespace updater {
 	        this.available = source["available"];
 	        this.version = source["version"];
 	        this.url = source["url"];
+	        this.download_url = source["download_url"];
 	        this.description = source["description"];
 	    }
 	}

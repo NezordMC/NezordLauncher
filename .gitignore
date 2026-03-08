@@ -1,6 +1,7 @@
 build/bin
 node_modules
 frontend/dist
+build/windows/installer/tmp/
 
 # AppImage artifacts
 *.AppImage
@@ -9,3 +10,4 @@ build/linux/tools/
 
 # Data directory
 data/
+
